@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+/* ================= USERS ================= */
+
+model users {
+  id                    Int      @id @default(autoincrement())
+  
+  // Basic Info
+  firstName             String?  @db.VarChar(255)
+  lastName              String?  @db.VarChar(255)
+  // Maintaining 'name' for backward compatibility or easy full name access if needed, 
+  // but we will primarily use firstName/lastName
+  name                  String?  @db.VarChar(255) 
+  
+  email                 String?  @unique @db.VarChar(255)
+  image                 String?  @db.Text
+  role                  String   @default("seeker") @db.VarChar(20)
+  providerRequestStatus String   @default("none") @db.VarChar(20)
+  isProviderAtFirst     Boolean  @default(false)
+
+  email_verified        Boolean  @default(false)
+
+  // Auth & Verification
+  password              String?  @db.VarChar(255)
+  mobile                String?  @db.VarChar(20)
+  otp                   String?  @db.VarChar(10)
+  otpExpiry             DateTime?
+  
+  // Personal Details
+  dateOfBirth           String?  @db.VarChar(50) // Store as string for flexibility or DateTime if preferred
+  languages             String?  @db.Text        // JSON string or CSV
+  
+  createdAt             DateTime @default(now()) @db.Timestamp(0)
+
+  providerRequests ProviderRequest[]
+
+  @@map("users")
+}
+
+model EmailOtp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+
+  @@map("email_otps")
+}
+
+/* ================= SERVICES ================= */
+
+model services {
+  id            Int      @id @default(autoincrement())
+  providerEmail String   @db.VarChar(255)
+  title         String   @db.VarChar(255)
+  description   String   @db.Text
+  location      String?  @db.VarChar(255)
+  price         String?  @db.VarChar(100)
+  createdAt     DateTime @default(now()) @db.Timestamp(0)
+  
+  subCategoryId Int         @map("sub_category_id")
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
+
+  @@map("services")
+}
+
+/* ================= CATEGORIES ================= */
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(255)
+  image         String?       @db.Text
+  subCategories SubCategory[]
+
+  @@map("categories")
+}
+
+model SubCategory {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(255)
+  categoryId Int        @map("category_id")
+  category   Category   @relation(fields: [categoryId], references: [id])
+  services   services[]
+
+  @@map("sub_categories")
+}
+
+/* ============ PROVIDER REQUEST ============ */
+
+model ProviderRequest {
+  id           Int      @id @default(autoincrement())
+
+  userId       Int      @map("user_id")
+  
+  // 1. Account Info is in `users` table (email, phone, etc)
+
+  // 2. Personal / Business Details
+  businessName       String?  @map("business_name") @db.VarChar(255)
+  businessType       String?  @map("business_type") @db.VarChar(50) // Individual, Company, Agency
+  registrationNumber String?  @map("registration_number") @db.VarChar(100)
+  establishmentYear  String?  @map("establishment_year") @db.VarChar(4) // Year
+  companyLogo        String?  @map("company_logo") @db.Text
+  
+  gender             String?  @db.VarChar(20)
+  dateOfBirth        String?  @map("date_of_birth") @db.VarChar(50)
+  profilePhoto       String?  @map("profile_photo") @db.Text
+
+  // 3. Contact & Location
+  country            String?  @db.VarChar(100)
+  state              String?  @db.VarChar(100)
+  city               String?  @db.VarChar(100)
+  zipCode            String?  @map("zip_code") @db.VarChar(20)
+  address            String?  @db.Text
+  serviceRadius      Int?     @map("service_radius") // in km/miles
+  serviceAreas       Json?    @map("service_areas")  // Array of cities/areas
+
+  // 4. Service Details
+  subCategoryId      Int?     @map("sub_category_id")
+  servicesOffered    Json?    @map("services_offered") // Array of service names
+  description        String?  @db.Text // Service Description
+  yearsExperience    String?  @map("years_experience") @db.VarChar(50)
+
+  // 5. Education & Qualifications
+  qualifications     Json?    // Array of objects { degree, institution, year }
+  
+  // 6. Certifications & Licenses
+  licenses           Json?    // Array of objects { name, authority, number, expiry, fileUrl }
+
+  // 7. Availability
+  availability       Json?    // Object { days: [], hours: { start, end }, emergency: bool }
+  
+  // 8. Pricing & Payment
+  pricingType        String?  @map("pricing_type") @db.VarChar(50) // Hourly, Fixed, etc
+  baseRate           String?  @map("base_rate") @db.VarChar(100)
+  onSiteCharges      String?  @map("on_site_charges") @db.VarChar(100)
+  paymentMethods     Json?    @map("payment_methods") // Array of strings
+
+  // 9. Identity & Verification
+  idType             String?  @map("id_type") @db.VarChar(50)
+  idNumber           String?  @map("id_number") @db.VarChar(100)
+  idProofUrl         String?  @map("id_proof_url") @db.Text
+  backgroundCheck    Boolean  @default(false) @map("background_check_consent")
+
+  // 11. Communication (Stored in preferences or just assumed)
+  contactMethod      String?  @map("contact_method") @db.VarChar(50)
+
+  // 12. Legal
+  termsAccepted      Boolean  @default(false) @map("terms_accepted")
+  privacyAccepted    Boolean  @default(false) @map("privacy_accepted")
+  rulesAccepted      Boolean  @default(false) @map("rules_accepted")
+
+  status       provider_requests_status @default(PENDING)
+  createdAt    DateTime                 @default(now()) @map("created_at")
+
+  user users @relation(fields: [userId], references: [id])
+
+  @@map("provider_requests")
+}
+
+/* ================= ENUM ================= */
+
+enum provider_requests_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
