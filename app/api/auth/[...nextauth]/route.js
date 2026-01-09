@@ -31,6 +31,45 @@ export const authOptions = {
 
         email = email.toLowerCase().trim();
 
+        // --- Handle Admin Registration ---
+        // Only attempt registration if adminKey is provided (and not "undefined" string)
+        if (adminKey && adminKey !== "undefined" && adminKey !== "null") {
+
+          // Check if user already exists
+          const [existing] = await db.query(
+            "SELECT id FROM users WHERE email = ?",
+            [email]
+          );
+
+          if (existing.length === 0) {
+            // User does not exist -> Proceed with Registration
+
+            // 1. Validate Secret
+            if (adminKey !== process.env.ADMIN_SECRET) {
+              throw new Error("Invalid Admin Secret");
+            }
+
+            // 2. Create Admin User
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const [result] = await db.query(
+              `INSERT INTO users (email, password, role, providerRequestStatus, isProviderAtFirst, email_verified)
+                 VALUES (?, ?, 'admin', 'none', false, true)`,
+              [email, hashedPassword]
+            );
+
+            return {
+              id: result.insertId,
+              email: email,
+              role: 'admin',
+              providerRequestStatus: 'none',
+              isProviderAtFirst: false
+            };
+          }
+          // If user exists, fall through to normal login check (ignore adminKey)
+        }
+        // --- End Admin Registration ---
+
         const [rows] = await db.query(
           "SELECT * FROM users WHERE email = ?",
           [email]
@@ -69,7 +108,7 @@ export const authOptions = {
     // Google auto insert
     async signIn({ user, account }) {
       console.log('user-acc', user, account);
-      
+
       if (account.provider === "google") {
         const [rows] = await db.query(
           "SELECT id FROM users WHERE email = ?",
@@ -100,13 +139,13 @@ export const authOptions = {
         token.role = session.user.role;
         token.isProviderAtFirst = session.user.isProviderAtFirst;
         // Fetch fresh data from DB to be sure
-         const [rows] = await db.query(
-            "SELECT role, providerRequestStatus, isProviderAtFirst FROM users WHERE email = ?",
-            [token.email]
+        const [rows] = await db.query(
+          "SELECT role, providerRequestStatus, isProviderAtFirst FROM users WHERE email = ?",
+          [token.email]
         );
         if (rows.length > 0) {
-           token.role = rows[0].role;
-           token.isProviderAtFirst = rows[0].isProviderAtFirst;
+          token.role = rows[0].role;
+          token.isProviderAtFirst = rows[0].isProviderAtFirst;
         }
       }
 
@@ -114,7 +153,7 @@ export const authOptions = {
       if (!email) return token;
 
       if (user) {
-          token.id = user.id;
+        token.id = user.id;
       }
 
       const [rows] = await db.query(
