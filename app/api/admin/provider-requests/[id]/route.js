@@ -6,10 +6,23 @@ export async function GET(req, context) {
   try {
     const { id } = await context.params;
 
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json(
+        { error: "Invalid request id" },
+        { status: 400 }
+      );
+    }
+
     const request = await prisma.providerRequest.findUnique({
       where: { id: Number(id) },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true, // ✅ ONLY existing column
+          },
+        },
       },
     });
 
@@ -36,6 +49,13 @@ export async function PATCH(req, context) {
     const { id } = await context.params;
     const { action } = await req.json();
 
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json(
+        { error: "Invalid request id" },
+        { status: 400 }
+      );
+    }
+
     if (!["approve", "reject"].includes(action)) {
       return NextResponse.json(
         { error: "Invalid action" },
@@ -43,15 +63,16 @@ export async function PATCH(req, context) {
       );
     }
 
-    const status =
-      action === "approve" ? "APPROVED" : "REJECTED";
+    const status = action === "approve" ? "APPROVED" : "REJECTED";
 
+    // 1️⃣ Update provider request status
     const request = await prisma.providerRequest.update({
       where: { id: Number(id) },
       data: { status },
     });
 
-    await prisma.users.update({
+    // 2️⃣ Update user role safely (NO firstName access)
+    await prisma.users.updateMany({
       where: { id: request.userId },
       data:
         action === "approve"

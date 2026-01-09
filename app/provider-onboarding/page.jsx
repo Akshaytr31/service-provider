@@ -21,6 +21,8 @@ import {
   Textarea,
   useToast,
   VStack,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -52,6 +54,10 @@ export default function ProviderOnboardingPage() {
   const [formData, setFormData] = useState({
     // STEP 0 – BUSINESS
     userType: "individual",
+
+    firstName: "",
+    lastName: "",
+
     businessName: "",
     businessType: "Company",
     registrationNumber: "",
@@ -153,7 +159,11 @@ export default function ProviderOnboardingPage() {
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step === 4 && formData.userType === "business") {
+      setStep(2);
+    } else if (step > 0) {
+      setStep(step - 1);
+    }
   };
 
   /* ================= OTP ================= */
@@ -190,15 +200,21 @@ export default function ProviderOnboardingPage() {
   const validateStep = () => {
     switch (step) {
       case 0:
-        if (
-          !formData.userType ||
-          (formData.userType === "business" &&
-            (!formData.businessName ||
-              !formData.businessType ||
-              !formData.registrationNumber ||
-              !formData.establishmentYear))
-        ) {
-          return "Please complete all business details";
+        if (formData.userType === "individual") {
+          if (!formData.firstName || !formData.lastName) {
+            return "Please enter first name and last name";
+          }
+        }
+
+        if (formData.userType === "business") {
+          if (
+            !formData.businessName ||
+            !formData.businessType ||
+            !formData.registrationNumber ||
+            !formData.establishmentYear
+          ) {
+            return "Please complete all business details";
+          }
         }
         return null;
 
@@ -227,12 +243,14 @@ export default function ProviderOnboardingPage() {
         return null;
 
       case 3:
-        if (
-          !formData.degree ||
-          !formData.institution ||
-          !formData.yearOfCompletion
-        ) {
-          return "Please complete education details";
+        if (formData.userType === "individual") {
+          if (
+            !formData.degree ||
+            !formData.institution ||
+            !formData.yearOfCompletion
+          ) {
+            return "Please complete education details";
+          }
         }
         return null;
 
@@ -261,34 +279,17 @@ export default function ProviderOnboardingPage() {
         if (
           !formData.pricingType ||
           !formData.baseRate ||
-          !formData.onSiteCharges ||
           formData.paymentMethods.length === 0
         ) {
           return "Please complete pricing details";
         }
         return null;
 
-      case 7: {
+      case 7:
         if (!formData.idType || !formData.idNumber) {
           return "Please provide identity verification details";
         }
-
-        if (formData.idType === "Passport") {
-          const passportRegex = /^[A-Z0-9]{6,9}$/i;
-          if (!passportRegex.test(formData.idNumber)) {
-            return "Invalid passport number format";
-          }
-        }
-
-        if (
-          formData.idType !== "Passport" &&
-          !/^[0-9]{6,20}$/.test(formData.idNumber)
-        ) {
-          return "Invalid ID number";
-        }
-
         return null;
-      }
 
       case 8:
         if (
@@ -358,15 +359,20 @@ export default function ProviderOnboardingPage() {
 
       // STEP 0 – Business
       if (step === 0) {
-        payload = {
-          userType: formData.userType,
-          businessName: formData.businessName,
-          businessType: formData.businessType,
-          registrationNumber: formData.registrationNumber,
-          establishmentYear: formData.establishmentYear,
-          gender: formData.gender,
-          dateOfBirth: formData.dateOfBirth,
-        };
+        payload =
+          formData.userType === "individual"
+            ? {
+                userType: "individual",
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+              }
+            : {
+                userType: "business",
+                businessName: formData.businessName,
+                businessType: formData.businessType,
+                registrationNumber: formData.registrationNumber,
+                establishmentYear: formData.establishmentYear,
+              };
       }
 
       // STEP 1 – Contact
@@ -449,7 +455,6 @@ export default function ProviderOnboardingPage() {
         payload = {
           pricingType: formData.pricingType,
           baseRate: formData.baseRate,
-          onSiteCharges: formData.onSiteCharges,
           paymentMethods: formData.paymentMethods,
         };
       }
@@ -472,7 +477,6 @@ export default function ProviderOnboardingPage() {
         };
       }
 
-      // 🔐 OTP VALIDATION — ONLY AT FINAL STEP
       if (step === 9 && !formData.otp.trim()) {
         throw new Error("OTP is required");
       }
@@ -483,7 +487,6 @@ export default function ProviderOnboardingPage() {
         };
       }
 
-      /* ================= SAVE CURRENT STEP ================= */
       const res = await fetch("/api/provider/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -493,9 +496,13 @@ export default function ProviderOnboardingPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Failed to save step");
 
-      /* ================= MOVE NEXT ================= */
       if (step < TOTAL_STEPS - 1) {
-        setStep((s) => s + 1);
+        // Skip STEP 3 for business users
+        if (step === 2 && formData.userType === "business") {
+          setStep(4); // jump directly to STEP 4
+        } else {
+          setStep((s) => s + 1);
+        }
       } else {
         toast({ title: "Onboarding Completed", status: "success" });
         router.push("/providerDashboard");
@@ -529,8 +536,9 @@ export default function ProviderOnboardingPage() {
 
         {/* STEP 0 */}
         {step === 0 && (
-          <Stack>
+          <Stack spacing={4}>
             <Text fontWeight="bold">I am a:</Text>
+
             <RadioGroup
               value={formData.userType}
               onChange={(val) => setFormData((p) => ({ ...p, userType: val }))}
@@ -541,32 +549,76 @@ export default function ProviderOnboardingPage() {
               </HStack>
             </RadioGroup>
 
-            {formData.userType === "business" && (
+            {/* INDIVIDUAL FIELDS */}
+            {formData.userType === "individual" && (
               <>
-                <Input
-                  name="businessName"
-                  placeholder="Business Name"
-                  onChange={handleChange}
-                />
-                <Select
-                  name="businessType"
-                  onChange={handleChange}
-                  value={formData.businessType}
-                >
-                  <option value="Company">Company</option>
-                  <option value="Agency">Agency</option>
-                </Select>
-                <Input
-                  name="registrationNumber"
-                  placeholder="Registration Number"
-                  onChange={handleChange}
-                />
-                <Input
-                  name="establishmentYear"
-                  placeholder="Establishment Year"
-                  onChange={handleChange}
-                />
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">First Name</FormLabel>
+                  <Input
+                    name="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Last Name</FormLabel>
+                  <Input
+                    name="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                </FormControl>
               </>
+            )}
+
+            {/* BUSINESS FIELDS */}
+            {formData.userType === "business" && (
+              <Stack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Business Name</FormLabel>
+                  <Input
+                    name="businessName"
+                    placeholder="Business Name"
+                    value={formData.businessName}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Business Type</FormLabel>
+                  <Select
+                    name="businessType"
+                    value={formData.businessType}
+                    onChange={handleChange}
+                  >
+                    <option value="Company">Company</option>
+                    <option value="Agency">Agency</option>
+                  </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Registration Number</FormLabel>
+                  <Input
+                    name="registrationNumber"
+                    placeholder="Registration Number"
+                    value={formData.registrationNumber}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Establishment Year</FormLabel>
+                  <Input
+                    name="establishmentYear"
+                    placeholder="Establishment Year"
+                    value={formData.establishmentYear}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+              </Stack>
             )}
           </Stack>
         )}
@@ -575,224 +627,384 @@ export default function ProviderOnboardingPage() {
         {step === 1 && (
           <Stack spacing={4}>
             <HStack>
-              <Input name="city" placeholder="City" onChange={handleChange} />
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">City</FormLabel>
+                <Input name="city" placeholder="City" onChange={handleChange} />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Zip Code</FormLabel>
+                <Input
+                  name="zipCode"
+                  placeholder="Zip Code"
+                  onChange={handleChange}
+                />
+              </FormControl>
+            </HStack>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">State</FormLabel>
+              <Input name="state" placeholder="State" onChange={handleChange} />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Country</FormLabel>
               <Input
-                name="zipCode"
-                placeholder="Zip Code"
+                name="country"
+                placeholder="Country"
                 onChange={handleChange}
               />
-            </HStack>
-            <Input name="state" placeholder="State" onChange={handleChange} />
-            <Input
-              name="country"
-              placeholder="Country"
-              onChange={handleChange}
-            />
-            <Textarea
-              name="address"
-              placeholder="Full Address"
-              onChange={handleChange}
-            />
-            <Input
-              name="serviceRadius"
-              placeholder="Service Radius (km)"
-              onChange={handleChange}
-            />
-            <Textarea
-              name="serviceAreasInput"
-              placeholder="Service Areas (comma separated)"
-              onChange={handleChange}
-            />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Full Address</FormLabel>
+              <Textarea
+                name="address"
+                placeholder="Full Address"
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Service Radius (km)</FormLabel>
+              <Input
+                name="serviceRadius"
+                placeholder="Service Radius (km)"
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontSize="sm">Service Areas</FormLabel>
+              <Textarea
+                name="serviceAreasInput"
+                placeholder="Service Areas (comma separated)"
+                onChange={handleChange}
+              />
+            </FormControl>
           </Stack>
         )}
 
         {step === 2 && (
           <Stack spacing={4}>
-            <Select
-              name="categoryId"
-              placeholder="Category"
-              onChange={handleChange}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+            <Heading size="sm">Service Details</Heading>
+
+            {/* CATEGORY */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Category</FormLabel>
+              <Select
+                name="categoryId"
+                value={formData.categoryId}
+                onChange={(e) => {
+                  handleChange(e);
+                  setFormData((prev) => ({
+                    ...prev,
+                    subCategoryId: "",
+                  }));
+                }}
+              >
+                <option value="" disabled>
+                  Select Category
                 </option>
-              ))}
-            </Select>
 
-            <Select
-              name="subCategoryId"
-              placeholder="Sub Category"
-              onChange={handleChange}
-            >
-              {subCategories.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* SUB CATEGORY */}
+            <FormControl isRequired isDisabled={!formData.categoryId}>
+              <FormLabel fontSize="sm">Sub Category</FormLabel>
+              <Select
+                name="subCategoryId"
+                value={formData.subCategoryId}
+                onChange={handleChange}
+              >
+                <option value="" disabled>
+                  {formData.categoryId
+                    ? "Select Sub Category"
+                    : "Select Category first"}
                 </option>
-              ))}
-            </Select>
 
-            <Textarea
-              name="servicesOfferedInput"
-              placeholder="Services Offered (comma separated)"
-              onChange={handleChange}
-            />
+                {subCategories.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
 
-            <Textarea
-              name="description"
-              placeholder="Service Description"
-              onChange={handleChange}
-            />
+            {/* SERVICES OFFERED */}
+            <FormControl>
+              <FormLabel fontSize="sm">Services Offered</FormLabel>
+              <Textarea
+                name="servicesOfferedInput"
+                placeholder="Services Offered (comma separated)"
+                onChange={handleChange}
+              />
+            </FormControl>
 
-            <Input
-              name="yearsExperience"
-              placeholder="Years of Experience"
-              onChange={handleChange}
-            />
+            {/* DESCRIPTION */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Service Description</FormLabel>
+              <Textarea
+                name="description"
+                placeholder="Describe your service"
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            {/* EXPERIENCE */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Years of Experience</FormLabel>
+              <Input
+                name="yearsExperience"
+                placeholder="Years of Experience"
+                onChange={handleChange}
+              />
+            </FormControl>
           </Stack>
         )}
 
         {/* STEP 3 */}
-        {step === 3 && (
+        {step === 3 && formData.userType === "individual" && (
           <Stack spacing={4}>
-            <Input name="degree" placeholder="Degree" onChange={handleChange} />
-            <Input
-              name="institution"
-              placeholder="Institution"
-              onChange={handleChange}
-            />
-            <Input
-              name="yearOfCompletion"
-              placeholder="Year of Completion"
-              onChange={handleChange}
-            />
+            <Heading size="sm">Qualification</Heading>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Qualification</FormLabel>
+              <Input
+                name="degree"
+                placeholder="Qualification"
+                value={formData.degree}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Institution</FormLabel>
+              <Input
+                name="institution"
+                placeholder="Institution"
+                value={formData.institution}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Year of Completion</FormLabel>
+              <Input
+                name="yearOfCompletion"
+                placeholder="Year of Completion"
+                value={formData.yearOfCompletion}
+                onChange={handleChange}
+              />
+            </FormControl>
           </Stack>
         )}
 
         {step === 4 && (
           <Stack spacing={4}>
-            <Input
-              name="licenseName"
-              placeholder="License Name"
-              onChange={handleChange}
-            />
-            <Input
-              name="licenseAuth"
-              placeholder="Issuing Authority"
-              onChange={handleChange}
-            />
-            <Input
-              name="licenseNumber"
-              placeholder="License Number"
-              onChange={handleChange}
-            />
-            <Input name="licenseExpiry" type="date" onChange={handleChange} />
+            <Heading size="sm">License</Heading>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">License Name</FormLabel>
+              <Input
+                name="licenseName"
+                placeholder="License Name"
+                value={formData.licenseName}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Issuing Authority</FormLabel>
+              <Input
+                name="licenseAuth"
+                placeholder="Issuing Authority"
+                value={formData.licenseAuth}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">License Number</FormLabel>
+              <Input
+                name="licenseNumber"
+                placeholder="License Number"
+                value={formData.licenseNumber}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">License Expiry Date</FormLabel>
+              <Input
+                name="licenseExpiry"
+                type="date"
+                value={formData.licenseExpiry}
+                onChange={handleChange}
+              />
+            </FormControl>
           </Stack>
         )}
 
         {step === 5 && (
           <Stack spacing={4}>
-            <HStack wrap="wrap">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                <Checkbox
-                  key={day}
-                  isChecked={formData.availableDays.includes(day)}
-                  onChange={() => handleArrayToggle("availableDays", day)}
-                >
-                  {day}
-                </Checkbox>
-              ))}
-            </HStack>
+            <Heading size="sm">Working days and time</Heading>
 
-            <HStack>
-              <Input
-                type="time"
-                name="availableHoursStart"
-                onChange={handleChange}
-              />
-              <Input
-                type="time"
-                name="availableHoursEnd"
-                onChange={handleChange}
-              />
-            </HStack>
+            {/* Working Days */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Available Days</FormLabel>
+              <HStack wrap="wrap">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                  (day) => (
+                    <Checkbox
+                      key={day}
+                      isChecked={formData.availableDays.includes(day)}
+                      onChange={() => handleArrayToggle("availableDays", day)}
+                    >
+                      {day}
+                    </Checkbox>
+                  )
+                )}
+              </HStack>
+            </FormControl>
 
-            <Checkbox
-              isChecked={formData.emergency}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, emergency: e.target.checked }))
-              }
-            >
-              Emergency / After-hours available
-            </Checkbox>
+            {/* Working Hours */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Working Hours</FormLabel>
+              <HStack>
+                <Input
+                  type="time"
+                  name="availableHoursStart"
+                  value={formData.availableHoursStart}
+                  onChange={handleChange}
+                />
+                <Input
+                  type="time"
+                  name="availableHoursEnd"
+                  value={formData.availableHoursEnd}
+                  onChange={handleChange}
+                />
+              </HStack>
+            </FormControl>
+
+            {/* Emergency Availability */}
+            <FormControl>
+              <Checkbox
+                isChecked={formData.emergency}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, emergency: e.target.checked }))
+                }
+              >
+                Emergency / After-hours available
+              </Checkbox>
+            </FormControl>
           </Stack>
         )}
 
         {step === 6 && (
           <Stack spacing={4}>
-            <Select name="pricingType" onChange={handleChange}>
-              <option value="hourly">Hourly</option>
-              <option value="fixed">Fixed</option>
-              <option value="project">Per Project</option>
-            </Select>
+            <Heading size="sm">Fix your price</Heading>
 
-            <Input
-              name="baseRate"
-              placeholder="Base Rate"
-              onChange={handleChange}
-            />
-            <Input
-              name="onSiteCharges"
-              placeholder="On-site Charges"
-              onChange={handleChange}
-            />
+            {/* Pricing Type */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Pricing Type</FormLabel>
+              <Select
+                name="pricingType"
+                value={formData.pricingType}
+                onChange={handleChange}
+              >
+                <option value="hourly">Hourly</option>
+                <option value="fixed">Fixed</option>
+                <option value="project">Per Project</option>
+              </Select>
+            </FormControl>
 
-            <HStack>
-              {["Bank", "Cash", "UPI"].map((p) => (
-                <Checkbox
-                  key={p}
-                  isChecked={formData.paymentMethods.includes(p)}
-                  onChange={() => handleArrayToggle("paymentMethods", p)}
-                >
-                  {p}
-                </Checkbox>
-              ))}
-            </HStack>
+            {/* Base Rate */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Base Rate</FormLabel>
+              <Input
+                name="baseRate"
+                placeholder="Enter base rate"
+                value={formData.baseRate}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            {/* Payment Methods */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Payment Methods</FormLabel>
+              <HStack spacing={4}>
+                {["Bank", "Cash", "UPI"].map((p) => (
+                  <Checkbox
+                    key={p}
+                    isChecked={formData.paymentMethods.includes(p)}
+                    onChange={() => handleArrayToggle("paymentMethods", p)}
+                  >
+                    {p}
+                  </Checkbox>
+                ))}
+              </HStack>
+            </FormControl>
           </Stack>
         )}
-
         {step === 7 && (
           <Stack spacing={4}>
-            <Select name="idType" onChange={handleChange}>
-              <option value="Passport">Passport</option>
-              <option value="Driving License">Driving License</option>
-              <option value="National ID">National ID</option>
-            </Select>
+            <Heading size="sm">Identity Verification</Heading>
 
-            <Input
-              name="idNumber"
-              type="text"
-              inputMode={formData.idType === "Passport" ? "text" : "numeric"}
-              placeholder={
-                formData.idType === "Passport"
-                  ? "Passport Number (A1234567)"
-                  : "ID Number"
-              }
-              value={formData.idNumber}
-              onChange={handleChange}
-            />
+            {/* ID TYPE */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Document Type</FormLabel>
+              <Select
+                name="idType"
+                value={formData.idType}
+                onChange={handleChange}
+              >
+                <option value="" disabled>
+                  Select Document
+                </option>
+                <option value="Passport">Passport</option>
+                <option value="Driving License">Driving License</option>
+                <option value="National ID">National ID</option>
+              </Select>
+            </FormControl>
 
-            <Checkbox
-              isChecked={formData.backgroundCheckConsent}
-              onChange={(e) =>
-                setFormData((p) => ({
-                  ...p,
-                  backgroundCheckConsent: e.target.checked,
-                }))
-              }
-            >
-              I consent to background check
-            </Checkbox>
+            {/* ID NUMBER */}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Document Number</FormLabel>
+              <Input
+                name="idNumber"
+                type="text"
+                inputMode={formData.idType === "Passport" ? "text" : "numeric"}
+                placeholder={
+                  formData.idType === "Passport"
+                    ? "Passport Number (A1234567)"
+                    : "ID Number"
+                }
+                value={formData.idNumber}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            {/* BACKGROUND CHECK */}
+            <FormControl>
+              <Checkbox
+                isChecked={formData.backgroundCheckConsent}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    backgroundCheckConsent: e.target.checked,
+                  }))
+                }
+              >
+                I consent to background check
+              </Checkbox>
+            </FormControl>
           </Stack>
         )}
 

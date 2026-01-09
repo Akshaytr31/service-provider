@@ -22,8 +22,6 @@ export default function SignupPage() {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -44,9 +42,6 @@ export default function SignupPage() {
 
   const handleSignup = async () => {
     let newErrors = {};
-
-    if (!form.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
 
     if (!form.email) {
       newErrors.email = "Email is required";
@@ -76,8 +71,6 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
           email: form.email,
           password: form.password,
         }),
@@ -103,29 +96,20 @@ export default function SignupPage() {
   };
 
   return (
-    <Box maxW="400px" mx="auto" mt="80px" p={6} boxShadow="md" borderRadius="md" bg="white">
+    <Box
+      maxW="400px"
+      mx="auto"
+      mt="80px"
+      p={6}
+      boxShadow="md"
+      borderRadius="md"
+      bg="white"
+    >
       <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
         Create an Account
       </Text>
 
       <Stack spacing={4}>
-        <Stack direction="row" spacing={4}>
-          <Input
-            name="firstName"
-            placeholder="First Name"
-            value={form.firstName}
-            onChange={handleChange}
-            isInvalid={!!errors.firstName}
-          />
-          <Input
-            name="lastName"
-            placeholder="Last Name"
-            value={form.lastName}
-            onChange={handleChange}
-            isInvalid={!!errors.lastName}
-          />
-        </Stack>
-
         <Input
           name="email"
           placeholder="Email address"
@@ -204,7 +188,10 @@ export default function SignupPage() {
       <Center mt={6}>
         <Text fontSize="sm">
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "blue", textDecoration: "underline" }}>
+          <Link
+            href="/login"
+            style={{ color: "blue", textDecoration: "underline" }}
+          >
             Log In
           </Link>
         </Text>

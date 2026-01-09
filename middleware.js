@@ -17,7 +17,6 @@
 //   const isProviderAtFirst = token.isProviderAtFirst === true;
 //   const isProvider = token.role === "provider";
 
-
 //   // const pathname = req.nextUrl.pathname;
 
 //   // // Protect admin routes
@@ -27,7 +26,7 @@
 //   //   }
 //   // }
 
-//   // // Provider only  
+//   // // Provider only
 //   // if (pathname === "/") {
 //   //   if (token?.role === "provider" && token?.isProviderAtFirst) {
 //   //     return NextResponse.redirect(new URL("/providerDashboard", req.url));
@@ -58,7 +57,6 @@
 
 //   return NextResponse.next();
 // }
-
 
 // import { getToken } from "next-auth/jwt";
 // import { NextResponse } from "next/server";
@@ -101,8 +99,6 @@
 //   matcher: ["/", "/providerDashboard/:path*"],
 // };
 
-
-
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 
@@ -113,6 +109,7 @@ export async function middleware(req) {
   });
 
   const { pathname } = req.nextUrl;
+  const role = token.role;
 
   if (!token) {
     return NextResponse.next();
@@ -121,9 +118,15 @@ export async function middleware(req) {
   const isProviderAtFirst =
     token.isProviderAtFirst === true || token.isProviderAtFirst === 1;
 
+    if (role === "admin" && pathname === "/") {
+      return NextResponse.redirect(new URL("/adminDashboard", req.url));
+    }
   /* =====================================================
      PROVIDER AT FIRST → STRICT REDIRECT
   ===================================================== */
+
+
+
   if (isProviderAtFirst) {
     if (
       pathname === "/providerDashboard" ||
@@ -132,9 +135,7 @@ export async function middleware(req) {
       return NextResponse.next();
     }
 
-    return NextResponse.redirect(
-      new URL("/providerDashboard", req.url)
-    );
+    return NextResponse.redirect(new URL("/providerDashboard", req.url));
   }
 
   return NextResponse.next();

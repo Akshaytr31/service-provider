@@ -5,15 +5,17 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { firstName, lastName, email, password } = body;
+    const { email, password } = body;
 
-    if (!email || !password || !firstName || !lastName) {
+    // Validate required fields
+    if (!email || !password) {
       return NextResponse.json(
-        { message: "Missing required fields" },
+        { message: "Email and password are required" },
         { status: 400 }
       );
     }
 
+    // Check existing user
     const [existingUsers] = await db.query(
       "SELECT id FROM users WHERE email = ?",
       [email]
@@ -27,14 +29,12 @@ export async function POST(req) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const fullName = `${firstName} ${lastName}`.trim();
 
-    // Create new user with default role 'seeker' but needing role selection
-    // We can use a specific status or rely on 'isProviderAtFirst' being false and client-side flow
+    // Create new user (NO firstName / lastName)
     await db.query(
-      `INSERT INTO users (firstName, lastName, name, email, password, role, providerRequestStatus, isProviderAtFirst)
-       VALUES (?, ?, ?, ?, ?, 'seeker', 'none', false)`,
-      [firstName, lastName, fullName, email, hashedPassword]
+      `INSERT INTO users (email, password, role, providerRequestStatus, isProviderAtFirst)
+       VALUES (?, ?, 'seeker', 'none', false)`,
+      [email, hashedPassword]
     );
 
     return NextResponse.json(

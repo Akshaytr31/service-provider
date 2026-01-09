@@ -26,11 +26,8 @@ export default function ProviderRequestDetails() {
     try {
       const res = await fetch(`/api/admin/provider-requests/${id}`);
       const json = await res.json();
+      console.log("data",json)
       setData(json);
-      console.log(
-        json,
-        "fetch dataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      );
     } catch (err) {
       console.error("Fetch failed", err);
     } finally {
@@ -63,7 +60,11 @@ export default function ProviderRequestDetails() {
   }
 
   const providerRequest = data;
-  const { user, status } = data;
+  const status = providerRequest.status;
+  const userType = providerRequest.businessName ? "business" : "individual";
+
+
+  console.log(userType)
 
   /* ================= UI ================= */
 
@@ -88,50 +89,79 @@ export default function ProviderRequestDetails() {
       <Box bg="gray.700" color="gray.50" p={5}>
         <Section title="User Information">
           <Text>
-            <b>Name:</b> {user?.name || "-"}
+            <b>Provider Type:</b>{" "}
+            {userType === "business" ? "Business" : "Individual"}
           </Text>
+
           <Text>
-            <b>Email:</b> {user?.email || "-"}
+            <b>Name:</b>{" "}
+            {userType === "business"
+              ? providerRequest.businessName || "-"
+              : providerRequest.user?.name || "-"}
+          </Text>
+
+          <Text>
+            <b>Email:</b> {providerRequest.user?.email || "-"}
           </Text>
         </Section>
       </Box>
 
-      {/* BUSINESS */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Business Details">
-          <Text>
-            <b>Business Name:</b> {providerRequest?.businessName || "-"}
-          </Text>
-          <Text>
-            <b>Type:</b> {providerRequest?.businessType || "-"}
-          </Text>
-          <Text>
-            <b>Registration No:</b> {providerRequest?.registrationNumber || "-"}
-          </Text>
-          <Text>
-            <b>Established:</b> {providerRequest?.establishmentYear || "-"}
-          </Text>
-        </Section>
-      </Box>
+      {/* BUSINESS DETAILS (ONLY FOR BUSINESS) */}
+      {userType === "business" && (
+        <Box bg="gray.700" color="gray.50" p={5}>
+          <Section title="Business Details">
+            <Text>
+              <b>Business Name:</b> {providerRequest.businessName || "-"}
+            </Text>
+            <Text>
+              <b>Type:</b> {providerRequest.businessType || "-"}
+            </Text>
+            <Text>
+              <b>Registration No:</b>{" "}
+              {providerRequest.registrationNumber || "-"}
+            </Text>
+            <Text>
+              <b>Established:</b> {providerRequest.establishmentYear || "-"}
+            </Text>
+          </Section>
+        </Box>
+      )}
+
+      {/* INDIVIDUAL DETAILS (ONLY FOR INDIVIDUAL) */}
+      {userType === "individual" && (
+        <Box bg="gray.700" color="gray.50" p={5}>
+          <Section title="Individual Details">
+            <Text>This provider registered as an individual.</Text>
+          </Section>
+        </Box>
+      )}
 
       {/* LOCATION */}
       <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Location" titleMt={0}>
+        <Section title="Location">
           <Text>
-            <b>City:</b> {providerRequest?.city}
+            <b>City:</b> {providerRequest.city || "-"}
           </Text>
           <Text>
-            <b>State:</b> {providerRequest?.state}
+            <b>State:</b> {providerRequest.state || "-"}
           </Text>
           <Text>
-            <b>Country:</b> {providerRequest?.country}
+            <b>Country:</b> {providerRequest.country || "-"}
           </Text>
           <Text>
-            <b>Service Radius:</b> {providerRequest?.serviceRadius} km
+            <b>Service Radius:</b>{" "}
+            {providerRequest.serviceRadius
+              ? `${providerRequest.serviceRadius} km`
+              : "-"}
           </Text>
           <Text>
             <b>Service Areas:</b>{" "}
-            {(providerRequest?.serviceAreas || []).join(", ") || "-"}
+            {(providerRequest.serviceAreas || []).join(", ") || "-"}
+          </Text>
+              <Divider my={2} />
+
+          <Text>
+            <b>Address:</b> {providerRequest.address || "-"}
           </Text>
         </Section>
       </Box>
@@ -140,37 +170,47 @@ export default function ProviderRequestDetails() {
       <Box bg="gray.700" color="gray.50" p={5}>
         <Section title="Services">
           <Text>
-            <b>Description:</b> {providerRequest?.description}
+            <b>Description:</b> {providerRequest.description || "-"}
           </Text>
           <Text>
-            <b>Experience:</b> {providerRequest?.yearsExperience}
+            <b>Experience:</b> {providerRequest.yearsExperience || "-"}
           </Text>
           <Text>
             <b>Services Offered:</b>{" "}
-            {(providerRequest?.servicesOffered || []).join(", ")}
+            {(providerRequest.servicesOffered || []).join(", ") || "-"}
           </Text>
         </Section>
       </Box>
 
-      {/* EDUCATION */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Qualifications">
-          {(providerRequest?.qualifications || []).map((q, i) => (
-            <Text key={i}>
-              {q.degree} — {q.institution} ({q.year})
-            </Text>
-          ))}
-        </Section>
-      </Box>
+      {/* EDUCATION – ONLY FOR INDIVIDUAL */}
+      {userType === "individual" && (
+        <Box bg="gray.700" color="gray.50" p={5}>
+          <Section title="Qualifications">
+            {(providerRequest.qualifications || []).length > 0 ? (
+              providerRequest.qualifications.map((q, i) => (
+                <Text key={i}>
+                  {q.degree} — {q.institution} ({q.year})
+                </Text>
+              ))
+            ) : (
+              <Text>-</Text>
+            )}
+          </Section>
+        </Box>
+      )}
 
       {/* LICENSES */}
       <Box bg="gray.700" color="gray.50" p={5}>
         <Section title="Licenses">
-          {(providerRequest?.licenses || []).map((l, i) => (
-            <Text key={i}>
-              {l.name} — {l.authority} ({l.number})
-            </Text>
-          ))}
+          {(providerRequest.licenses || []).length > 0 ? (
+            providerRequest.licenses.map((l, i) => (
+              <Text key={i}>
+                {l.name} — {l.authority} ({l.number})
+              </Text>
+            ))
+          ) : (
+            <Text>-</Text>
+          )}
         </Section>
       </Box>
 
@@ -179,15 +219,15 @@ export default function ProviderRequestDetails() {
         <Section title="Availability">
           <Text>
             <b>Days:</b>{" "}
-            {(providerRequest?.availability?.days || []).join(", ")}
+            {(providerRequest.availability?.days || []).join(", ") || "-"}
           </Text>
           <Text>
-            <b>Hours:</b> {providerRequest?.availability?.hours?.start} -{" "}
-            {providerRequest?.availability?.hours?.end}
+            <b>Hours:</b> {providerRequest.availability?.hours?.start || "-"} -{" "}
+            {providerRequest.availability?.hours?.end || "-"}
           </Text>
           <Text>
             <b>Emergency:</b>{" "}
-            {providerRequest?.availability?.emergency ? "Yes" : "No"}
+            {providerRequest.availability?.emergency ? "Yes" : "No"}
           </Text>
         </Section>
       </Box>
@@ -196,13 +236,14 @@ export default function ProviderRequestDetails() {
       <Box bg="gray.700" color="gray.50" p={5}>
         <Section title="Pricing">
           <Text>
-            <b>Type:</b> {providerRequest?.pricingType}
+            <b>Type:</b> {providerRequest.pricingType || "-"}
           </Text>
           <Text>
-            <b>Base Rate:</b> {providerRequest?.baseRate}
+            <b>Base Rate:</b> {providerRequest.baseRate || "-"}
           </Text>
           <Text>
-            <b>Payment:</b> {(providerRequest?.paymentMethods || []).join(", ")}
+            <b>Payment:</b>{" "}
+            {(providerRequest.paymentMethods || []).join(", ") || "-"}
           </Text>
         </Section>
       </Box>
@@ -211,14 +252,14 @@ export default function ProviderRequestDetails() {
       <Box bg="gray.700" color="gray.50" p={5}>
         <Section title="Identity">
           <Text>
-            <b>ID Type:</b> {providerRequest?.idType}
+            <b>ID Type:</b> {providerRequest.idType || "-"}
           </Text>
           <Text>
-            <b>ID Number:</b> {providerRequest?.idNumber}
+            <b>ID Number:</b> {providerRequest.idNumber || "-"}
           </Text>
           <Text>
             <b>Background Check:</b>{" "}
-            {providerRequest?.backgroundCheck ? "Yes" : "No"}
+            {providerRequest.backgroundCheck ? "Yes" : "No"}
           </Text>
         </Section>
       </Box>

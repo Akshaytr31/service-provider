@@ -13,6 +13,9 @@ import {
   Heading,
   Spinner,
   Badge,
+  HStack,
+  Card,
+  CardBody,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import CategoryManager from "../components/admin/CategoryManager";
@@ -20,6 +23,7 @@ import CategoryManager from "../components/admin/CategoryManager";
 export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState("requests"); // "categories" | "requests"
   const router = useRouter();
 
   const fetchRequests = async () => {
@@ -42,48 +46,88 @@ export default function AdminDashboard() {
   }
 
   return (
-    <Box p={6}>
-      <Heading mb={3}>Add category and sub category</Heading>
-      <CategoryManager/>
-      <Heading>Provider requests</Heading>
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Name</Th>
-            <Th>Email</Th>
-            <Th>Status</Th>
-          </Tr>
-        </Thead>
+    <Box p={6} maxW="1200px" mx="auto">
+      {/* ================= HEADER ================= */}
+      <Heading mb={6} color="gray.700">Admin Dashboard</Heading>
 
-        <Tbody>
-          {requests.map((req) => (
-            <Tr
-              key={req.id}
-              cursor="pointer"
-              _hover={{ bg: "gray.50" }}
-              onClick={() =>
-                router.push(`/admin/provider-requests/${req.id}`)
-              }
-            >
-              <Td>{req.user.name || "N/A"}</Td>
-              <Td>{req.user.email}</Td>
-              <Td>
-                <Badge
-                  colorScheme={
-                    req.status === "PENDING"
-                      ? "yellow"
-                      : req.status === "APPROVED"
-                      ? "green"
-                      : "red"
-                  }
-                >
-                  {req.status}
-                </Badge>
-              </Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      {/* ================= ACTION BUTTONS ================= */}
+      <HStack spacing={4} mb={8}>
+        <Button
+          colorScheme={activeView === "categories" ? "green" : "gray"}
+          onClick={() => setActiveView("categories")}
+        >
+          Add Category
+        </Button>
+
+        <Button
+          colorScheme={activeView === "requests" ? "green" : "gray"}
+          onClick={() => setActiveView("requests")}
+        >
+          Provider Requests
+        </Button>
+      </HStack>
+
+      {/* ================= CATEGORY MANAGER ================= */}
+      {activeView === "categories" && (
+        <Card>
+          <CardBody>
+            <Heading size="md" mb={4} color="gray.700">
+              Manage Categories
+            </Heading>
+            <CategoryManager />
+          </CardBody>
+        </Card>
+      )}
+
+      {/* ================= PROVIDER REQUESTS ================= */}
+      {activeView === "requests" && (
+        <Card>
+          <CardBody>
+            <Heading size="md" mb={4}>
+              Provider Requests
+            </Heading>
+
+            <Table variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>Name</Th>
+                  <Th>Email</Th>
+                  <Th>Status</Th>
+                </Tr>
+              </Thead>
+
+              <Tbody>
+                {requests.map((req) => (
+                  <Tr
+                    key={req.id}
+                    cursor="pointer"
+                    _hover={{ bg: "gray.100" }}
+                    onClick={() =>
+                      router.push(`/admin/provider-requests/${req.id}`)
+                    }
+                  >
+                    <Td>{req.businessName || req.user?.name || "N/A"}</Td>
+                    <Td>{req.user?.email || "-"}</Td>
+                    <Td>
+                      <Badge
+                        colorScheme={
+                          req.status === "PENDING"
+                            ? "yellow"
+                            : req.status === "APPROVED"
+                            ? "green"
+                            : "red"
+                        }
+                      >
+                        {req.status}
+                      </Badge>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </CardBody>
+        </Card>
+      )}
     </Box>
   );
 }

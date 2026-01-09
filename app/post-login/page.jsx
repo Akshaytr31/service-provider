@@ -14,24 +14,25 @@ export default function PostLoginPage() {
 
     const user = session.user;
 
+    /* ================= ADMIN ================= */
+    if (user.role === "admin") {
+      router.replace("/adminDashboard");
+      return;
+    }
+
+    /* ================= NO ROLE ================= */
     if (!user.role) {
       router.replace("/role-selection");
       return;
     }
 
+    /* ================= PROVIDER ================= */
     if (user.role === "provider") {
-      if (
-        user.providerRequestStatus === "APPROVED" ||
-        user.providerRequestStatus === "PENDING"
-      ) {
-        router.replace("/providerDashboard");
-        return;
-      }
-
       router.replace("/providerDashboard");
       return;
     }
 
+    /* ================= DEFAULT USER ================= */
     router.replace("/");
   }, [status, session, router]);
 

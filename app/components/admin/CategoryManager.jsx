@@ -7,8 +7,16 @@ import {
   Input,
   Select,
   VStack,
+  HStack,
+  Text,
   useToast,
+  Card,
+  CardHeader,
+  Divider,
+  CardBody,
+  Flex,
 } from "@chakra-ui/react";
+import { AddIcon } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
 
 export default function CategoryManager() {
@@ -26,7 +34,7 @@ export default function CategoryManager() {
     categoryId: "",
   });
 
-  /* Fetch categories */
+  /* ================= FETCH CATEGORIES ================= */
   const fetchCategories = async () => {
     const res = await fetch("/api/categories");
     const data = await res.json();
@@ -37,7 +45,7 @@ export default function CategoryManager() {
     fetchCategories();
   }, []);
 
-  /* Add category */
+  /* ================= ADD CATEGORY ================= */
   const addCategory = async () => {
     if (!categoryForm.name) {
       toast({
@@ -57,16 +65,16 @@ export default function CategoryManager() {
     fetchCategories();
 
     toast({
-      title: "Category added",
+      title: "Category added successfully",
       status: "success",
     });
   };
 
-  /* Add sub-category */
+  /* ================= ADD SUB-CATEGORY ================= */
   const addSubCategory = async () => {
     if (!subCategoryForm.name || !subCategoryForm.categoryId) {
       toast({
-        title: "All fields required",
+        title: "All fields are required",
         status: "warning",
       });
       return;
@@ -81,84 +89,110 @@ export default function CategoryManager() {
     setSubCategoryForm({ name: "", categoryId: "" });
 
     toast({
-      title: "Sub-category added",
+      title: "Sub-category added successfully",
       status: "success",
     });
   };
 
   return (
-    <Box p={4} border="1px solid" borderColor="gray.200" borderRadius="md">
-      {/* CATEGORY */}
-      <Heading size="md" mb={3}>
-        Add Category
-      </Heading>
+    <Box >
+      <Flex direction={{ base: "column", md: "row" }} gap={4} alignItems={"flex-start"}>
+        {/* ================= CATEGORY CARD ================= */}
 
-      <VStack spacing={3} mb={6}>
-        <Input
-          placeholder="Category name"
-          value={categoryForm.name}
-          onChange={(e) =>
-            setCategoryForm({
-              ...categoryForm,
-              name: e.target.value,
-            })
-          }
-        />
+        <Card mb={6} boxShadow="md" flex="1">
+          <CardHeader>
+            <Heading size="md" color="gray.700">Add Category</Heading>
+            <Text fontSize="sm" color="gray.500">
+              Create a new main service category
+            </Text>
+          </CardHeader>
 
-        <Input
-          placeholder="Image URL (optional)"
-          value={categoryForm.image}
-          onChange={(e) =>
-            setCategoryForm({
-              ...categoryForm,
-              image: e.target.value,
-            })
-          }
-        />
+          <Divider />
 
-        <Button colorScheme="blue" onClick={addCategory}>
-          Add Category
-        </Button>
-      </VStack>
+          <CardBody>
+            <VStack spacing={4}>
+              <Input
+                placeholder="Category name *"
+                value={categoryForm.name}
+                onChange={(e) =>
+                  setCategoryForm({ ...categoryForm, name: e.target.value })
+                }
+              />
 
-      {/* SUB CATEGORY */}
-      <Heading size="md" mb={3}>
-        Add Sub-Category
-      </Heading>
+              <Input
+                placeholder="Image URL (optional)"
+                value={categoryForm.image}
+                onChange={(e) =>
+                  setCategoryForm({ ...categoryForm, image: e.target.value })
+                }
+              />
 
-      <VStack spacing={3}>
-        <Input
-          placeholder="Sub-category name"
-          value={subCategoryForm.name}
-          onChange={(e) =>
-            setSubCategoryForm({
-              ...subCategoryForm,
-              name: e.target.value,
-            })
-          }
-        />
+              <Button
+                colorScheme="blue"
+                leftIcon={<AddIcon />}
+                alignSelf="flex-end"
+                onClick={addCategory}
+              >
+                Add Category
+              </Button>
+            </VStack>
+          </CardBody>
+        </Card>
 
-        <Select
-          placeholder="Select category"
-          value={subCategoryForm.categoryId}
-          onChange={(e) =>
-            setSubCategoryForm({
-              ...subCategoryForm,
-              categoryId: e.target.value,
-            })
-          }
-        >
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </Select>
+        {/* ================= SUB CATEGORY CARD ================= */}
+        <Card boxShadow="md" flex="1">
+          <CardHeader>
+            <Heading size="md" color="gray.700">Add Sub-Category</Heading>
+            <Text fontSize="sm" color="gray.500">
+              Assign a sub-category to an existing category
+            </Text>
+          </CardHeader>
 
-        <Button colorScheme="green" onClick={addSubCategory}>
-          Add Sub-Category
-        </Button>
-      </VStack>
+          <Divider />
+
+          <CardBody>
+            <VStack spacing={4}>
+              <Input
+                placeholder="Sub-category name *"
+                value={subCategoryForm.name}
+                onChange={(e) =>
+                  setSubCategoryForm({
+                    ...subCategoryForm,
+                    name: e.target.value,
+                  })
+                }
+              />
+
+              <Select
+                placeholder="Select parent category *"
+                value={subCategoryForm.categoryId}
+                onChange={(e) =>
+                  setSubCategoryForm({
+                    ...subCategoryForm,
+                    categoryId: e.target.value,
+                  })
+                }
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </Select>
+
+              <HStack w="100%" justify="flex-end">
+                <Button
+                  colorScheme="green"
+                  leftIcon={<AddIcon />}
+                  onClick={addSubCategory}
+                >
+                  Add Sub-Category
+                </Button>
+              </HStack>
+            </VStack>
+          </CardBody>
+        </Card>
+      </Flex>
     </Box>
   );
 }

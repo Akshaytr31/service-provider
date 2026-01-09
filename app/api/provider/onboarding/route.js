@@ -19,10 +19,9 @@ export async function POST(req) {
     const email = session.user.email;
 
     /* ========== USER ========== */
-    const [users] = await db.query(
-      "SELECT id FROM users WHERE email = ?",
-      [email]
-    );
+    const [users] = await db.query("SELECT id FROM users WHERE email = ?", [
+      email,
+    ]);
 
     if (!users.length) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -73,10 +72,9 @@ export async function POST(req) {
         return NextResponse.json({ message: "OTP expired" }, { status: 400 });
       }
 
-      await db.query(
-        "UPDATE users SET email_verified = true WHERE id = ?",
-        [userId]
-      );
+      await db.query("UPDATE users SET email_verified = true WHERE id = ?", [
+        userId,
+      ]);
 
       await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
 
@@ -106,19 +104,67 @@ export async function POST(req) {
 
 async function saveStepData(step, data, userId) {
   switch (step) {
-    case 0:
+    case 0: {
+      const {
+        userType,
+        firstName,
+        lastName,
+        businessName,
+        businessType,
+        registrationNumber,
+        establishmentYear,
+      } = data;
+
+      // Validation
+      if (userType === "individual") {
+        if (!firstName || !lastName) {
+          throw new Error("First name and last name are required");
+        }
+
+        const fullName = `${firstName} ${lastName}`.trim();
+
+        // ✅ SAVE NAME INTO USERS TABLE
+        await db.query(`UPDATE users SET name = ? WHERE id = ?`, [
+          fullName,
+          userId,
+        ]);
+      }
+
+      if (userType === "business") {
+        if (!businessName || !registrationNumber) {
+          throw new Error("Business details are required");
+        }
+      }
+
+      // ✅ SAVE PROVIDER REQUEST DATA
       return db.query(
         `UPDATE provider_requests
-         SET business_name = ?, business_type = ?, registration_number = ?, establishment_year = ?
-         WHERE user_id = ?`,
+     SET
+       user_type = ?,
+       first_name = ?,
+       last_name = ?,
+       business_name = ?,
+       business_type = ?,
+       registration_number = ?,
+       establishment_year = ?
+     WHERE user_id = ?`,
         [
-          data.businessName || null,
-          data.businessType || null,
-          data.registrationNumber || null,
-          data.establishmentYear || null,
+          userType,
+
+          // individual
+          userType === "individual" ? firstName : null,
+          userType === "individual" ? lastName : null,
+
+          // business
+          userType === "business" ? businessName : null,
+          userType === "business" ? businessType : null,
+          userType === "business" ? registrationNumber : null,
+          userType === "business" ? establishmentYear : null,
+
           userId,
         ]
       );
+    }
 
     case 1:
       return db.query(
@@ -152,10 +198,14 @@ async function saveStepData(step, data, userId) {
       );
 
     case 3:
+      if (data.userType === "business") {
+        return; // do nothing
+      }
+
       return db.query(
         `UPDATE provider_requests
-         SET qualifications = ?
-         WHERE user_id = ?`,
+     SET qualifications = ?
+     WHERE user_id = ?`,
         [JSON.stringify(data.qualifications || []), userId]
       );
 
@@ -178,12 +228,11 @@ async function saveStepData(step, data, userId) {
     case 6:
       return db.query(
         `UPDATE provider_requests
-         SET pricing_type = ?, base_rate = ?, on_site_charges = ?, payment_methods = ?
-         WHERE user_id = ?`,
+     SET pricing_type = ?, base_rate = ?, payment_methods = ?
+     WHERE user_id = ?`,
         [
           data.pricingType,
           data.baseRate,
-          data.onSiteCharges,
           JSON.stringify(data.paymentMethods || []),
           userId,
         ]
@@ -207,12 +256,7 @@ async function saveStepData(step, data, userId) {
         `UPDATE provider_requests
          SET terms_accepted = ?, privacy_accepted = ?, rules_accepted = ?
          WHERE user_id = ?`,
-        [
-          data.termsAccepted,
-          data.privacyAccepted,
-          data.rulesAccepted,
-          userId,
-        ]
+        [data.termsAccepted, data.privacyAccepted, data.rulesAccepted, userId]
       );
 
     default:
