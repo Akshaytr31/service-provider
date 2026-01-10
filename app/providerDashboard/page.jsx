@@ -17,7 +17,7 @@ export default function ProviderDashboard() {
   /* ================= STATUS: NONE ================= */
   if (user.providerRequestStatus === "none") {
     return (
-      <Box p={6}>
+      <Box p={20}>
         <Heading mb={2}>Pending Provider Registration</Heading>
         {/* <Text mb={4}>
           You need to complete onboarding before accessing the provider dashboard.

@@ -23,6 +23,7 @@ import {
   VStack,
   FormControl,
   FormLabel,
+  Card,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -523,10 +524,29 @@ export default function ProviderOnboardingPage() {
   return (
     <Container maxW="container.sm" py={10}>
       <VStack bg="white" p={8} spacing={6} borderRadius="lg" boxShadow="md">
-        <Heading size="md">Provider Registration</Heading>
+        <Heading size="lg" color="gray.600">
+          Provider Registration
+        </Heading>
 
         <Box w="100%">
-          <Progress value={progress} colorScheme="blue" />
+          <Box
+            position="fixed"
+            top="62px"
+            left="0"
+            width="100vw"
+            zIndex="1"
+            bg="white"
+            px={4}
+            padding={0}
+          >
+            <Progress
+              h="4px"
+              value={((step + 1) / TOTAL_STEPS) * 100}
+              colorScheme="blue"
+              borderRadius="md"
+            />
+          </Box>
+
           <Text fontSize="sm" mt={1} textAlign="right">
             Step {step + 1} of {TOTAL_STEPS}
           </Text>
@@ -536,8 +556,10 @@ export default function ProviderOnboardingPage() {
 
         {/* STEP 0 */}
         {step === 0 && (
-          <Stack spacing={4}>
-            <Text fontWeight="bold">I am a:</Text>
+          <Stack spacing={4} alignItems={"center"}>
+            <Text fontWeight="bold" fontSize={20} color="gray.600">
+              Select type
+            </Text>
 
             <RadioGroup
               value={formData.userType}
@@ -551,7 +573,7 @@ export default function ProviderOnboardingPage() {
 
             {/* INDIVIDUAL FIELDS */}
             {formData.userType === "individual" && (
-              <>
+              <Box w="full">
                 <FormControl isRequired>
                   <FormLabel fontSize="sm">First Name</FormLabel>
                   <Input
@@ -571,7 +593,7 @@ export default function ProviderOnboardingPage() {
                     onChange={handleChange}
                   />
                 </FormControl>
-              </>
+              </Box>
             )}
 
             {/* BUSINESS FIELDS */}

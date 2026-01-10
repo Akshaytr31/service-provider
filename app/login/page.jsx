@@ -85,6 +85,7 @@ export default function LoginPage() {
       boxShadow="md"
       borderRadius="md"
       bg="white"
+      marginTop={"100px"}
     >
       <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
         Sign In

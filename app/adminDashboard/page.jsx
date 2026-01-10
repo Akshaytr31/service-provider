@@ -47,7 +47,6 @@ export default function AdminDashboard() {
 
   return (
     <Box p={6} maxW="1200px" mx="auto">
-      {/* ================= HEADER ================= */}
       <Heading mb={6} color="gray.700">Admin Dashboard</Heading>
 
       {/* ================= ACTION BUTTONS ================= */}
