@@ -90,7 +90,6 @@ export default function LoginPage() {
       <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
         Sign In
       </Text>
-
       <Stack spacing={4}>
         <Input
           name="email"
