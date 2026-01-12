@@ -19,12 +19,13 @@ import {
 import Link from "next/link";
 import SearchBox from "./SearchBox";
 import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import ConfirmDialog from "./ConfirmDialog";
 
 export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
 
   const user = session?.user;
@@ -95,16 +96,47 @@ export default function Navbar() {
 
             {/* PROVIDER */}
             {user?.role === "provider" && (
-              <Button
-                bg="transparent"
-                _hover={{ bg: "gray.100" }}
-                _active={{ bg: "gray.200" }}
-                _focus={{ boxShadow: "none" }}
-                size="sm"
-                onClick={() => router.push("/providerDashboard")}
-              >
-                Provider Dashboard
-              </Button>
+               // If isProviderAtFirst is true (1), ALWAYS show Provider Dashboard.
+               // If false (0), toggle based on path.
+               user.isProviderAtFirst ? (
+                  <Button
+                    bg="transparent"
+                    _hover={{ bg: "gray.100" }}
+                    _active={{ bg: "gray.200" }}
+                    _focus={{ boxShadow: "none" }}
+                    size="sm"
+                    onClick={() => router.push("/providerDashboard")}
+                  >
+                    Provider Dashboard
+                  </Button>
+               ) : (
+                  // Seeker-turned-Provider: Toggle Logic
+                  pathname.startsWith("/providerDashboard") ? (
+                     <Button
+                        bg="transparent"
+                        _hover={{ bg: "gray.100" }}
+                        _active={{ bg: "gray.200" }}
+                        _focus={{ boxShadow: "none" }}
+                        size="sm"
+                        onClick={() => router.push("/")}
+                        colorScheme="teal"
+                        variant="ghost"
+                      >
+                        Seeker Dashboard
+                      </Button>
+                  ) : (
+                      <Button
+                        bg="transparent"
+                        _hover={{ bg: "gray.100" }}
+                        _active={{ bg: "gray.200" }}
+                        _focus={{ boxShadow: "none" }}
+                        size="sm"
+                        onClick={() => router.push("/providerDashboard")}
+                      >
+                        Provider Dashboard
+                      </Button>
+                  )
+               )
             )}
 
             {/* ADMIN */}

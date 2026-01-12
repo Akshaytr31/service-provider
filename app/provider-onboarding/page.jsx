@@ -1138,9 +1138,9 @@ export default function ProviderOnboardingPage() {
           >
             Back
           </Button>
-          <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
+          {/* <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
             {step === TOTAL_STEPS - 1 ? (otpSent ? "Verify & Finish" : "Send OTP") : "Next"}
-          </Button>
+          </Button> */}
         </HStack>
       </VStack>
     </Container>
