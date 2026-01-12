@@ -7,12 +7,20 @@ import { transporter } from "@/lib/mailer";
 export async function POST(req) {
   try {
     const token = await getToken({ req });
-
-    if (!token?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    
+    // Check if email is provided in body (public mode) or token (auth mode)
+    let email;
+    if (token?.email) {
+      email = token.email;
+    } else {
+      const body = await req.json().catch(() => ({}));
+      email = body.email;
     }
 
-    const email = token.email;
+    if (!email) {
+      return NextResponse.json({ message: "Email is required" }, { status: 400 });
+    }
+
     const otp = randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
 

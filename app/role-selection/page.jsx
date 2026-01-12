@@ -8,90 +8,20 @@ import {
   SimpleGrid,
   Text,
   VStack,
-  useToast,
-  Spinner,
 } from "@chakra-ui/react";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 
 export default function RoleSelectionPage() {
-  const { data: session, status, update } = useSession();
   const router = useRouter();
-  const toast = useToast();
-  const [loading, setLoading] = useState(false);
 
-  /* ----------------------------------------
-     AUTH GUARD – VERY IMPORTANT
-  ---------------------------------------- */
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login");
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <Container maxW="container.md" py={20} textAlign="center">
-        <Spinner size="xl" />
-      </Container>
-    );
-  }
-
-  if (!session) return null;
-
-  /* ----------------------------------------
-     HANDLE ROLE SELECTION
-  ---------------------------------------- */
-  const handleRoleSelect = async (role) => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/update-role", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", 
-        body: JSON.stringify({ role }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to update role");
-      }
-
-      // Update NextAuth session (JWT)
-      await update({
-        user: {
-          ...session.user,
-          role,
-          isProviderAtFirst: role === "provider",
-        },
-      });
-
-      // Redirect based on role
-      if (role === "seeker") {
-        router.push("/seeker/seeker-onboarding");
-      } else {
-        router.push("/provider-onboarding");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    } finally {
-      setLoading(false);
+  const handleRoleSelect = (role) => {
+    if (role === "seeker") {
+      router.push("/seeker/seeker-onboarding");
+    } else {
+      router.push("/provider-onboarding");
     }
   };
 
-  /* ----------------------------------------
-     UI
-  ---------------------------------------- */
   return (
     <Container maxW="container.md" py={20}>
       <VStack spacing={8} textAlign="center">
@@ -120,7 +50,6 @@ export default function RoleSelectionPage() {
                 colorScheme="blue"
                 variant="outline"
                 w="full"
-                isLoading={loading}
               >
                 Continue as Seeker
               </Button>
@@ -146,7 +75,6 @@ export default function RoleSelectionPage() {
                 colorScheme="purple"
                 variant="outline"
                 w="full"
-                isLoading={loading}
               >
                 Continue as Provider
               </Button>

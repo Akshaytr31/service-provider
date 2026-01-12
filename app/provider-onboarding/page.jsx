@@ -1,5 +1,7 @@
 "use client";
 
+import { signIn } from "next-auth/react";
+
 import {
   Box,
   Button,
@@ -24,7 +26,11 @@ import {
   FormControl,
   FormLabel,
   Card,
+  InputGroup,
+  InputRightElement,
+  IconButton,
 } from "@chakra-ui/react";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +46,8 @@ export default function ProviderOnboardingPage() {
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -115,7 +123,10 @@ export default function ProviderOnboardingPage() {
     privacyAccepted: false,
     rulesAccepted: false,
 
-    // STEP 9 – OTP
+    // STEP 9 – ACCOUNT
+    email: "",
+    password: "",
+    confirmPassword: "",
     otp: "",
   });
 
@@ -174,6 +185,7 @@ export default function ProviderOnboardingPage() {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
       });
 
       const data = await res.json();
@@ -303,8 +315,15 @@ export default function ProviderOnboardingPage() {
         return null;
 
       case 9:
-        if (!formData.otp.trim()) {
-          return "OTP is required";
+        if (!formData.email || !formData.password || !formData.confirmPassword) {
+            return "Please fill in all account details";
+        }
+        if (formData.password !== formData.confirmPassword) {
+            return "Passwords do not match";
+        }
+        // If OTP is sent, it must be entered
+        if (otpSent && !formData.otp) {
+            return "Please enter OTP";
         }
         return null;
 
@@ -331,182 +350,116 @@ export default function ProviderOnboardingPage() {
         return;
       }
 
-      /* ================= STEP 0: SET ROLE ================= */
-      if (step === 0) {
-        const roleRes = await fetch("/api/auth/update-role", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "provider" }),
-        });
-
-        if (!roleRes.ok) {
-          throw new Error("Failed to set provider role");
-        }
-      }
-
-      /* ================= STEP 8: LEGAL VALIDATION ================= */
-      if (step === 8) {
-        if (
-          !formData.termsAccepted ||
-          !formData.privacyAccepted ||
-          !formData.rulesAccepted
-        ) {
-          throw new Error("You must accept all legal terms");
-        }
-      }
-
-      /* ================= BUILD STEP-SPECIFIC PAYLOAD ================= */
-      let payload = {};
-
-      // STEP 0 – Business
-      if (step === 0) {
-        payload =
-          formData.userType === "individual"
-            ? {
-                userType: "individual",
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-              }
-            : {
-                userType: "business",
-                businessName: formData.businessName,
-                businessType: formData.businessType,
-                registrationNumber: formData.registrationNumber,
-                establishmentYear: formData.establishmentYear,
-              };
-      }
-
-      // STEP 1 – Contact
-      if (step === 1) {
-        payload = {
-          city: formData.city,
-          zipCode: formData.zipCode,
-          state: formData.state,
-          country: formData.country,
-          address: formData.address,
-          serviceRadius: formData.serviceRadius
-            ? parseInt(formData.serviceRadius)
-            : null,
-          serviceAreas: formData.serviceAreasInput
-            ? formData.serviceAreasInput.split(",").map((s) => s.trim())
-            : [],
-        };
-      }
-
-      // STEP 2 – Service
-      if (step === 2) {
-        payload = {
-          categoryId: Number(formData.categoryId),
-          subCategoryId: Number(formData.subCategoryId),
-          servicesOffered: formData.servicesOfferedInput
-            ? formData.servicesOfferedInput.split(",").map((s) => s.trim())
-            : [],
-          description: formData.description,
-          yearsExperience: formData.yearsExperience,
-        };
-      }
-
-      // STEP 3 – Education
-      if (step === 3) {
-        payload = {
-          qualifications: formData.degree
-            ? [
-                {
-                  degree: formData.degree,
-                  institution: formData.institution,
-                  year: formData.yearOfCompletion,
-                },
-              ]
-            : [],
-        };
-      }
-
-      // STEP 4 – Certifications
-      if (step === 4) {
-        payload = {
-          licenses: formData.licenseName
-            ? [
-                {
-                  name: formData.licenseName,
-                  authority: formData.licenseAuth,
-                  number: formData.licenseNumber,
-                  expiry: formData.licenseExpiry,
-                },
-              ]
-            : [],
-        };
-      }
-
-      // STEP 5 – Availability
-      if (step === 5) {
-        payload = {
-          availability: {
-            days: formData.availableDays,
-            hours: {
-              start: formData.availableHoursStart,
-              end: formData.availableHoursEnd,
-            },
-            emergency: formData.emergency,
-          },
-        };
-      }
-
-      // STEP 6 – Pricing
-      if (step === 6) {
-        payload = {
-          pricingType: formData.pricingType,
-          baseRate: formData.baseRate,
-          paymentMethods: formData.paymentMethods,
-        };
-      }
-
-      // STEP 7 – Identity
-      if (step === 7) {
-        payload = {
-          idType: formData.idType,
-          idNumber: formData.idNumber,
-          backgroundCheckConsent: formData.backgroundCheckConsent,
-        };
-      }
-
-      // STEP 8 – Legal
-      if (step === 8) {
-        payload = {
-          termsAccepted: formData.termsAccepted,
-          privacyAccepted: formData.privacyAccepted,
-          rulesAccepted: formData.rulesAccepted,
-        };
-      }
-
-      if (step === 9 && !formData.otp.trim()) {
-        throw new Error("OTP is required");
-      }
-
+    // STEP 9 – Account Creation
       if (step === 9) {
-        payload = {
-          otp: formData.otp.trim(),
-        };
+          if (!otpSent) {
+             await handleSendOtp();
+             return;
+          }
+          // If OTP sent, proceed to final submission (which now includes OTP verification)
       }
 
-      const res = await fetch("/api/provider/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step, data: payload }),
-      });
+      /* ================= FINAL SUBMISSION ================= */
+      if (step === TOTAL_STEPS - 1) {
+          // Combine all formData for submission
+          // Ideally we should construct the full object here from formData
+          // But since we built 'payload' based on step, we might need to change strategy.
+          // Actually, we need to gather ALL data now.
+          
+          const fullPayload = {
+               // User Info
+               userType: formData.userType,
+               firstName: formData.firstName,
+               lastName: formData.lastName,
+               email: formData.email,
+               password: formData.password,
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to save step");
+               // Business
+               businessName: formData.businessName,
+               businessType: formData.businessType,
+               registrationNumber: formData.registrationNumber,
+               establishmentYear: formData.establishmentYear,
 
+               // Contact
+               city: formData.city,
+               zipCode: formData.zipCode,
+               state: formData.state,
+               country: formData.country,
+               address: formData.address,
+               serviceRadius: formData.serviceRadius,
+               serviceAreas: formData.serviceAreasInput ? formData.serviceAreasInput.split(",").map(s=>s.trim()) : [],
+
+               // Service
+               categoryId: formData.categoryId,
+               subCategoryId: formData.subCategoryId,
+               servicesOffered: formData.servicesOfferedInput ? formData.servicesOfferedInput.split(",").map(s=>s.trim()) : [],
+               description: formData.description,
+               yearsExperience: formData.yearsExperience,
+
+               // Education
+               qualifications: formData.degree ? [{ degree: formData.degree, institution: formData.institution, year: formData.yearOfCompletion }] : [],
+               
+               // License
+               licenses: formData.licenseName ? [{ name: formData.licenseName, authority: formData.licenseAuth, number: formData.licenseNumber, expiry: formData.licenseExpiry }] : [],
+
+               // Availability
+               availability: {
+                   days: formData.availableDays,
+                   hours: { start: formData.availableHoursStart, end: formData.availableHoursEnd },
+                   emergency: formData.emergency
+               },
+
+               // Pricing
+               pricingType: formData.pricingType,
+               baseRate: formData.baseRate,
+               onSiteCharges: formData.onSiteCharges, 
+               paymentMethods: formData.paymentMethods,
+
+               // Identity
+               idType: formData.idType,
+               idNumber: formData.idNumber,
+               backgroundCheckConsent: formData.backgroundCheckConsent,
+
+               // Legal
+               termsAccepted: formData.termsAccepted,
+               privacyAccepted: formData.privacyAccepted,
+               rulesAccepted: formData.rulesAccepted,
+               
+               otp: formData.otp, // Add OTP to payload
+          };
+
+          const res = await fetch("/api/auth/signup-provider", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fullPayload),
+          });
+
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.message || "Failed to create account");
+
+          // Login
+          const signInRes = await signIn("credentials", {
+            redirect: false,
+            email: formData.email,
+            password: formData.password,
+          });
+
+          if (signInRes?.error) {
+             throw new Error("Account created but failed to login automatically");
+          }
+
+          toast({ title: "Registration Successful!", status: "success" });
+          router.push("/providerDashboard");
+          return;
+      }
+      
+      // Move to next step if not final
       if (step < TOTAL_STEPS - 1) {
-        // Skip STEP 3 for business users
         if (step === 2 && formData.userType === "business") {
-          setStep(4); // jump directly to STEP 4
+          setStep(4);
         } else {
           setStep((s) => s + 1);
         }
-      } else {
-        toast({ title: "Onboarding Completed", status: "success" });
-        router.push("/providerDashboard");
       }
     } catch (err) {
       toast({
@@ -1066,32 +1019,114 @@ export default function ProviderOnboardingPage() {
 
         {step === 9 && (
           <Stack spacing={4}>
-            <Input
-              name="otp"
-              placeholder="Enter OTP"
-              value={formData.otp}
-              onChange={handleChange}
-            />
+             <Heading size="sm">Create Account</Heading>
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Email Address</FormLabel>
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="Email Address"
+                  value={formData.email}
+                  onChange={handleChange}
+                  isDisabled={otpSent}
+                />
+            </FormControl>
 
-            {!otpSent ? (
-              <Button
-                colorScheme="blue"
-                onClick={handleSendOtp}
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Password</FormLabel>
+                <InputGroup>
+                  <Input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    isDisabled={otpSent}
+                  />
+                  <InputRightElement>
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                      onClick={() => setShowPassword(!showPassword)}
+                    />
+                  </InputRightElement>
+                </InputGroup>
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Confirm Password</FormLabel>
+                <InputGroup>
+                  <Input
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm Password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    isDisabled={otpSent}
+                  />
+                  <InputRightElement>
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    />
+                  </InputRightElement>
+                </InputGroup>
+            </FormControl>
+
+           {/* OTP LOGIC */}
+           {!otpSent ? (
+              <Button 
+                onClick={handleSendOtp} 
                 isLoading={otpLoading}
+                variant="outline"
+                colorScheme="blue"
+                mt={2}
               >
-                Send OTP
+                Send OTP to Verify
               </Button>
             ) : (
-              <Button
-                variant="outline"
-                onClick={handleResendOtp}
-                isDisabled={resendTimer > 0}
-              >
-                {resendTimer > 0
-                  ? `Resend OTP in ${resendTimer}s`
-                  : "Resend OTP"}
-              </Button>
+              <Stack spacing={2}>
+                 <FormControl isRequired>
+                    <FormLabel fontSize="sm" fontWeight="bold">Enter OTP sent to email</FormLabel>
+                    <HStack>
+                      <Input
+                        name="otp"
+                        placeholder="######"
+                        value={formData.otp}
+                        onChange={handleChange}
+                        maxLength={6}
+                        textAlign="center"
+                        letterSpacing={2}
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleResendOtp}
+                        isDisabled={resendTimer > 0}
+                        color="blue.500"
+                      >
+                        {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
+                      </Button>
+                    </HStack>
+                    <Text fontSize="xs" color="gray.500">
+                       A 6-digit code has been sent to {formData.email}
+                    </Text>
+                 </FormControl>
+                 <Button
+                    onClick={handleNext}
+                    isLoading={loading}
+                    colorScheme="green"
+                    width="full"
+                    mt={2}
+                 >
+                    Verify & Finish
+                 </Button>
+              </Stack>
             )}
+
           </Stack>
         )}
 
@@ -1104,7 +1139,7 @@ export default function ProviderOnboardingPage() {
             Back
           </Button>
           <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
-            {step === TOTAL_STEPS - 1 ? "Verify & Finish" : "Next"}
+            {step === TOTAL_STEPS - 1 ? (otpSent ? "Verify & Finish" : "Send OTP") : "Next"}
           </Button>
         </HStack>
       </VStack>
