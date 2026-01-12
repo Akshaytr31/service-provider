@@ -154,6 +154,8 @@ model ProviderRequest {
   idProofUrl         String?  @map("id_proof_url") @db.Text
   backgroundCheck    Boolean  @default(false) @map("background_check_consent")
 
+  rejectionReason    String?  @map("rejection_reason") @db.Text
+
   // 11. Communication (Stored in preferences or just assumed)
   contactMethod      String?  @map("contact_method") @db.VarChar(50)
 

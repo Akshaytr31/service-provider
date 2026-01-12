@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { transporter } from "@/lib/mailer";
 
 /* ================= GET SINGLE REQUEST ================= */
 export async function GET(req, context) {
@@ -47,7 +48,7 @@ export async function GET(req, context) {
 export async function PATCH(req, context) {
   try {
     const { id } = await context.params;
-    const { action } = await req.json();
+    const { action, reason } = await req.json();
 
     if (!id || isNaN(Number(id))) {
       return NextResponse.json(
@@ -66,9 +67,15 @@ export async function PATCH(req, context) {
     const status = action === "approve" ? "APPROVED" : "REJECTED";
 
     // 1️⃣ Update provider request status
+    const updateData = { status };
+    if (action === "reject") {
+       updateData.rejectionReason = reason;
+    }
+
     const request = await prisma.providerRequest.update({
       where: { id: Number(id) },
-      data: { status },
+      data: updateData,
+      include: { user: true } // Fetch user for email
     });
 
     // 2️⃣ Update user role safely (NO firstName access)
@@ -85,11 +92,30 @@ export async function PATCH(req, context) {
             },
     });
 
+    // 3️⃣ Send Email
+    if (action === "reject" && request.user.email) {
+       const reapplyLink = `${process.env.NEXTAUTH_URL}/providerDashboard`; 
+       // Note: NEXTAUTH_URL should be set in environment variables
+       
+       await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: request.user.email,
+        subject: "Provider Request Update",
+        html: `
+          <p>Dear ${request.user.name || "User"},</p>
+          <p>Your request to become a provider has been <strong>rejected</strong>.</p>
+          <p><strong>Reason:</strong> ${reason || "Not specified"}</p>
+          <p>You can view details and reapply by visiting your dashboard:</p>
+          // <a href="${reapplyLink}">Go to Dashboard</a>
+        `,
+      });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("PATCH ERROR:", error);
     return NextResponse.json(
-      { error: "Failed to update request" },
+      { error: error.message || "Failed to update request" },
       { status: 500 }
     );
   }

@@ -13,7 +13,7 @@ export async function GET() {
           select: {
             id: true,
             email: true,
-            name: true, // ✅ ONLY existing column
+            name: true,
           },
         },
       },

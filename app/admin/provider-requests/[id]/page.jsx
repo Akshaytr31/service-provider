@@ -10,6 +10,16 @@ import {
   Button,
   Divider,
   Spinner,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Textarea,
+  useToast, // Added toast for feedback
 } from "@chakra-ui/react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -19,6 +29,9 @@ export default function ProviderRequestDetails() {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const toast = useToast();
 
   /* ================= FETCH ================= */
 
@@ -41,14 +54,34 @@ export default function ProviderRequestDetails() {
 
   /* ================= ACTION ================= */
 
-  const handleAction = async (action) => {
-    await fetch(`/api/admin/provider-requests/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
+  const handleAction = async (action, reason = "") => {
+    try {
+      const body = { action };
+      if (action === "reject") {
+          body.reason = reason;
+      }
 
-    router.push("/adminDashboard");
+      const res = await fetch(`/api/admin/provider-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Action failed");
+      }
+
+      toast({ title: "Updated successfully", status: "success" });
+      router.push("/adminDashboard");
+    } catch (err) {
+      toast({ title: "Error", description: err.message, status: "error" });
+    }
+  };
+
+  const confirmReject = () => {
+    handleAction("reject", rejectionReason);
+    onClose();
   };
 
   if (loading) {
@@ -270,11 +303,37 @@ export default function ProviderRequestDetails() {
           <Button colorScheme="green" onClick={() => handleAction("approve")}>
             Approve
           </Button>
-          <Button colorScheme="red" onClick={() => handleAction("reject")}>
+          <Button colorScheme="red" onClick={onOpen}>
             Reject
           </Button>
         </Stack>
       )}
+
+      {/* REJECTION MODAL */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Reject Request</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text mb={2}>Please provide a reason for rejection:</Text>
+            <Textarea 
+              value={rejectionReason} 
+              onChange={(e) => setRejectionReason(e.target.value)} 
+              placeholder="Reason for rejection..."
+            />
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={confirmReject}>
+              Reject & Send Email
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
