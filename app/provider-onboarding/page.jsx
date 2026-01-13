@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 import {
   Box,
@@ -29,6 +29,11 @@ import {
   InputGroup,
   InputRightElement,
   IconButton,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  SliderMark,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
@@ -36,13 +41,18 @@ import { useRouter } from "next/navigation";
 
 /* ================= CONFIG ================= */
 
-const TOTAL_STEPS = 10;
+/* ================= CONFIG ================= */
+
+const BASE_STEPS = 10;
 
 /* ================= COMPONENT ================= */
 
 export default function ProviderOnboardingPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const toast = useToast();
+
+  const TOTAL_STEPS = 9; // Reduced to 9
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -51,6 +61,11 @@ export default function ProviderOnboardingPage() {
 
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  useEffect(() => {
+    if (status === "authenticated") {
+      setStep(1); // Start at Step 1 (Basic Info) if logged in
+    }
+  }, [status]);
   const [resendTimer, setResendTimer] = useState(0);
 
   const progress = ((step + 1) / TOTAL_STEPS) * 100;
@@ -73,6 +88,8 @@ export default function ProviderOnboardingPage() {
     establishmentYear: "",
     gender: "",
     dateOfBirth: "",
+    trnNumber: "",
+    expiryDate: "",
 
     // STEP 1 – CONTACT
     city: "",
@@ -171,11 +188,11 @@ export default function ProviderOnboardingPage() {
   };
 
   const handleBack = () => {
-    if (step === 4 && formData.userType === "business") {
-      setStep(2);
-    } else if (step > 0) {
-      setStep(step - 1);
-    }
+  if (step === 5 && formData.userType === "business") {
+    setStep(3);
+  } else if (step > 0) {
+    setStep(step - 1);
+  }
   };
 
   /* ================= OTP ================= */
@@ -213,9 +230,35 @@ export default function ProviderOnboardingPage() {
   const validateStep = () => {
     switch (step) {
       case 0:
+        // Account Verification (Unauthenticated Only)
+        if (status !== "authenticated") {
+          if (
+            !formData.email ||
+            !formData.password ||
+            !formData.confirmPassword
+          ) {
+            return "Please enter email and password";
+          }
+          if (formData.password !== formData.confirmPassword) {
+            return "Passwords do not match";
+          }
+          if (otpSent && !formData.otp) {
+            return "Please enter OTP";
+          }
+        }
+        return null;
+
+      case 1:
+        // Basic Info - New Step 1
         if (formData.userType === "individual") {
           if (!formData.firstName || !formData.lastName) {
             return "Please enter first name and last name";
+          }
+          if (!formData.idType || !formData.idNumber) {
+            return "Please enter ID type and ID number";
+          }
+          if (!formData.backgroundCheckConsent) {
+            return "Please confirm background check consent";
           }
         }
 
@@ -224,14 +267,17 @@ export default function ProviderOnboardingPage() {
             !formData.businessName ||
             !formData.businessType ||
             !formData.registrationNumber ||
-            !formData.establishmentYear
+            !formData.establishmentYear ||
+            !formData.trnNumber ||
+            !formData.expiryDate
           ) {
             return "Please complete all business details";
           }
         }
         return null;
 
-      case 1:
+      case 2:
+        // Contact Details - Was Step 1
         if (
           !formData.city ||
           !formData.zipCode ||
@@ -244,41 +290,59 @@ export default function ProviderOnboardingPage() {
         }
         return null;
 
-      case 2:
+      case 3:
+        // Service Category - Was Step 2
         if (
           !formData.categoryId ||
           !formData.subCategoryId ||
-          !formData.description ||
-          !formData.yearsExperience
+          !formData.description
         ) {
           return "Please complete service details";
         }
+        // Basic service check
+        if (!formData.servicesOfferedInput)
+          return "Please add at least one service offered";
+
         return null;
 
-      case 3:
+      case 4:
+        // Education - Was Step 3
         if (formData.userType === "individual") {
+          // Optional validation if fields are partially filled?
+          // Keeping it loose for now as originally required
           if (
-            !formData.degree ||
-            !formData.institution ||
-            !formData.yearOfCompletion
+            formData.degree &&
+            (!formData.institution || !formData.yearOfCompletion)
           ) {
             return "Please complete education details";
           }
         }
         return null;
 
-      case 4:
-        if (
-          !formData.licenseName ||
-          !formData.licenseAuth ||
-          !formData.licenseNumber ||
-          !formData.licenseExpiry
-        ) {
-          return "Please complete certification details";
+      case 5:
+        // Experience / Licenses - Was Step 4
+        // Original logic: required certain fields
+        /* 
+          !formData.licenseName || !formData.licenseAuth ... 
+          Actually user disabled strict checks previously?
+          Let's verify existing logic.
+          Original Step 4 checked license details if present or strictly?
+          Looking at previous code: it checked license details. 
+        */
+        if (!formData.yearsExperience) return "Years of experience is required";
+        // License logic: If user enters name, enforce others?
+        if (formData.licenseName) {
+          if (
+            !formData.licenseAuth ||
+            !formData.licenseNumber ||
+            !formData.licenseExpiry
+          )
+            return "Complete license details";
         }
         return null;
 
-      case 5:
+      case 6:
+        // Availability - Was Step 5
         if (
           formData.availableDays.length === 0 ||
           !formData.availableHoursStart ||
@@ -288,7 +352,8 @@ export default function ProviderOnboardingPage() {
         }
         return null;
 
-      case 6:
+      case 7:
+        // Pricing - Was Step 6
         if (
           !formData.pricingType ||
           !formData.baseRate ||
@@ -298,32 +363,14 @@ export default function ProviderOnboardingPage() {
         }
         return null;
 
-      case 7:
-        if (!formData.idType || !formData.idNumber) {
-          return "Please provide identity verification details";
-        }
-        return null;
-
       case 8:
+        // Terms - Was Step 9
         if (
           !formData.termsAccepted ||
           !formData.privacyAccepted ||
           !formData.rulesAccepted
         ) {
           return "You must accept all legal agreements";
-        }
-        return null;
-
-      case 9:
-        if (!formData.email || !formData.password || !formData.confirmPassword) {
-            return "Please fill in all account details";
-        }
-        if (formData.password !== formData.confirmPassword) {
-            return "Passwords do not match";
-        }
-        // If OTP is sent, it must be entered
-        if (otpSent && !formData.otp) {
-            return "Please enter OTP";
         }
         return null;
 
@@ -350,92 +397,161 @@ export default function ProviderOnboardingPage() {
         return;
       }
 
-    // STEP 9 – Account Creation
-      if (step === 9) {
-          if (!otpSent) {
-             await handleSendOtp();
-             return;
-          }
-          // If OTP sent, proceed to final submission (which now includes OTP verification)
+      // STEP 0 – Basic Signup (if unauthenticated)
+      if (step === 0 && status !== "authenticated") {
+        if (!otpSent) {
+          await handleSendOtp();
+          return;
+        }
+
+        // Verify OTP Only (Do not create account yet)
+        const verifyPayload = {
+          email: formData.email,
+          otp: formData.otp,
+        };
+
+        const res = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(verifyPayload),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "OTP Verification failed");
+
+        toast({ title: "Email Verified!", status: "success" });
+        // Move to next step (Still unauthenticated)
+        setStep(1);
+        return;
       }
 
       /* ================= FINAL SUBMISSION ================= */
       if (step === TOTAL_STEPS - 1) {
-          // Combine all formData for submission
-          // Ideally we should construct the full object here from formData
-          // But since we built 'payload' based on step, we might need to change strategy.
-          // Actually, we need to gather ALL data now.
-          
-          const fullPayload = {
-               // User Info
-               userType: formData.userType,
-               firstName: formData.firstName,
-               lastName: formData.lastName,
-               email: formData.email,
-               password: formData.password,
+        // 1. Payload Construction (Common Fields)
+        const payload = {
+          // User Info
+          userType: formData.userType,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          // ... (email/pass only if not auth)
 
-               // Business
-               businessName: formData.businessName,
-               businessType: formData.businessType,
-               registrationNumber: formData.registrationNumber,
-               establishmentYear: formData.establishmentYear,
+          // Business
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+          registrationNumber: formData.registrationNumber,
+          establishmentYear: formData.establishmentYear,
+          trnNumber: formData.trnNumber,
+          expiryDate: formData.expiryDate,
 
-               // Contact
-               city: formData.city,
-               zipCode: formData.zipCode,
-               state: formData.state,
-               country: formData.country,
-               address: formData.address,
-               serviceRadius: formData.serviceRadius,
-               serviceAreas: formData.serviceAreasInput ? formData.serviceAreasInput.split(",").map(s=>s.trim()) : [],
+          // Contact
+          city: formData.city,
+          zipCode: formData.zipCode,
+          state: formData.state,
+          country: formData.country,
+          address: formData.address,
+          serviceRadius: formData.serviceRadius,
+          serviceAreas: formData.serviceAreasInput
+            ? formData.serviceAreasInput.split(",").map((s) => s.trim())
+            : [],
 
-               // Service
-               categoryId: formData.categoryId,
-               subCategoryId: formData.subCategoryId,
-               servicesOffered: formData.servicesOfferedInput ? formData.servicesOfferedInput.split(",").map(s=>s.trim()) : [],
-               description: formData.description,
-               yearsExperience: formData.yearsExperience,
+          // Service
+          categoryId: formData.categoryId,
+          subCategoryId: formData.subCategoryId,
+          servicesOffered: formData.servicesOfferedInput
+            ? formData.servicesOfferedInput.split(",").map((s) => s.trim())
+            : [],
+          description: formData.description,
+          yearsExperience: formData.yearsExperience,
 
-               // Education
-               qualifications: formData.degree ? [{ degree: formData.degree, institution: formData.institution, year: formData.yearOfCompletion }] : [],
-               
-               // License
-               licenses: formData.licenseName ? [{ name: formData.licenseName, authority: formData.licenseAuth, number: formData.licenseNumber, expiry: formData.licenseExpiry }] : [],
+          // Education
+          qualifications: formData.degree
+            ? [
+                {
+                  degree: formData.degree,
+                  institution: formData.institution,
+                  year: formData.yearOfCompletion,
+                },
+              ]
+            : [],
 
-               // Availability
-               availability: {
-                   days: formData.availableDays,
-                   hours: { start: formData.availableHoursStart, end: formData.availableHoursEnd },
-                   emergency: formData.emergency
-               },
+          // License
+          licenses: formData.licenseName
+            ? [
+                {
+                  name: formData.licenseName,
+                  authority: formData.licenseAuth,
+                  number: formData.licenseNumber,
+                  expiry: formData.licenseExpiry,
+                },
+              ]
+            : [],
 
-               // Pricing
-               pricingType: formData.pricingType,
-               baseRate: formData.baseRate,
-               onSiteCharges: formData.onSiteCharges, 
-               paymentMethods: formData.paymentMethods,
+          // Availability
+          availability: {
+            days: formData.availableDays,
+            hours: {
+              start: formData.availableHoursStart,
+              end: formData.availableHoursEnd,
+            },
+            emergency: formData.emergency,
+          },
 
-               // Identity
-               idType: formData.idType,
-               idNumber: formData.idNumber,
-               backgroundCheckConsent: formData.backgroundCheckConsent,
+          // Pricing
+          pricingType: formData.pricingType,
+          baseRate: formData.baseRate,
+          onSiteCharges: formData.onSiteCharges,
+          paymentMethods: formData.paymentMethods,
 
-               // Legal
-               termsAccepted: formData.termsAccepted,
-               privacyAccepted: formData.privacyAccepted,
-               rulesAccepted: formData.rulesAccepted,
-               
-               otp: formData.otp, // Add OTP to payload
-          };
+          // Identity
+          idType: formData.idType,
+          idNumber: formData.idNumber,
+          backgroundCheckConsent: formData.backgroundCheckConsent,
+
+          // Legal
+          termsAccepted: formData.termsAccepted,
+          privacyAccepted: formData.privacyAccepted,
+          rulesAccepted: formData.rulesAccepted,
+        };
+
+        // 2. Logic Split: UPGRADE vs SIGNUP
+        // Since we force login at Step 0, we can assume authenticated flow here mostly.
+        // However, to be safe, we check session.
+
+        if (status === "authenticated") {
+          // --- UPGRADE FLOW ---
+          const res = await fetch("/api/provider/upgrade-request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await res.json();
+          if (!res.ok)
+            throw new Error(result.message || "Failed to submit request");
+
+          toast({
+            title: "Request Submitted!",
+            description: "Admin will review your request.",
+            status: "success",
+          });
+          router.push("/providerDashboard");
+          return;
+        } else {
+          // --- SIGNUP FLOW (New Provider) ---
+          // Append Account Data to Payload
+          payload.email = formData.email;
+          payload.password = formData.password;
+          payload.otp = formData.otp;
 
           const res = await fetch("/api/auth/signup-provider", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(fullPayload),
+            body: JSON.stringify(payload),
           });
 
           const result = await res.json();
-          if (!res.ok) throw new Error(result.message || "Failed to create account");
+          if (!res.ok)
+            throw new Error(result.message || "Failed to create account");
 
           // Login
           const signInRes = await signIn("credentials", {
@@ -445,21 +561,22 @@ export default function ProviderOnboardingPage() {
           });
 
           if (signInRes?.error) {
-             throw new Error("Account created but failed to login automatically");
+            throw new Error(
+              "Account created but failed to login automatically"
+            );
           }
 
           toast({ title: "Registration Successful!", status: "success" });
           router.push("/providerDashboard");
           return;
-      }
-      
-      // Move to next step if not final
-      if (step < TOTAL_STEPS - 1) {
-        if (step === 2 && formData.userType === "business") {
-          setStep(4);
-        } else {
-          setStep((s) => s + 1);
         }
+      }
+
+      // Move to next step if not final
+      if (step === 3 && formData.userType === "business") {
+        setStep(5);
+      } else {
+        setStep((prev) => prev + 1);
       }
     } catch (err) {
       toast({
@@ -475,7 +592,7 @@ export default function ProviderOnboardingPage() {
   /* ================= UI ================= */
 
   return (
-    <Container maxW="container.sm" py={10}>
+    <Container maxW="container.sm" py={10} marginTop={"70px"}>
       <VStack bg="white" p={8} spacing={6} borderRadius="lg" boxShadow="md">
         <Heading size="lg" color="gray.600">
           Provider Registration
@@ -507,12 +624,131 @@ export default function ProviderOnboardingPage() {
 
         <Divider />
 
-        {/* STEP 0 */}
+        {/* STEP 0 - Account Setup */}
         {step === 0 && (
           <Stack spacing={4} alignItems={"center"}>
-            <Text fontWeight="bold" fontSize={20} color="gray.600">
-              Select type
-            </Text>
+            {/* ACCOUNT FIELDS (Unauthenticated Only) */}
+            {status !== "authenticated" ? (
+              <Stack spacing={4} w="full" pb={4}>
+                <Heading size="md" color="gray.600">
+                  Account Setup
+                </Heading>
+
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Email</FormLabel>
+                  <Input
+                    name="email"
+                    type="email"
+                    placeholder="Email Address"
+                    onChange={handleChange}
+                    value={formData.email}
+                  />
+                </FormControl>
+
+                <Stack direction="row" spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="sm">Password</FormLabel>
+                    <InputGroup>
+                      <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        onChange={handleChange}
+                        value={formData.password}
+                      />
+                      <InputRightElement>
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                          onClick={() => setShowPassword(!showPassword)}
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                  </FormControl>
+
+                  <FormControl isRequired>
+                    <FormLabel fontSize="sm">Confirm Password</FormLabel>
+                    <InputGroup>
+                      <Input
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm Password"
+                        onChange={handleChange}
+                        value={formData.confirmPassword}
+                      />
+                      <InputRightElement>
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          icon={
+                            showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />
+                          }
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                  </FormControl>
+                </Stack>
+
+                {/* OTP LOGIC */}
+                {!otpSent ? (
+                  <Button
+                    onClick={handleSendOtp}
+                    isLoading={otpLoading}
+                    variant="outline"
+                    colorScheme="blue"
+                    width="full"
+                  >
+                    Send OTP to Verify Email
+                  </Button>
+                ) : (
+                  <Stack spacing={2} bg="blue.50" p={3} borderRadius="md">
+                    <FormControl isRequired>
+                      <FormLabel fontSize="sm" fontWeight="bold">
+                        Enter OTP sent to {formData.email}
+                      </FormLabel>
+                      <HStack>
+                        <Input
+                          name="otp"
+                          placeholder="######"
+                          value={formData.otp}
+                          onChange={handleChange}
+                          maxLength={6}
+                          textAlign="center"
+                          letterSpacing={2}
+                          bg="white"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleResendOtp}
+                          isDisabled={resendTimer > 0}
+                          color="blue.500"
+                        >
+                          {resendTimer > 0
+                            ? `Resend (${resendTimer})`
+                            : "Resend"}
+                        </Button>
+                      </HStack>
+                    </FormControl>
+                  </Stack>
+                )}
+              </Stack>
+            ) : (
+              <Text>You are already logged in. Click Next to proceed.</Text>
+            )}
+          </Stack>
+        )}
+
+        {/* STEP 1 - Basic Info (User Type / Name) */}
+        {step === 1 && (
+          <Stack spacing={4} alignItems={"center"} width="full">
+            <Heading size="md" color="gray.600">
+              Basic Details & Select type
+            </Heading>
 
             <RadioGroup
               value={formData.userType}
@@ -546,12 +782,61 @@ export default function ProviderOnboardingPage() {
                     onChange={handleChange}
                   />
                 </FormControl>
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Document Type</FormLabel>
+                  <Select
+                    name="idType"
+                    value={formData.idType}
+                    onChange={handleChange}
+                  >
+                    <option value="" disabled>
+                      Select Document
+                    </option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driving License">Driving License</option>
+                    <option value="National ID">National ID</option>
+                  </Select>
+                </FormControl>
+
+                {/* ID NUMBER */}
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Document Number</FormLabel>
+                  <Input
+                    name="idNumber"
+                    type="text"
+                    inputMode={
+                      formData.idType === "Passport" ? "text" : "numeric"
+                    }
+                    placeholder={
+                      formData.idType === "Passport"
+                        ? "Passport Number (A1234567)"
+                        : "ID Number"
+                    }
+                    value={formData.idNumber}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+
+                {/* BACKGROUND CHECK */}
+                <FormControl>
+                  <Checkbox
+                    isChecked={formData.backgroundCheckConsent}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        backgroundCheckConsent: e.target.checked,
+                      }))
+                    }
+                  >
+                    I consent to background check
+                  </Checkbox>
+                </FormControl>
               </Box>
             )}
 
             {/* BUSINESS FIELDS */}
             {formData.userType === "business" && (
-              <Stack spacing={4}>
+              <Stack spacing={4} width={"full"}>
                 <FormControl isRequired>
                   <FormLabel fontSize="sm">Business Name</FormLabel>
                   <Input
@@ -593,13 +878,32 @@ export default function ProviderOnboardingPage() {
                     onChange={handleChange}
                   />
                 </FormControl>
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">TRN Number</FormLabel>
+                  <Input
+                    name="trnNumber"
+                    placeholder="TRN Number"
+                    value={formData.trnNumber}
+                    onChange={handleChange}
+                  />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel fontSize="sm">Expiry Date</FormLabel>
+                  <Input
+                    name="expiryDate"
+                    type="date"
+                    placeholder="Expiry Date"
+                    value={formData.expiryDate}
+                    onChange={handleChange}
+                  />
+                </FormControl>
               </Stack>
             )}
           </Stack>
         )}
 
         {/* STEP 1 */}
-        {step === 1 && (
+        {step === 2 && (
           <Stack spacing={4}>
             <HStack>
               <FormControl isRequired>
@@ -618,7 +922,7 @@ export default function ProviderOnboardingPage() {
             </HStack>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm">State</FormLabel>
+              <FormLabel fontSize="sm">State/Emirates/Governorate</FormLabel>
               <Input name="state" placeholder="State" onChange={handleChange} />
             </FormControl>
 
@@ -641,31 +945,68 @@ export default function ProviderOnboardingPage() {
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm">Service Radius (km)</FormLabel>
-              <Input
-                name="serviceRadius"
-                placeholder="Service Radius (km)"
-                onChange={handleChange}
-              />
+              <Card
+                padding={"20px"}
+                border={"1px solid #e2e8f0"}
+                boxShadow={"none"}
+              >
+                <FormLabel fontSize="sm">
+                  Service Radius (km): {formData.serviceRadius || 0}
+                </FormLabel>
+
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={Number(formData.serviceRadius) || 0}
+                  onChange={(val) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      serviceRadius: val,
+                    }))
+                  }
+                >
+                  {/* Optional marks */}
+                  <SliderMark value={0} mt="2" ml="-2" fontSize="xs">
+                    0
+                  </SliderMark>
+                  <SliderMark value={50} mt="2" ml="-2" fontSize="xs">
+                    50
+                  </SliderMark>
+                  <SliderMark value={100} mt="2" ml="-4" fontSize="xs">
+                    100
+                  </SliderMark>
+
+                  <SliderTrack>
+                    <SliderFilledTrack />
+                  </SliderTrack>
+
+                  <SliderThumb boxSize={6} backgroundColor="blue.500">
+                    <Box color="white" fontSize="10px">
+                      KM
+                    </Box>
+                  </SliderThumb>
+                </Slider>
+              </Card>
             </FormControl>
 
             <FormControl>
-              <FormLabel fontSize="sm">Service Areas</FormLabel>
+              <FormLabel fontSize="sm">Service Locality</FormLabel>
               <Textarea
-                name="serviceAreasInput"
-                placeholder="Service Areas (comma separated)"
+                name="serviceLocality"
+                placeholder="Service Locality"
                 onChange={handleChange}
               />
             </FormControl>
           </Stack>
         )}
 
-        {step === 2 && (
-          <Stack spacing={4}>
+        {step === 3 && (
+          <Stack spacing={4} width={"full"}>
             <Heading size="sm">Service Details</Heading>
 
             {/* CATEGORY */}
-            <FormControl isRequired>
+            <FormControl isRequired width={"full"}>
               <FormLabel fontSize="sm">Category</FormLabel>
               <Select
                 name="categoryId"
@@ -744,13 +1085,13 @@ export default function ProviderOnboardingPage() {
           </Stack>
         )}
 
-        {/* STEP 3 */}
-        {step === 3 && formData.userType === "individual" && (
-          <Stack spacing={4}>
+        {/* STEP 4 - Education */}
+        {step === 4 && formData.userType === "individual" && (
+          <Stack spacing={4} width={"full"}>
             <Heading size="sm">Qualification</Heading>
 
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Qualification</FormLabel>
+            <FormControl isRequired width={"full"}>
+              <FormLabel fontSize="sm" >Qualification</FormLabel>
               <Input
                 name="degree"
                 placeholder="Qualification"
@@ -781,11 +1122,11 @@ export default function ProviderOnboardingPage() {
           </Stack>
         )}
 
-        {step === 4 && (
-          <Stack spacing={4}>
+        {step === 5 && (
+          <Stack spacing={4} width={"full"}>
             <Heading size="sm">License</Heading>
 
-            <FormControl isRequired>
+            <FormControl isRequired width={"full"}>
               <FormLabel fontSize="sm">License Name</FormLabel>
               <Input
                 name="licenseName"
@@ -827,7 +1168,7 @@ export default function ProviderOnboardingPage() {
           </Stack>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <Stack spacing={4}>
             <Heading size="sm">Working days and time</Heading>
 
@@ -882,7 +1223,7 @@ export default function ProviderOnboardingPage() {
           </Stack>
         )}
 
-        {step === 6 && (
+        {step === 7 && (
           <Stack spacing={4}>
             <Heading size="sm">Fix your price</Heading>
 
@@ -915,7 +1256,7 @@ export default function ProviderOnboardingPage() {
             <FormControl isRequired>
               <FormLabel fontSize="sm">Payment Methods</FormLabel>
               <HStack spacing={4}>
-                {["Bank", "Cash", "UPI"].map((p) => (
+                {["Bank", "App"].map((p) => (
                   <Checkbox
                     key={p}
                     isChecked={formData.paymentMethods.includes(p)}
@@ -925,60 +1266,6 @@ export default function ProviderOnboardingPage() {
                   </Checkbox>
                 ))}
               </HStack>
-            </FormControl>
-          </Stack>
-        )}
-        {step === 7 && (
-          <Stack spacing={4}>
-            <Heading size="sm">Identity Verification</Heading>
-
-            {/* ID TYPE */}
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Document Type</FormLabel>
-              <Select
-                name="idType"
-                value={formData.idType}
-                onChange={handleChange}
-              >
-                <option value="" disabled>
-                  Select Document
-                </option>
-                <option value="Passport">Passport</option>
-                <option value="Driving License">Driving License</option>
-                <option value="National ID">National ID</option>
-              </Select>
-            </FormControl>
-
-            {/* ID NUMBER */}
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Document Number</FormLabel>
-              <Input
-                name="idNumber"
-                type="text"
-                inputMode={formData.idType === "Passport" ? "text" : "numeric"}
-                placeholder={
-                  formData.idType === "Passport"
-                    ? "Passport Number (A1234567)"
-                    : "ID Number"
-                }
-                value={formData.idNumber}
-                onChange={handleChange}
-              />
-            </FormControl>
-
-            {/* BACKGROUND CHECK */}
-            <FormControl>
-              <Checkbox
-                isChecked={formData.backgroundCheckConsent}
-                onChange={(e) =>
-                  setFormData((p) => ({
-                    ...p,
-                    backgroundCheckConsent: e.target.checked,
-                  }))
-                }
-              >
-                I consent to background check
-              </Checkbox>
             </FormControl>
           </Stack>
         )}
@@ -1017,118 +1304,7 @@ export default function ProviderOnboardingPage() {
           </Stack>
         )}
 
-        {step === 9 && (
-          <Stack spacing={4}>
-             <Heading size="sm">Create Account</Heading>
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Email Address</FormLabel>
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="Email Address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  isDisabled={otpSent}
-                />
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Password</FormLabel>
-                <InputGroup>
-                  <Input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    isDisabled={otpSent}
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                      onClick={() => setShowPassword(!showPassword)}
-                    />
-                  </InputRightElement>
-                </InputGroup>
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Confirm Password</FormLabel>
-                <InputGroup>
-                  <Input
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm Password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    isDisabled={otpSent}
-                  />
-                  <InputRightElement>
-                    <IconButton
-                      variant="ghost"
-                      size="sm"
-                      icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    />
-                  </InputRightElement>
-                </InputGroup>
-            </FormControl>
-
-           {/* OTP LOGIC */}
-           {!otpSent ? (
-              <Button 
-                onClick={handleSendOtp} 
-                isLoading={otpLoading}
-                variant="outline"
-                colorScheme="blue"
-                mt={2}
-              >
-                Send OTP to Verify
-              </Button>
-            ) : (
-              <Stack spacing={2}>
-                 <FormControl isRequired>
-                    <FormLabel fontSize="sm" fontWeight="bold">Enter OTP sent to email</FormLabel>
-                    <HStack>
-                      <Input
-                        name="otp"
-                        placeholder="######"
-                        value={formData.otp}
-                        onChange={handleChange}
-                        maxLength={6}
-                        textAlign="center"
-                        letterSpacing={2}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleResendOtp}
-                        isDisabled={resendTimer > 0}
-                        color="blue.500"
-                      >
-                        {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
-                      </Button>
-                    </HStack>
-                    <Text fontSize="xs" color="gray.500">
-                       A 6-digit code has been sent to {formData.email}
-                    </Text>
-                 </FormControl>
-                 <Button
-                    onClick={handleNext}
-                    isLoading={loading}
-                    colorScheme="green"
-                    width="full"
-                    mt={2}
-                 >
-                    Verify & Finish
-                 </Button>
-              </Stack>
-            )}
-
-          </Stack>
-        )}
+        {/* STEP 9 - REMOVED MERGED INTO STEP 0 */}
 
         <HStack w="100%" justify="space-between">
           <Button
@@ -1138,9 +1314,9 @@ export default function ProviderOnboardingPage() {
           >
             Back
           </Button>
-          {/* <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
-            {step === TOTAL_STEPS - 1 ? (otpSent ? "Verify & Finish" : "Send OTP") : "Next"}
-          </Button> */}
+          <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
+            {step === TOTAL_STEPS - 1 ? "Finish" : "Next"}
+          </Button>
         </HStack>
       </VStack>
     </Container>

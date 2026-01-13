@@ -19,7 +19,10 @@ import {
   ModalCloseButton,
   useDisclosure,
   Textarea,
-  useToast, // Added toast for feedback
+  useToast,
+  HStack,
+  Tag,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -33,13 +36,29 @@ export default function ProviderRequestDetails() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
+  const InfoCard = ({ title, children }) => (
+    <Box
+      bg="gray.800"
+      color="gray.100"
+      p={5}
+      borderRadius="xl"
+      border="1px solid"
+      borderColor="gray.700"
+    >
+      <Heading size="sm" mb={4} color="blue.300">
+        {title}
+      </Heading>
+      <Stack spacing={2}>{children}</Stack>
+    </Box>
+  );
+
   /* ================= FETCH ================= */
 
   const fetchRequest = async () => {
     try {
       const res = await fetch(`/api/admin/provider-requests/${id}`);
       const json = await res.json();
-      console.log("data",json)
+      console.log("data", json);
       setData(json);
     } catch (err) {
       console.error("Fetch failed", err);
@@ -58,7 +77,7 @@ export default function ProviderRequestDetails() {
     try {
       const body = { action };
       if (action === "reject") {
-          body.reason = reason;
+        body.reason = reason;
       }
 
       const res = await fetch(`/api/admin/provider-requests/${id}`, {
@@ -96,8 +115,7 @@ export default function ProviderRequestDetails() {
   const status = providerRequest.status;
   const userType = providerRequest.businessName ? "business" : "individual";
 
-
-  console.log(userType)
+  console.log(userType);
 
   /* ================= UI ================= */
 
@@ -119,12 +137,22 @@ export default function ProviderRequestDetails() {
       </Badge>
 
       {/* USER INFO */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="User Information">
-          <Text>
-            <b>Provider Type:</b>{" "}
-            {userType === "business" ? "Business" : "Individual"}
-          </Text>
+      <Box
+        display="grid"
+        gridTemplateColumns="repeat(auto-fit, minmax(400px, 1fr))"
+        gap={4}
+      >
+        <InfoCard title="User Information">
+          <HStack justify="space-between">
+            <Text fontWeight="bold">
+              {userType === "business" ? "Business" : "Individual"}
+            </Text>
+            <Tag colorScheme={userType === "business" ? "purple" : "green"}>
+              {userType.toUpperCase()}
+            </Tag>
+          </HStack>
+
+          <Divider />
 
           <Text>
             <b>Name:</b>{" "}
@@ -136,165 +164,185 @@ export default function ProviderRequestDetails() {
           <Text>
             <b>Email:</b> {providerRequest.user?.email || "-"}
           </Text>
-        </Section>
-      </Box>
+        </InfoCard>
 
-      {/* BUSINESS DETAILS (ONLY FOR BUSINESS) */}
-      {userType === "business" && (
-        <Box bg="gray.700" color="gray.50" p={5}>
-          <Section title="Business Details">
-            <Text>
-              <b>Business Name:</b> {providerRequest.businessName || "-"}
-            </Text>
-            <Text>
-              <b>Type:</b> {providerRequest.businessType || "-"}
-            </Text>
-            <Text>
-              <b>Registration No:</b>{" "}
-              {providerRequest.registrationNumber || "-"}
-            </Text>
-            <Text>
-              <b>Established:</b> {providerRequest.establishmentYear || "-"}
-            </Text>
-          </Section>
-        </Box>
-      )}
+        {/* BUSINESS DETAILS (ONLY FOR BUSINESS) */}
+        {userType === "business" && (
+          <InfoCard title="Business Details">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+              <Text>
+                <b>Name:</b> {providerRequest.businessName || "-"}
+              </Text>
+              <Text>
+                <b>Type:</b> {providerRequest.businessType || "-"}
+              </Text>
+              <Text>
+                <b>Registration:</b> {providerRequest.registrationNumber || "-"}
+              </Text>
+              <Text>
+                <b>Established:</b> {providerRequest.establishmentYear || "-"}
+              </Text>
+              <Text>
+                <b>TRN:</b> {providerRequest.trnNumber || "-"}
+              </Text>
+              <Text>
+                <b>Expiry:</b> {providerRequest.businessExpiryDate || "-"}
+              </Text>
+            </SimpleGrid>
+          </InfoCard>
+        )}
 
-      {/* INDIVIDUAL DETAILS (ONLY FOR INDIVIDUAL) */}
-      {userType === "individual" && (
-        <Box bg="gray.700" color="gray.50" p={5}>
-          <Section title="Individual Details">
-            <Text>This provider registered as an individual.</Text>
-          </Section>
-        </Box>
-      )}
+        {/* INDIVIDUAL DETAILS (ONLY FOR INDIVIDUAL) */}
+        {userType === "individual" && (
+          <Box bg="gray.700" color="gray.50" p={5}>
+            <Section title="Individual Details">
+              <Text>This provider registered as an individual.</Text>
+            </Section>
+          </Box>
+        )}
 
-      {/* LOCATION */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Location">
-          <Text>
-            <b>City:</b> {providerRequest.city || "-"}
-          </Text>
-          <Text>
-            <b>State:</b> {providerRequest.state || "-"}
-          </Text>
-          <Text>
-            <b>Country:</b> {providerRequest.country || "-"}
-          </Text>
-          <Text>
-            <b>Service Radius:</b>{" "}
-            {providerRequest.serviceRadius
-              ? `${providerRequest.serviceRadius} km`
-              : "-"}
-          </Text>
+        {/* LOCATION */}
+        <InfoCard title="Location">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+            <Text>
+              <b>City:</b> {providerRequest.city || "-"}
+            </Text>
+            <Text>
+              <b>State:</b> {providerRequest.state || "-"}
+            </Text>
+            <Text>
+              <b>Country:</b> {providerRequest.country || "-"}
+            </Text>
+            <Text>
+              <b>Radius:</b>{" "}
+              {providerRequest.serviceRadius
+                ? `${providerRequest.serviceRadius} km`
+                : "-"}
+            </Text>
+          </SimpleGrid>
+
+          <Divider />
+
           <Text>
             <b>Service Areas:</b>{" "}
             {(providerRequest.serviceAreas || []).join(", ") || "-"}
           </Text>
-              <Divider my={2} />
 
           <Text>
             <b>Address:</b> {providerRequest.address || "-"}
           </Text>
-        </Section>
-      </Box>
+        </InfoCard>
 
-      {/* SERVICES */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Services">
+        {/* SERVICES */}
+        <InfoCard title="Services">
           <Text>
             <b>Description:</b> {providerRequest.description || "-"}
           </Text>
           <Text>
             <b>Experience:</b> {providerRequest.yearsExperience || "-"}
           </Text>
-          <Text>
-            <b>Services Offered:</b>{" "}
-            {(providerRequest.servicesOffered || []).join(", ") || "-"}
-          </Text>
-        </Section>
-      </Box>
 
-      {/* EDUCATION – ONLY FOR INDIVIDUAL */}
-      {userType === "individual" && (
-        <Box bg="gray.700" color="gray.50" p={5}>
-          <Section title="Qualifications">
-            {(providerRequest.qualifications || []).length > 0 ? (
-              providerRequest.qualifications.map((q, i) => (
-                <Text key={i}>
-                  {q.degree} — {q.institution} ({q.year})
-                </Text>
+          <HStack wrap="wrap">
+            {(providerRequest.servicesOffered || []).length > 0 ? (
+              providerRequest.servicesOffered.map((s, i) => (
+                <Tag key={i} colorScheme="blue">
+                  {s}
+                </Tag>
               ))
             ) : (
               <Text>-</Text>
             )}
-          </Section>
-        </Box>
-      )}
+          </HStack>
+        </InfoCard>
 
-      {/* LICENSES */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Licenses">
+        {/* EDUCATION – ONLY FOR INDIVIDUAL */}
+        {userType === "individual" && (
+          <InfoCard title="Qualifications">
+            {(providerRequest.qualifications || []).length > 0 ? (
+              providerRequest.qualifications.map((q, i) => (
+                <Box key={i} p={3} bg="gray.700" borderRadius="md">
+                  <Text fontWeight="bold">{q.degree}</Text>
+                  <Text fontSize="sm">
+                    {q.institution} • {q.year}
+                  </Text>
+                </Box>
+              ))
+            ) : (
+              <Text>-</Text>
+            )}
+          </InfoCard>
+        )}
+
+        {/* LICENSES */}
+        <InfoCard title="Licenses">
           {(providerRequest.licenses || []).length > 0 ? (
             providerRequest.licenses.map((l, i) => (
-              <Text key={i}>
-                {l.name} — {l.authority} ({l.number})
-              </Text>
+              <Box key={i} p={3} bg="gray.700" borderRadius="md">
+                <Text fontWeight="bold">{l.name}</Text>
+                <Text fontSize="sm">
+                  {l.authority} • {l.number}
+                </Text>
+              </Box>
             ))
           ) : (
             <Text>-</Text>
           )}
-        </Section>
-      </Box>
+        </InfoCard>
 
-      {/* AVAILABILITY */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Availability">
+        {/* AVAILABILITY */}
+        <InfoCard title="Availability">
           <Text>
             <b>Days:</b>{" "}
             {(providerRequest.availability?.days || []).join(", ") || "-"}
           </Text>
           <Text>
-            <b>Hours:</b> {providerRequest.availability?.hours?.start || "-"} -{" "}
+            <b>Hours:</b> {providerRequest.availability?.hours?.start || "-"} –{" "}
             {providerRequest.availability?.hours?.end || "-"}
           </Text>
-          <Text>
-            <b>Emergency:</b>{" "}
-            {providerRequest.availability?.emergency ? "Yes" : "No"}
-          </Text>
-        </Section>
-      </Box>
+          <Tag
+            maxWidth={"120px"}
+            colorScheme={
+              providerRequest.availability?.emergency ? "red" : "gray"
+            }
+          >
+            Emergency: {providerRequest.availability?.emergency ? "Yes" : "No"}
+          </Tag>
+        </InfoCard>
 
-      {/* PRICING */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Pricing">
+        {/* PRICING */}
+        <InfoCard title="Pricing">
           <Text>
             <b>Type:</b> {providerRequest.pricingType || "-"}
           </Text>
           <Text>
             <b>Base Rate:</b> {providerRequest.baseRate || "-"}
           </Text>
-          <Text>
-            <b>Payment:</b>{" "}
-            {(providerRequest.paymentMethods || []).join(", ") || "-"}
-          </Text>
-        </Section>
-      </Box>
 
-      {/* IDENTITY */}
-      <Box bg="gray.700" color="gray.50" p={5}>
-        <Section title="Identity">
-          <Text>
-            <b>ID Type:</b> {providerRequest.idType || "-"}
-          </Text>
-          <Text>
-            <b>ID Number:</b> {providerRequest.idNumber || "-"}
-          </Text>
-          <Text>
-            <b>Background Check:</b>{" "}
-            {providerRequest.backgroundCheck ? "Yes" : "No"}
-          </Text>
-        </Section>
+          <HStack wrap="wrap">
+            {(providerRequest.paymentMethods || []).map((p, i) => (
+              <Tag key={i} colorScheme="green">
+                {p}
+              </Tag>
+            ))}
+          </HStack>
+        </InfoCard>
+
+        {/* IDENTITY */}
+        {userType === "individual" && (
+          <InfoCard title="Identity Verification">
+            <Text>
+              <b>ID Type:</b> {providerRequest.idType || "-"}
+            </Text>
+            <Text>
+              <b>ID Number:</b> {providerRequest.idNumber || "-"}
+            </Text>
+            <Tag
+              colorScheme={providerRequest.backgroundCheck ? "green" : "red"}
+            >
+              Background Check: {providerRequest.backgroundCheck ? "Yes" : "No"}
+            </Tag>
+          </InfoCard>
+        )}
       </Box>
 
       {/* ACTIONS */}
@@ -317,9 +365,9 @@ export default function ProviderRequestDetails() {
           <ModalCloseButton />
           <ModalBody>
             <Text mb={2}>Please provide a reason for rejection:</Text>
-            <Textarea 
-              value={rejectionReason} 
-              onChange={(e) => setRejectionReason(e.target.value)} 
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="Reason for rejection..."
             />
           </ModalBody>

@@ -98,10 +98,6 @@ export async function POST(req) {
   }
 }
 
-/* ===================================================== */
-/* SAVE STEP DATA — MATCHES PRISMA SCHEMA                */
-/* ===================================================== */
-
 async function saveStepData(step, data, userId) {
   switch (step) {
     case 0: {
@@ -146,6 +142,8 @@ async function saveStepData(step, data, userId) {
        business_name = ?,
        business_type = ?,
        registration_number = ?,
+       trn_number = ?,
+       business_expiry_date = ?,
        establishment_year = ?
      WHERE user_id = ?`,
         [
@@ -159,6 +157,8 @@ async function saveStepData(step, data, userId) {
           userType === "business" ? businessName : null,
           userType === "business" ? businessType : null,
           userType === "business" ? registrationNumber : null,
+          userType === "business" ? data.trnNumber : null,
+          userType === "business" ? data.expiryDate : null,
           userType === "business" ? establishmentYear : null,
 
           userId,

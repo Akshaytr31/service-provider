@@ -23,7 +23,7 @@ export default function SeekerDashboard() {
   }, []);
 
   return (
-    <Box maxW="900px" mx="auto" mt={10}>
+    <Box maxW="900px" mx="auto" mt={10} marginTop={"80px"}>
       <Heading mb={6}>Available Services</Heading>
       <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4} spacing={6}>
         {services.map((service) => (

@@ -36,7 +36,7 @@ export default function ProviderDashboard() {
   /* ================= STATUS: PENDING ================= */
   if (user.providerRequestStatus === "PENDING") {
     return (
-      <Box p={6}>
+      <Box p={6} marginTop={"70px"}>
         <Heading>Approval Pending</Heading>
         <Text mt={2}>
           Your provider request is under admin review.
@@ -52,7 +52,7 @@ export default function ProviderDashboard() {
 
   /* ================= STATUS: APPROVED ================= */
   return (
-    <Box p={6}>
+    <Box p={6} marginTop={"70px"}>
       <Heading mb={4}>Provider Dashboard</Heading>
       <PostService />
     </Box>
@@ -83,7 +83,7 @@ function RejectedView() {
   },[]);
 
   return (
-    <Box p={10} textAlign="center" marginTop={"70px"}>
+    <Box p={10} textAlign="center" marginTop={"170px"}>
       <Heading color="red.500" mb={4}>Application Rejected</Heading>
       <Text fontSize="lg" mb={6}>
         Your application to become a provider was rejected.

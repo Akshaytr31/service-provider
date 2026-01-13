@@ -93,22 +93,35 @@ export async function PATCH(req, context) {
     });
 
     // 3️⃣ Send Email
-    if (action === "reject" && request.user.email) {
-       const reapplyLink = `${process.env.NEXTAUTH_URL}/providerDashboard`; 
-       // Note: NEXTAUTH_URL should be set in environment variables
-       
-       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: request.user.email,
-        subject: "Provider Request Update",
-        html: `
-          <p>Dear ${request.user.name || "User"},</p>
-          <p>Your request to become a provider has been <strong>rejected</strong>.</p>
-          <p><strong>Reason:</strong> ${reason || "Not specified"}</p>
-          <p>You can view details and reapply by visiting your dashboard:</p>
-          // <a href="${reapplyLink}">Go to Dashboard</a>
-        `,
-      });
+    if (request.user.email) {
+       const dashboardLink = `${process.env.NEXTAUTH_URL}/providerDashboard`; 
+
+       if (action === "reject") {
+           await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: request.user.email,
+            subject: "Provider Request Update",
+            html: `
+              <p>Dear ${request.user.name || "User"},</p>
+              <p>Your request to become a provider has been <strong>rejected</strong>.</p>
+              <p><strong>Reason:</strong> ${reason || "Not specified"}</p>
+              <p>You can view details and reapply by visiting your dashboard:</p>
+              <a href="${dashboardLink}">Go to Dashboard</a>
+            `,
+          });
+       } else if (action === "approve") {
+           await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: request.user.email,
+            subject: "Provider Request Approved!",
+            html: `
+              <p>Dear ${request.user.name || "User"},</p>
+              <p>Congratulations! Your request to become a provider has been <strong>APPROVED</strong>.</p>
+              <p>You can now access your provider dashboard to post services.</p>
+              <a href="${dashboardLink}">Go to Dashboard</a>
+            `,
+          });
+       }
     }
 
     return NextResponse.json({ success: true });

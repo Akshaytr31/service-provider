@@ -111,6 +111,8 @@ model ProviderRequest {
   businessName       String?  @map("business_name") @db.VarChar(255)
   businessType       String?  @map("business_type") @db.VarChar(50) // Individual, Company, Agency
   registrationNumber String?  @map("registration_number") @db.VarChar(100)
+  trnNumber          String?  @map("trn_number") @db.VarChar(100)
+  businessExpiryDate String?  @map("business_expiry_date") @db.VarChar(50)
   establishmentYear  String?  @map("establishment_year") @db.VarChar(4) // Year
   companyLogo        String?  @map("company_logo") @db.Text
   

@@ -7,22 +7,22 @@ import { transporter } from "@/lib/mailer";
 export async function POST(req) {
   try {
     const token = await getToken({ req });
-    
-    // Check if email is provided in body (public mode) or token (auth mode)
-    let email;
-    if (token?.email) {
-      email = token.email;
-    } else {
-      const body = await req.json().catch(() => ({}));
-      email = body.email;
+    let email = token?.email;
+
+    if (!email) {
+      const body = await req.json();
+      email = body?.email;
     }
 
     if (!email) {
-      return NextResponse.json({ message: "Email is required" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Email is required" },
+        { status: 400 }
+      );
     }
 
     const otp = randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
 
@@ -31,7 +31,6 @@ export async function POST(req) {
       [email, otp, expiresAt]
     );
 
-    // Send Email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -43,8 +42,9 @@ export async function POST(req) {
   } catch (err) {
     console.error("Send OTP Error:", err);
     return NextResponse.json(
-      { message: "Failed to send OTP" },
+      { message: err.message || "Failed to send OTP" },
       { status: 500 }
     );
   }
 }
+

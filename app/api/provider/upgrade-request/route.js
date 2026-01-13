@@ -1,14 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
-      email,
-      password,
-      otp,
       // User Info
       userType,
       firstName,
@@ -55,74 +59,32 @@ export async function POST(req) {
       rulesAccepted,
     } = body;
 
-    // 1. Basic Validation
-    if (!email || !password) {
+    // Basic Validation (checking a few key fields)
+    if (!userType || !termsAccepted) {
       return NextResponse.json(
-        { message: "Email and password are required" },
+        { message: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // 2. Check overlap
-    const existingUser = await prisma.users.findUnique({
-      where: { email },
+    // Check if request already exists?
+    const existingRequest = await prisma.providerRequest.findFirst({
+      where: { userId: Number(session.user.id) },
     });
 
-    if (existingUser) {
+    if (existingRequest && existingRequest.status === "PENDING") {
       return NextResponse.json(
-        { message: "User already exists with this email" },
+        { message: "You already have a pending provider request." },
         { status: 409 }
       );
     }
 
-    // 3. Hash Password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 4. Verify OTP
-    if (!otp) {
-      return NextResponse.json({ message: "OTP is required" }, { status: 400 });
-    }
-
-    const otpRecord = await prisma.emailOtp.findFirst({
-      where: { email },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (!otpRecord || otpRecord.otp !== otp) {
-      return NextResponse.json({ message: "Invalid OTP" }, { status: 400 });
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      return NextResponse.json({ message: "OTP expired" }, { status: 400 });
-    }
-
-    // 5. Transaction: Create User + Provider Request
+    // Transaction: Create Request + Update User
     await prisma.$transaction(async (tx) => {
-      // Create User
-      const newUser = await tx.users.create({
-        data: {
-          email,
-          password: hashedPassword,
-          role: "provider",
-          name:
-            userType === "individual"
-              ? `${firstName} ${lastName}`
-              : businessName,
-          providerRequestStatus: "PENDING",
-          isProviderAtFirst: true,
-          email_verified: true,
-        },
-      });
-
-      // Delete Used OTP
-      await tx.emailOtp.delete({
-        where: { id: otpRecord.id },
-      });
-
       // Create Provider Request
       await tx.providerRequest.create({
         data: {
-          userId: newUser.id,
+          userId: Number(session.user.id),
           userType,
           firstName,
           lastName,
@@ -139,10 +101,10 @@ export async function POST(req) {
           country,
           address,
           serviceRadius: serviceRadius ? parseInt(serviceRadius) : null,
-          serviceAreas: serviceAreas || [], // JSON
+          serviceAreas: serviceAreas || [],
 
           subCategoryId: subCategoryId ? parseInt(subCategoryId) : null,
-          servicesOffered: servicesOffered || [], // JSON
+          servicesOffered: servicesOffered || [],
           description,
           yearsExperience,
 
@@ -158,8 +120,7 @@ export async function POST(req) {
 
           idType,
           idNumber,
-          backgroundCheck: backgroundCheckConsent, // Map 'backgroundCheckConsent' (payload) to 'backgroundCheck' (model)
-          // Missing idProofUrl handling (assumed handled elsewhere or optional)
+          backgroundCheck: backgroundCheckConsent,
 
           termsAccepted,
           privacyAccepted,
@@ -168,15 +129,22 @@ export async function POST(req) {
           status: "PENDING",
         },
       });
+
+      // Update User Status
+      await tx.users.update({
+        where: { id: Number(session.user.id) },
+        data: {
+          providerRequestStatus: "PENDING",
+        },
+      });
     });
 
     return NextResponse.json(
-      { message: "Provider account created successfully" },
+      { message: "Provider request submitted successfully" },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Provider Signup Error:", error);
-    // Return the specific error message for debugging purposes
+    console.error("Provider Upgrade Error:", error);
     return NextResponse.json(
       { message: `Error: ${error.message}` },
       { status: 500 }
