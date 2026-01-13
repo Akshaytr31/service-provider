@@ -192,15 +192,6 @@ export default function ProviderRequestDetails() {
           </InfoCard>
         )}
 
-        {/* INDIVIDUAL DETAILS (ONLY FOR INDIVIDUAL) */}
-        {userType === "individual" && (
-          <Box bg="gray.700" color="gray.50" p={5}>
-            <Section title="Individual Details">
-              <Text>This provider registered as an individual.</Text>
-            </Section>
-          </Box>
-        )}
-
         {/* LOCATION */}
         <InfoCard title="Location">
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
