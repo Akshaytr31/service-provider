@@ -21,6 +21,9 @@ import {
   InputGroup,
   InputRightElement,
   IconButton,
+  Flex,
+  RadioGroup,
+  Radio,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
@@ -42,6 +45,7 @@ export default function SeekerOnboarding() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [form, setForm] = useState({
+    userType: "individual",
     dateOfBirth: "",
     gender: "",
     address: "",
@@ -52,14 +56,19 @@ export default function SeekerOnboarding() {
       year: "",
     },
     termsAccepted: false,
-    privacyAccepted: false,
-    updatesAccepted: false,
-    updatesAccepted: false,
     email: "",
     password: "",
     confirmPassword: "",
     otp: "",
   });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -71,39 +80,44 @@ export default function SeekerOnboarding() {
   /* ================= VALIDATION ================= */
   const validateStep = () => {
     switch (step) {
+      // STEP 0 – Account + OTP
       case 0:
-        if (!form.dateOfBirth || !form.gender || !form.address) {
-          return "Please complete all required personal details";
-        }
-        return null;
-
-      case 1:
-        if (
-          !form.education.qualification ||
-          !form.education.field ||
-          !form.education.institution ||
-          !form.education.year
-        ) {
-          return "Please complete all education details";
-        }
-        return null;
-
-      case 2:
-        if (!form.termsAccepted || !form.privacyAccepted) {
-          return "You must accept Terms & Privacy Policy";
-        }
-        return null;
-
-      case 3:
-      case 3:
         if (!form.email || !form.password || !form.confirmPassword) {
-          return "Please enter email, password and confirm password";
+          return "Email and password are required";
         }
         if (form.password !== form.confirmPassword) {
           return "Passwords do not match";
         }
         if (otpSent && !form.otp) {
           return "Please enter OTP";
+        }
+        return null;
+
+      // STEP 1 – User type selection only
+      case 1:
+        if (!form.userType) {
+          return "Please select user type";
+        }
+        return null;
+
+      // STEP 2 – Education (ONLY for individual)
+      case 2:
+        if (form.userType === "business") return null;
+
+        if (
+          !form.education.qualification ||
+          !form.education.field ||
+          !form.education.institution ||
+          !form.education.year
+        ) {
+          return "Please complete education details";
+        }
+        return null;
+
+      // STEP 3 – Legal
+      case 3:
+        if (!form.termsAccepted) {
+          return "You must accept Terms & Privacy Policy";
         }
         return null;
 
@@ -146,50 +160,59 @@ export default function SeekerOnboarding() {
       return;
     }
 
-    if (step < TOTAL_STEPS - 1) {
-      setStep(step + 1);
-    } else {
+    // STEP 0 – OTP FLOW
+    if (step === 0) {
       if (!otpSent) {
         await handleSendOtp();
-        setLoading(false);
         return;
       }
-      // FINAL SUBMISSION
+
+      // verify OTP
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, otp: form.otp }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: data.message || "Invalid OTP", status: "error" });
+        return;
+      }
+
+      toast({ title: "Email verified", status: "success" });
+      setStep(1);
+      return;
+    }
+
+    // FINAL STEP → CREATE ACCOUNT
+    if (step === TOTAL_STEPS - 1) {
       setLoading(true);
       try {
         const payload = {
-            // Personal
-            dateOfBirth: form.dateOfBirth,
-            gender: form.gender,
-            address: form.address,
-            // Education
-            education: form.education,
-            // Legal
-            termsAccepted: form.termsAccepted,
-            privacyAccepted: form.privacyAccepted,
-            // Account
-            email: form.email,
-            password: form.password,
-            otp: form.otp
+          email: form.email,
+          password: form.password,
+          userType: form.userType,
+          dateOfBirth: form.dateOfBirth || null,
+          gender: form.gender || null,
+          address: form.address || null,
+          education: form.userType === "individual" ? form.education : null,
         };
 
         const res = await fetch("/api/auth/signup-seeker", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Signup failed");
 
-        // Login
-        const loginRes = await signIn("credentials", {
-            redirect: false,
-            email: form.email,
-            password: form.password
+        await signIn("credentials", {
+          redirect: false,
+          email: form.email,
+          password: form.password,
         });
-
-        if (loginRes?.error) throw new Error("Account created but failed to login");
 
         toast({ title: "Onboarding completed", status: "success" });
         router.push("/");
@@ -198,7 +221,11 @@ export default function SeekerOnboarding() {
       } finally {
         setLoading(false);
       }
+      return;
     }
+
+    // NORMAL NEXT
+    setStep((s) => s + 1);
   };
 
   const handleBack = () => {
@@ -206,7 +233,7 @@ export default function SeekerOnboarding() {
   };
 
   return (
-    <Container maxW="container.md" py={10}>
+    <Container maxW="container.md" py={10} marginTop={"70px"}>
       <Heading mb={4}>Seeker Onboarding</Heading>
       <Box
         position="fixed"
@@ -225,47 +252,273 @@ export default function SeekerOnboarding() {
           borderRadius="md"
         />
       </Box>
-
-      {/* STEP 0 */}
       {step === 0 && (
         <Stack spacing={4}>
+          <Heading size="md">Account Details</Heading>
           <FormControl isRequired>
-            <FormLabel>Date of Birth</FormLabel>
+            <FormLabel>Email</FormLabel>
             <Input
-              type="date"
-              value={form.dateOfBirth}
-              onChange={(e) =>
-                setForm({ ...form, dateOfBirth: e.target.value })
-              }
+              type="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </FormControl>
+          <Flex gap={2}>
+            <FormControl isRequired>
+              <FormLabel>Password</FormLabel>
+              <InputGroup>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                />
+                <InputRightElement>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    onClick={() => setShowPassword(!showPassword)}
+                  />
+                </InputRightElement>
+              </InputGroup>
+            </FormControl>
 
-          <FormControl isRequired>
-            <FormLabel>Gender</FormLabel>
-            <Select
-              placeholder="Select gender"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            <FormControl isRequired>
+              <FormLabel>Confirm Password</FormLabel>
+              <InputGroup>
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    setForm({ ...form, confirmPassword: e.target.value })
+                  }
+                />
+                <InputRightElement>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                </InputRightElement>
+              </InputGroup>
+            </FormControl>
+          </Flex>
+
+          {!otpSent ? (
+            <Button
+              onClick={handleSendOtp}
+              isLoading={otpLoading}
+              variant="outline"
+              colorScheme="blue"
+              mt={2}
             >
-              <option>Male</option>
-              <option>Female</option>
-              <option>Prefer not to say</option>
-            </Select>
-          </FormControl>
+              Send OTP to Verify
+            </Button>
+          ) : (
+            <Stack spacing={2}>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Enter OTP
+                </FormLabel>
+                <HStack>
+                  <Input
+                    placeholder="######"
+                    value={form.otp}
+                    onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                    maxLength={6}
+                    textAlign="center"
+                    letterSpacing={2}
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleResendOtp}
+                    isDisabled={resendTimer > 0}
+                    color="blue.500"
+                  >
+                    {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
+                  </Button>
+                </HStack>
+              </FormControl>
+              <Button
+                onClick={handleNext}
+                isLoading={loading}
+                colorScheme="green"
+                width="full"
+                mt={2}
+              >
+                Verify & Finish
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+      )}
 
-          <FormControl isRequired>
-            <FormLabel>Address</FormLabel>
-            <Textarea
-              placeholder="Full address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          </FormControl>
+      {/* STEP 0 */}
+      {step === 1 && (
+        <Stack spacing={4} alignItems={"center"} width="full">
+          <Heading size="md" color="gray.600">
+            Basic Details & Select type
+          </Heading>
+
+          <RadioGroup
+            value={form.userType}
+            onChange={(val) => setForm((p) => ({ ...p, userType: val }))}
+          >
+            <HStack>
+              <Radio value="individual">Individual</Radio>
+              <Radio value="business">Business</Radio>
+            </HStack>
+          </RadioGroup>
+
+          {/* INDIVIDUAL FIELDS */}
+          {form.userType === "individual" && (
+            <Box w="full">
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">First Name</FormLabel>
+                <Input
+                  name="firstName"
+                  placeholder="First Name"
+                  value={form.firstName}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Last Name</FormLabel>
+                <Input
+                  name="lastName"
+                  placeholder="Last Name"
+                  value={form.lastName}
+                  onChange={handleChange}
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Document Type</FormLabel>
+                <Select
+                  name="idType"
+                  value={form.idType}
+                  onChange={handleChange}
+                >
+                  <option value="" disabled>
+                    Select Document
+                  </option>
+                  <option value="Passport">Passport</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="National ID">National ID</option>
+                </Select>
+              </FormControl>
+
+              {/* ID NUMBER */}
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Document Number</FormLabel>
+                <Input
+                  name="idNumber"
+                  type="text"
+                  inputMode={form.idType === "Passport" ? "text" : "numeric"}
+                  placeholder={
+                    form.idType === "Passport"
+                      ? "Passport Number (A1234567)"
+                      : "ID Number"
+                  }
+                  value={form.idNumber}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              {/* BACKGROUND CHECK */}
+              <FormControl>
+                <Checkbox
+                  isChecked={form.backgroundCheckConsent}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      backgroundCheckConsent: e.target.checked,
+                    }))
+                  }
+                >
+                  I consent to background check
+                </Checkbox>
+              </FormControl>
+            </Box>
+          )}
+
+          {/* BUSINESS FIELDS */}
+          {form.userType === "business" && (
+            <Stack spacing={4} width={"full"}>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Business Name</FormLabel>
+                <Input
+                  name="businessName"
+                  placeholder="Business Name"
+                  value={form.businessName}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Business Type</FormLabel>
+                <Select
+                  name="businessType"
+                  value={form.businessType}
+                  onChange={handleChange}
+                >
+                  <option value="Company">Company</option>
+                  <option value="Agency">Agency</option>
+                </Select>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Registration Number</FormLabel>
+                <Input
+                  name="registrationNumber"
+                  placeholder="Registration Number"
+                  value={form.registrationNumber}
+                  onChange={handleChange}
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Establishment Year</FormLabel>
+                <Input
+                  name="establishmentYear"
+                  placeholder="Establishment Year"
+                  value={form.establishmentYear}
+                  onChange={handleChange}
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">TRN Number</FormLabel>
+                <Input
+                  name="trnNumber"
+                  placeholder="TRN Number"
+                  value={form.trnNumber}
+                  onChange={handleChange}
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm">Expiry Date</FormLabel>
+                <Input
+                  name="expiryDate"
+                  type="date"
+                  placeholder="Expiry Date"
+                  value={form.expiryDate}
+                  onChange={handleChange}
+                />
+              </FormControl>
+            </Stack>
+          )}
         </Stack>
       )}
 
       {/* STEP 1 */}
-      {step === 1 && (
+      {step === 2 && (
         <Stack spacing={4}>
           <FormControl isRequired>
             <FormLabel>Qualification</FormLabel>
@@ -332,7 +585,7 @@ export default function SeekerOnboarding() {
       )}
 
       {/* STEP 2 */}
-      {step === 2 && (
+      {step === 3 && (
         <Stack spacing={4}>
           <Checkbox
             isChecked={form.termsAccepted}
@@ -343,140 +596,24 @@ export default function SeekerOnboarding() {
             I agree to Terms & Conditions *
           </Checkbox>
 
-          <Checkbox
-            isChecked={form.privacyAccepted}
-            onChange={(e) =>
-              setForm({ ...form, privacyAccepted: e.target.checked })
-            }
-          >
-            I agree to Privacy Policy *
-          </Checkbox>
-
-          <Checkbox
-            isChecked={form.updatesAccepted}
-            onChange={(e) =>
-              setForm({ ...form, updatesAccepted: e.target.checked })
-            }
-          >
-            Receive updates (optional)
-          </Checkbox>
         </Stack>
       )}
 
       {/* STEP 3 */}
-      {step === 3 && (
-        <Stack spacing={4}>
-           <Heading size="md">Account Details</Heading>
-          <FormControl isRequired>
-            <FormLabel>Email</FormLabel>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              isDisabled={otpSent}
-            />
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel>Password</FormLabel>
-            <InputGroup>
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                isDisabled={otpSent}
-              />
-              <InputRightElement>
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                  onClick={() => setShowPassword(!showPassword)}
-                />
-              </InputRightElement>
-            </InputGroup>
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel>Confirm Password</FormLabel>
-            <InputGroup>
-              <Input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                value={form.confirmPassword}
-                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                isDisabled={otpSent}
-              />
-              <InputRightElement>
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                />
-              </InputRightElement>
-            </InputGroup>
-          </FormControl>
-
-          {!otpSent ? (
-              <Button 
-                onClick={handleSendOtp} 
-                isLoading={otpLoading}
-                variant="outline"
-                colorScheme="blue"
-                mt={2}
-              >
-                Send OTP to Verify
-              </Button>
-            ) : (
-              <Stack spacing={2}>
-                 <FormControl isRequired>
-                    <FormLabel fontSize="sm" fontWeight="bold">Enter OTP</FormLabel>
-                    <HStack>
-                      <Input
-                        placeholder="######"
-                        value={form.otp}
-                        onChange={(e) => setForm({ ...form, otp: e.target.value })}
-                        maxLength={6}
-                        textAlign="center"
-                        letterSpacing={2}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleResendOtp}
-                        isDisabled={resendTimer > 0}
-                        color="blue.500"
-                      >
-                        {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
-                      </Button>
-                    </HStack>
-                 </FormControl>
-                 <Button
-                    onClick={handleNext}
-                    isLoading={loading}
-                    colorScheme="green"
-                    width="full"
-                    mt={2}
-                 >
-                    Verify & Finish
-                 </Button>
-              </Stack>
-            )}
-        </Stack>
-      )}
 
       <HStack mt={6} justify="space-between">
         <Button variant="outline" onClick={handleBack} isDisabled={step === 0}>
           Back
         </Button>
-        {step < 3 && (
-         <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
-            {step === TOTAL_STEPS - 1 ? (otpSent ? "Sign Up & Finish" : "Send OTP") : "Next"}
-          </Button>
-        )}
+        <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
+          {step === 0
+            ? otpSent
+              ? "Verify & Next"
+              : "Send OTP"
+            : step === TOTAL_STEPS - 1
+            ? "Finish"
+            : "Next"}
+        </Button>
       </HStack>
     </Container>
   );

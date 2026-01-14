@@ -40,6 +40,7 @@ model users {
   createdAt             DateTime @default(now()) @db.Timestamp(0)
 
   providerRequests ProviderRequest[]
+  seekerProfile SeekerProfile?
 
   @@map("users")
 }
@@ -181,3 +182,44 @@ enum provider_requests_status {
   APPROVED
   REJECTED
 }
+
+model SeekerProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  userType        String
+
+  // Individual
+  firstName       String?
+  lastName        String?
+  idType          String?
+  idNumber        String?
+  backgroundCheck Boolean  @default(false)
+
+  // Business
+  businessName       String?
+  businessType       String?
+  registrationNumber String?
+  establishmentYear  String?
+  trnNumber          String?
+  businessExpiryDate String?
+
+  // Common
+  gender            String?
+  address           String?
+
+  // Education
+  qualifications    Json?
+  fieldOfStudy      String?
+  institution       String?
+  year              String?
+
+  acceptedTermsandconditions Boolean @default(false)
+  createdAt         DateTime @default(now())
+
+  user users @relation(fields: [userId], references: [id])
+}
+
+
+
+
+

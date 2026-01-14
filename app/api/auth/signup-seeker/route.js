@@ -5,22 +5,48 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const body = await req.json();
+
     const {
       email,
       password,
-      dateOfBirth,
-      otp,
-      // The following fields are collected but strictly speaking
-      // there is no column in `users` table for them yet, 
-      // except dateOfBirth.
-      // gender,
-      // address,
-      // education
+      userType,
+
+      // Individual
+      firstName,
+      lastName,
+      idType,
+      idNumber,
+      backgroundCheckConsent,
+
+      // Business
+      businessName,
+      businessType,
+      registrationNumber,
+      establishmentYear,
+      trnNumber,
+      businessExpiryDate,
+
+      // Education
+      education,
+
+      // Common
+      gender,
+      address,
+      acceptedTermsandconditions,
     } = body;
 
-    if (!email || !password) {
+    /* ================= BASIC VALIDATION ================= */
+
+    if (!email || !password || !userType) {
       return NextResponse.json(
-        { message: "Email and password are required" },
+        { message: "Invalid signup payload" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: "Password must be at least 6 characters" },
         { status: 400 }
       );
     }
@@ -38,46 +64,53 @@ export async function POST(req) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Verify OTP
-    if (!otp) {
-      return NextResponse.json(
-        { message: "OTP is required" },
-        { status: 400 }
-      );
-    }
-
-    const otpRecord = await prisma.emailOtp.findFirst({
-      where: { email },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (!otpRecord || otpRecord.otp !== otp) {
-      return NextResponse.json(
-        { message: "Invalid OTP" },
-        { status: 400 }
-      );
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      return NextResponse.json(
-        { message: "OTP expired" },
-        { status: 400 }
-      );
-    }
+    /* ================= TRANSACTION ================= */
 
     await prisma.$transaction(async (tx) => {
-       await tx.users.create({
+      // 1️⃣ Create user
+      const user = await tx.users.create({
         data: {
           email,
           password: hashedPassword,
           role: "seeker",
-          dateOfBirth: dateOfBirth || null,
           email_verified: true,
         },
       });
 
-      await tx.emailOtp.delete({
-        where: { id: otpRecord.id }
+      // 2️⃣ Create seeker profile
+      await tx.seekerProfile.create({
+        data: {
+          userId: user.id,
+          userType,
+
+          // Individual fields
+          ...(userType === "individual" && {
+            firstName: firstName || null,
+            lastName: lastName || null,
+            idType: idType || null,
+            idNumber: idNumber || null,
+            backgroundCheck: backgroundCheckConsent || false,
+            qualifications: education ? [education] : null,
+            fieldOfStudy: education?.field || null,
+            institution: education?.institution || null,
+            year: education?.year || null,
+          }),
+
+          // Business fields
+          ...(userType === "business" && {
+            businessName: businessName || null,
+            businessType: businessType || null,
+            registrationNumber: registrationNumber || null,
+            establishmentYear: establishmentYear || null,
+            trnNumber: trnNumber || null,
+            businessExpiryDate: businessExpiryDate || null,
+          }),
+
+          // Common
+          gender: gender || null,
+          address: address || null,
+          acceptedTermsandconditions: acceptedTermsandconditions || false,
+        },
       });
     });
 
@@ -86,7 +119,7 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Seeker Signup Error:", error);
+    console.error("Signup error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }
