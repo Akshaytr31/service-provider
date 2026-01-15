@@ -168,6 +168,72 @@ export default function ProviderOnboardingPage() {
     return () => clearInterval(t);
   }, [resendTimer]);
 
+  // Fetch seeker profile and prefill form for authenticated users
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const fetchSeekerProfile = async () => {
+      try {
+        const res = await fetch("/api/seeker/profile");
+        const data = await res.json();
+        if (data.profile) {
+          const p = data.profile;
+          // Parse qualifications if it's a JSON array
+          let educationData = {};
+          if (
+            p.qualifications &&
+            Array.isArray(p.qualifications) &&
+            p.qualifications.length > 0
+          ) {
+            const qual = p.qualifications[0];
+            educationData = {
+              degree: qual.qualification || qual.degree || "",
+              institution: qual.institution || p.institution || "",
+              yearOfCompletion: qual.year || p.year || "",
+            };
+          } else {
+            educationData = {
+              degree: "",
+              institution: p.institution || "",
+              yearOfCompletion: p.year || "",
+            };
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            // User type
+            userType: p.userType || prev.userType,
+            // Individual fields
+            firstName: p.firstName || "",
+            lastName: p.lastName || "",
+            idType: p.idType || "",
+            idNumber: p.idNumber || "",
+            backgroundCheckConsent: p.backgroundCheck || false,
+            // Business fields
+            businessName: p.businessName || "",
+            businessType: p.businessType || "Company",
+            registrationNumber: p.registrationNumber || "",
+            establishmentYear: p.establishmentYear || "",
+            trnNumber: p.trnNumber || "",
+            expiryDate: p.businessExpiryDate || "",
+            // Address fields
+            city: p.city || "",
+            zipCode: p.zipCode || "",
+            state: p.state || "",
+            country: p.country || "",
+            address: p.address || "",
+            // Education
+            ...educationData,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch seeker profile:", err);
+      }
+    };
+
+    fetchSeekerProfile();
+  }, [status]);
+
   /* ================= HELPERS ================= */
 
   const handleChange = (e) => {
@@ -188,11 +254,11 @@ export default function ProviderOnboardingPage() {
   };
 
   const handleBack = () => {
-  if (step === 5 && formData.userType === "business") {
-    setStep(3);
-  } else if (step > 0) {
-    setStep(step - 1);
-  }
+    if (step === 5 && formData.userType === "business") {
+      setStep(3);
+    } else if (step > 0) {
+      setStep(step - 1);
+    }
   };
 
   /* ================= OTP ================= */
@@ -908,7 +974,12 @@ export default function ProviderOnboardingPage() {
             <HStack>
               <FormControl isRequired>
                 <FormLabel fontSize="sm">City</FormLabel>
-                <Input name="city" placeholder="City" onChange={handleChange} />
+                <Input
+                  name="city"
+                  placeholder="City"
+                  value={formData.city}
+                  onChange={handleChange}
+                />
               </FormControl>
 
               <FormControl isRequired>
@@ -916,6 +987,7 @@ export default function ProviderOnboardingPage() {
                 <Input
                   name="zipCode"
                   placeholder="Zip Code"
+                  value={formData.zipCode}
                   onChange={handleChange}
                 />
               </FormControl>
@@ -923,7 +995,12 @@ export default function ProviderOnboardingPage() {
 
             <FormControl isRequired>
               <FormLabel fontSize="sm">State/Emirates/Governorate</FormLabel>
-              <Input name="state" placeholder="State" onChange={handleChange} />
+              <Input
+                name="state"
+                placeholder="State"
+                value={formData.state}
+                onChange={handleChange}
+              />
             </FormControl>
 
             <FormControl isRequired>
@@ -931,6 +1008,7 @@ export default function ProviderOnboardingPage() {
               <Input
                 name="country"
                 placeholder="Country"
+                value={formData.country}
                 onChange={handleChange}
               />
             </FormControl>
@@ -940,6 +1018,7 @@ export default function ProviderOnboardingPage() {
               <Textarea
                 name="address"
                 placeholder="Full Address"
+                value={formData.address}
                 onChange={handleChange}
               />
             </FormControl>
@@ -993,8 +1072,9 @@ export default function ProviderOnboardingPage() {
             <FormControl>
               <FormLabel fontSize="sm">Service Locality</FormLabel>
               <Textarea
-                name="serviceLocality"
-                placeholder="Service Locality"
+                name="serviceAreasInput"
+                placeholder="Service Locality (comma separated)"
+                value={formData.serviceAreasInput}
                 onChange={handleChange}
               />
             </FormControl>
@@ -1059,6 +1139,7 @@ export default function ProviderOnboardingPage() {
               <Textarea
                 name="servicesOfferedInput"
                 placeholder="Services Offered (comma separated)"
+                value={formData.servicesOfferedInput}
                 onChange={handleChange}
               />
             </FormControl>
@@ -1069,6 +1150,7 @@ export default function ProviderOnboardingPage() {
               <Textarea
                 name="description"
                 placeholder="Describe your service"
+                value={formData.description}
                 onChange={handleChange}
               />
             </FormControl>
@@ -1079,6 +1161,7 @@ export default function ProviderOnboardingPage() {
               <Input
                 name="yearsExperience"
                 placeholder="Years of Experience"
+                value={formData.yearsExperience}
                 onChange={handleChange}
               />
             </FormControl>
@@ -1091,7 +1174,7 @@ export default function ProviderOnboardingPage() {
             <Heading size="sm">Qualification</Heading>
 
             <FormControl isRequired width={"full"}>
-              <FormLabel fontSize="sm" >Qualification</FormLabel>
+              <FormLabel fontSize="sm">Qualification</FormLabel>
               <Input
                 name="degree"
                 placeholder="Qualification"

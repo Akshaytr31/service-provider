@@ -111,10 +111,29 @@ export default function SeekerOnboarding() {
         }
         return null;
 
-      // STEP 1 – User type selection only
+      // STEP 1 – User type and basic details
       case 1:
         if (!form.userType) {
           return "Please select user type";
+        }
+        if (form.userType === "individual") {
+          if (!form.firstName || !form.lastName) {
+            return "First and last name are required";
+          }
+          if (!form.idType || !form.idNumber) {
+            return "ID type and ID number are required";
+          }
+        } else if (form.userType === "business") {
+          if (
+            !form.businessName ||
+            !form.businessType ||
+            !form.registrationNumber ||
+            !form.establishmentYear ||
+            !form.trnNumber ||
+            !form.expiryDate
+          ) {
+            return "Please complete all business details";
+          }
         }
         return null;
 
@@ -249,6 +268,11 @@ export default function SeekerOnboarding() {
           // Terms
           acceptedTermsandconditions: form.termsAccepted || false,
         };
+
+        console.log(
+          "Submitting Seeker Onboarding Payload:",
+          JSON.stringify(payload, null, 2)
+        );
 
         const res = await fetch("/api/auth/signup-seeker", {
           method: "POST",

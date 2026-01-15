@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const body = await req.json();
+    console.log("Signup Payload Received:", JSON.stringify(body, null, 2));
 
     const {
       email,
@@ -81,44 +82,52 @@ export async function POST(req) {
         },
       });
 
-      // 2️⃣ Create seeker profile
+      console.log("User created with ID:", user.id);
+
+      // 2️⃣ Construct profile data explicitly
+      const profileData = {
+        userId: user.id,
+        userType,
+        gender: gender || null,
+        address: address || null,
+        city: city || null,
+        zipCode: zipCode || null,
+        state: state || null,
+        country: country || null,
+        acceptedTermsandconditions: acceptedTermsandconditions || false,
+      };
+
+      if (userType === "individual") {
+        Object.assign(profileData, {
+          firstName: firstName || null,
+          lastName: lastName || null,
+          idType: idType || null,
+          idNumber: idNumber || null,
+          backgroundCheck: backgroundCheckConsent || false,
+          qualifications: education ? [education] : null,
+          fieldOfStudy: education?.field || null,
+          institution: education?.institution || null,
+          year: education?.year || null,
+        });
+      } else if (userType === "business") {
+        Object.assign(profileData, {
+          businessName: businessName || null,
+          businessType: businessType || null,
+          registrationNumber: registrationNumber || null,
+          establishmentYear: establishmentYear || null,
+          trnNumber: trnNumber || null,
+          businessExpiryDate: businessExpiryDate || null,
+        });
+      }
+
+      console.log(
+        "Inserting Seeker Profile Data:",
+        JSON.stringify(profileData, null, 2)
+      );
+
+      // 3️⃣ Create seeker profile
       await tx.seekerProfile.create({
-        data: {
-          userId: user.id,
-          userType,
-
-          // Individual fields
-          ...(userType === "individual" && {
-            firstName: firstName || null,
-            lastName: lastName || null,
-            idType: idType || null,
-            idNumber: idNumber || null,
-            backgroundCheck: backgroundCheckConsent || false,
-            qualifications: education ? [education] : null,
-            fieldOfStudy: education?.field || null,
-            institution: education?.institution || null,
-            year: education?.year || null,
-          }),
-
-          // Business fields
-          ...(userType === "business" && {
-            businessName: businessName || null,
-            businessType: businessType || null,
-            registrationNumber: registrationNumber || null,
-            establishmentYear: establishmentYear || null,
-            trnNumber: trnNumber || null,
-            businessExpiryDate: businessExpiryDate || null,
-          }),
-
-          // Common
-          gender: gender || null,
-          address: address || null,
-          city: city || null,
-          zipCode: zipCode || null,
-          state: state || null,
-          country: country || null,
-          acceptedTermsandconditions: acceptedTermsandconditions || false,
-        },
+        data: profileData,
       });
     });
 
@@ -127,9 +136,9 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Signup error details:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: "Internal server error", error: error.message },
       { status: 500 }
     );
   }
