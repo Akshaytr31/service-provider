@@ -29,7 +29,7 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function SeekerOnboarding() {
   const router = useRouter();
@@ -49,6 +49,24 @@ export default function SeekerOnboarding() {
     dateOfBirth: "",
     gender: "",
     address: "",
+    city: "",
+    zipCode: "",
+    state: "",
+    country: "",
+    // Individual fields
+    firstName: "",
+    lastName: "",
+    idType: "",
+    idNumber: "",
+    backgroundCheckConsent: false,
+    // Business fields
+    businessName: "",
+    businessType: "Company",
+    registrationNumber: "",
+    establishmentYear: "",
+    trnNumber: "",
+    expiryDate: "",
+    // Education
     education: {
       qualification: "",
       field: "",
@@ -100,8 +118,21 @@ export default function SeekerOnboarding() {
         }
         return null;
 
-      // STEP 2 – Education (ONLY for individual)
+      // STEP 2 – Address fields
       case 2:
+        if (
+          !form.city ||
+          !form.zipCode ||
+          !form.state ||
+          !form.country ||
+          !form.address
+        ) {
+          return "Please complete all address fields";
+        }
+        return null;
+
+      // STEP 3 – Education (ONLY for individual)
+      case 3:
         if (form.userType === "business") return null;
 
         if (
@@ -114,8 +145,8 @@ export default function SeekerOnboarding() {
         }
         return null;
 
-      // STEP 3 – Legal
-      case 3:
+      // STEP 4 – Legal
+      case 4:
         if (!form.termsAccepted) {
           return "You must accept Terms & Privacy Policy";
         }
@@ -196,7 +227,27 @@ export default function SeekerOnboarding() {
           dateOfBirth: form.dateOfBirth || null,
           gender: form.gender || null,
           address: form.address || null,
+          city: form.city || null,
+          zipCode: form.zipCode || null,
+          state: form.state || null,
+          country: form.country || null,
+          // Individual fields
+          firstName: form.firstName || null,
+          lastName: form.lastName || null,
+          idType: form.idType || null,
+          idNumber: form.idNumber || null,
+          backgroundCheckConsent: form.backgroundCheckConsent || false,
+          // Business fields
+          businessName: form.businessName || null,
+          businessType: form.businessType || null,
+          registrationNumber: form.registrationNumber || null,
+          establishmentYear: form.establishmentYear || null,
+          trnNumber: form.trnNumber || null,
+          businessExpiryDate: form.expiryDate || null,
+          // Education
           education: form.userType === "individual" ? form.education : null,
+          // Terms
+          acceptedTermsandconditions: form.termsAccepted || false,
         };
 
         const res = await fetch("/api/auth/signup-seeker", {
@@ -224,12 +275,23 @@ export default function SeekerOnboarding() {
       return;
     }
 
-    // NORMAL NEXT
-    setStep((s) => s + 1);
+    // NORMAL NEXT - skip step 3 (education) for business users
+    if (step === 2 && form.userType === "business") {
+      setStep(4); // Skip education, go to terms
+    } else {
+      setStep((s) => s + 1);
+    }
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step > 0) {
+      // Skip step 3 (education) for business users when going back
+      if (step === 4 && form.userType === "business") {
+        setStep(2); // Skip education, go back to address
+      } else {
+        setStep(step - 1);
+      }
+    }
   };
 
   return (
@@ -517,8 +579,64 @@ export default function SeekerOnboarding() {
         </Stack>
       )}
 
-      {/* STEP 1 */}
       {step === 2 && (
+        <Stack spacing={4}>
+          <HStack>
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">City</FormLabel>
+              <Input
+                name="city"
+                placeholder="City"
+                value={form.city}
+                onChange={handleChange}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontSize="sm">Zip Code</FormLabel>
+              <Input
+                name="zipCode"
+                placeholder="Zip Code"
+                value={form.zipCode}
+                onChange={handleChange}
+              />
+            </FormControl>
+          </HStack>
+
+          <FormControl isRequired>
+            <FormLabel fontSize="sm">State/Emirates/Governorate</FormLabel>
+            <Input
+              name="state"
+              placeholder="State"
+              value={form.state}
+              onChange={handleChange}
+            />
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormLabel fontSize="sm">Country</FormLabel>
+            <Input
+              name="country"
+              placeholder="Country"
+              value={form.country}
+              onChange={handleChange}
+            />
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormLabel fontSize="sm">Full Address</FormLabel>
+            <Textarea
+              name="address"
+              placeholder="Full Address"
+              value={form.address}
+              onChange={handleChange}
+            />
+          </FormControl>
+        </Stack>
+      )}
+
+      {/* STEP 1 */}
+      {step === 3 && (
         <Stack spacing={4}>
           <FormControl isRequired>
             <FormLabel>Qualification</FormLabel>
@@ -585,7 +703,7 @@ export default function SeekerOnboarding() {
       )}
 
       {/* STEP 2 */}
-      {step === 3 && (
+      {step === 4 && (
         <Stack spacing={4}>
           <Checkbox
             isChecked={form.termsAccepted}
@@ -595,7 +713,6 @@ export default function SeekerOnboarding() {
           >
             I agree to Terms & Conditions *
           </Checkbox>
-
         </Stack>
       )}
 

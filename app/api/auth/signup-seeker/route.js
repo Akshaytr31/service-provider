@@ -32,6 +32,10 @@ export async function POST(req) {
       // Common
       gender,
       address,
+      city,
+      zipCode,
+      state,
+      country,
       acceptedTermsandconditions,
     } = body;
 
@@ -109,6 +113,10 @@ export async function POST(req) {
           // Common
           gender: gender || null,
           address: address || null,
+          city: city || null,
+          zipCode: zipCode || null,
+          state: state || null,
+          country: country || null,
           acceptedTermsandconditions: acceptedTermsandconditions || false,
         },
       });

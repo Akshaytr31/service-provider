@@ -206,6 +206,10 @@ model SeekerProfile {
   // Common
   gender            String?
   address           String?
+  city              String?
+  state             String?
+  country           String?
+  zipCode           String?
 
   // Education
   qualifications    Json?
