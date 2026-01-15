@@ -16,6 +16,7 @@ import {
   HStack,
   Card,
   CardBody,
+  Flex
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import CategoryManager from "../components/admin/CategoryManager";
@@ -47,9 +48,12 @@ export default function AdminDashboard() {
 
   return (
     <Box p={6} maxW="1200px" mx="auto">
-      <Heading mb={6} color="gray.700">Admin Dashboard</Heading>
+      <Heading mb={6} color="gray.700">
+        Admin Dashboard
+      </Heading>
 
       {/* ================= ACTION BUTTONS ================= */}
+      <Flex justify="space-between">
       <HStack spacing={4} mb={8}>
         <Button
           colorScheme={activeView === "categories" ? "green" : "gray"}
@@ -65,6 +69,15 @@ export default function AdminDashboard() {
           Provider Requests
         </Button>
       </HStack>
+
+      <Button
+        colorScheme="blue"
+        variant="outline"
+        onClick={() => router.push("/admin/privacy-policy")}
+      >
+        Privacy Policy
+      </Button>
+      </Flex>
 
       {/* ================= CATEGORY MANAGER ================= */}
       {activeView === "categories" && (

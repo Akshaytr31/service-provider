@@ -223,6 +223,14 @@ model SeekerProfile {
   user users @relation(fields: [userId], references: [id])
 }
 
+model PrivacyPolicy {
+  id        Int      @id @default(1)
+  content   String   @db.LongText
+  updatedAt DateTime @updatedAt
+
+  @@map("privacy_policy")
+}
+
 
 
 

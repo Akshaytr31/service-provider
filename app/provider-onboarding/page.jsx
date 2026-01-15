@@ -58,6 +58,7 @@ export default function ProviderOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [privacyPolicy, setPrivacyPolicy] = useState("");
 
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -148,6 +149,20 @@ export default function ProviderOnboardingPage() {
   });
 
   /* ================= EFFECTS ================= */
+  useEffect(() => {
+    const fetchPrivacyPolicy = async () => {
+      try {
+        const res = await fetch("/api/admin/privacyPolicy");
+        const data = await res.json();
+        if (data?.content) {
+          setPrivacyPolicy(data.content);
+        }
+      } catch (error) {
+        console.error("Failed to fetch privacy policy:", error);
+      }
+    };
+    fetchPrivacyPolicy();
+  }, []);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -431,12 +446,8 @@ export default function ProviderOnboardingPage() {
 
       case 8:
         // Terms - Was Step 9
-        if (
-          !formData.termsAccepted ||
-          !formData.privacyAccepted ||
-          !formData.rulesAccepted
-        ) {
-          return "You must accept all legal agreements";
+        if (!formData.termsAccepted) {
+          return "You must accept the terms and conditions";
         }
         return null;
 
@@ -1355,6 +1366,20 @@ export default function ProviderOnboardingPage() {
 
         {step === 8 && (
           <Stack spacing={4}>
+            <Heading size="sm">Privacy Policy</Heading>
+            <Box
+              p={4}
+              borderWidth="1px"
+              borderRadius="md"
+              maxH="300px"
+              overflowY="auto"
+              bg="gray.800"
+              color="white"
+            >
+              <Text whiteSpace="pre-wrap" fontSize="sm">
+                {privacyPolicy || "Loading privacy policy..."}
+              </Text>
+            </Box>
             <Checkbox
               isChecked={formData.termsAccepted}
               onChange={(e) =>
@@ -1362,27 +1387,6 @@ export default function ProviderOnboardingPage() {
               }
             >
               Accept Terms & Conditions
-            </Checkbox>
-
-            <Checkbox
-              isChecked={formData.privacyAccepted}
-              onChange={(e) =>
-                setFormData((p) => ({
-                  ...p,
-                  privacyAccepted: e.target.checked,
-                }))
-              }
-            >
-              Accept Privacy Policy
-            </Checkbox>
-
-            <Checkbox
-              isChecked={formData.rulesAccepted}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, rulesAccepted: e.target.checked }))
-              }
-            >
-              Agree to Platform Rules
             </Checkbox>
           </Stack>
         )}

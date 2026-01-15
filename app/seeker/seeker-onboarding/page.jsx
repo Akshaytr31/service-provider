@@ -43,6 +43,7 @@ export default function SeekerOnboarding() {
   const [resendTimer, setResendTimer] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [privacyPolicy, setPrivacyPolicy] = useState("");
 
   const [form, setForm] = useState({
     userType: "individual",
@@ -87,6 +88,21 @@ export default function SeekerOnboarding() {
       [name]: value,
     }));
   };
+
+  useEffect(() => {
+    const fetchPrivacyPolicy = async () => {
+      try {
+        const res = await fetch("/api/admin/privacyPolicy");
+        const data = await res.json();
+        if (data?.content) {
+          setPrivacyPolicy(data.content);
+        }
+      } catch (error) {
+        console.error("Failed to fetch privacy policy:", error);
+      }
+    };
+    fetchPrivacyPolicy();
+  }, []);
 
   /* ================= TIMER ================= */
   useEffect(() => {
@@ -729,6 +745,20 @@ export default function SeekerOnboarding() {
       {/* STEP 2 */}
       {step === 4 && (
         <Stack spacing={4}>
+          <Heading size="sm">Privacy Policy</Heading>
+          <Box
+            p={4}
+            borderWidth="1px"
+            borderRadius="md"
+            maxH="300px"
+            overflowY="auto"
+            bg="gray.800"
+            color="white"
+          >
+            <Text whiteSpace="pre-wrap" fontSize="sm">
+              {privacyPolicy || "Loading privacy policy..."}
+            </Text>
+          </Box>
           <Checkbox
             isChecked={form.termsAccepted}
             onChange={(e) =>
