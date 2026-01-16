@@ -83,9 +83,24 @@ export default function SeekerOnboarding() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    const numericFields = [
+      "zipCode",
+      "establishmentYear",
+      "registrationNumber",
+      "trnNumber",
+      "otp",
+    ];
+
+    let finalValue = value;
+
+    if (numericFields.includes(name)) {
+      finalValue = value.replace(/\D/g, "");
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
   };
 
@@ -430,12 +445,15 @@ export default function SeekerOnboarding() {
                 </FormLabel>
                 <HStack>
                   <Input
+                    name="otp"
                     placeholder="######"
                     value={form.otp}
-                    onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                    onChange={handleChange}
                     maxLength={6}
                     textAlign="center"
                     letterSpacing={2}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                   />
                   <Button
                     size="sm"
@@ -524,13 +542,21 @@ export default function SeekerOnboarding() {
                   name="idNumber"
                   type="text"
                   inputMode={form.idType === "Passport" ? "text" : "numeric"}
+                  pattern={form.idType === "Passport" ? undefined : "[0-9]*"}
                   placeholder={
                     form.idType === "Passport"
                       ? "Passport Number (A1234567)"
                       : "ID Number"
                   }
                   value={form.idNumber}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    const finalValue =
+                      form.idType === "Passport"
+                        ? value
+                        : value.replace(/\D/g, "");
+                    setForm((p) => ({ ...p, idNumber: finalValue }));
+                  }}
                 />
               </FormControl>
 
@@ -583,6 +609,8 @@ export default function SeekerOnboarding() {
                   placeholder="Registration Number"
                   value={form.registrationNumber}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                 />
               </FormControl>
 
@@ -593,6 +621,8 @@ export default function SeekerOnboarding() {
                   placeholder="Establishment Year"
                   value={form.establishmentYear}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                 />
               </FormControl>
               <FormControl isRequired>
@@ -602,6 +632,8 @@ export default function SeekerOnboarding() {
                   placeholder="TRN Number"
                   value={form.trnNumber}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                 />
               </FormControl>
               <FormControl isRequired>
@@ -639,6 +671,8 @@ export default function SeekerOnboarding() {
                 placeholder="Zip Code"
                 value={form.zipCode}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </FormControl>
           </HStack>
@@ -734,9 +768,14 @@ export default function SeekerOnboarding() {
               onChange={(e) =>
                 setForm({
                   ...form,
-                  education: { ...form.education, year: e.target.value },
+                  education: {
+                    ...form.education,
+                    year: e.target.value.replace(/\D/g, ""),
+                  },
                 })
               }
+              inputMode="numeric"
+              pattern="[0-9]*"
             />
           </FormControl>
         </Stack>

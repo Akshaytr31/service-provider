@@ -253,9 +253,31 @@ export default function ProviderOnboardingPage() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Fields that should only contain numbers
+    const numericFields = [
+      "zipCode",
+      "serviceRadius",
+      "establishmentYear",
+      "registrationNumber",
+      "trnNumber",
+      "yearsExperience",
+      "yearOfCompletion",
+      "licenseNumber",
+      "baseRate",
+      "onSiteCharges",
+      "otp",
+    ];
+
+    let finalValue = type === "checkbox" ? checked : value;
+
+    if (numericFields.includes(name) && typeof finalValue === "string") {
+      finalValue = finalValue.replace(/\D/g, "");
+    }
+
     setFormData((p) => ({
       ...p,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: finalValue,
     }));
   };
 
@@ -797,6 +819,8 @@ export default function ProviderOnboardingPage() {
                           textAlign="center"
                           letterSpacing={2}
                           bg="white"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                         />
                         <Button
                           size="sm"
@@ -884,13 +908,23 @@ export default function ProviderOnboardingPage() {
                     inputMode={
                       formData.idType === "Passport" ? "text" : "numeric"
                     }
+                    pattern={
+                      formData.idType === "Passport" ? undefined : "[0-9]*"
+                    }
                     placeholder={
                       formData.idType === "Passport"
                         ? "Passport Number (A1234567)"
                         : "ID Number"
                     }
                     value={formData.idNumber}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const { value } = e.target;
+                      const finalValue =
+                        formData.idType === "Passport"
+                          ? value
+                          : value.replace(/\D/g, "");
+                      setFormData((p) => ({ ...p, idNumber: finalValue }));
+                    }}
                   />
                 </FormControl>
 
@@ -943,6 +977,8 @@ export default function ProviderOnboardingPage() {
                     placeholder="Registration Number"
                     value={formData.registrationNumber}
                     onChange={handleChange}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                   />
                 </FormControl>
 
@@ -953,6 +989,8 @@ export default function ProviderOnboardingPage() {
                     placeholder="Establishment Year"
                     value={formData.establishmentYear}
                     onChange={handleChange}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                   />
                 </FormControl>
                 <FormControl isRequired>
@@ -962,6 +1000,8 @@ export default function ProviderOnboardingPage() {
                     placeholder="TRN Number"
                     value={formData.trnNumber}
                     onChange={handleChange}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                   />
                 </FormControl>
                 <FormControl isRequired>
@@ -1000,6 +1040,8 @@ export default function ProviderOnboardingPage() {
                   placeholder="Zip Code"
                   value={formData.zipCode}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                 />
               </FormControl>
             </HStack>
@@ -1174,6 +1216,8 @@ export default function ProviderOnboardingPage() {
                 placeholder="Years of Experience"
                 value={formData.yearsExperience}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </FormControl>
           </Stack>
@@ -1211,6 +1255,8 @@ export default function ProviderOnboardingPage() {
                 placeholder="Year of Completion"
                 value={formData.yearOfCompletion}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </FormControl>
           </Stack>
@@ -1247,6 +1293,8 @@ export default function ProviderOnboardingPage() {
                 placeholder="License Number"
                 value={formData.licenseNumber}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </FormControl>
 
@@ -1318,11 +1366,11 @@ export default function ProviderOnboardingPage() {
         )}
 
         {step === 7 && (
-          <Stack spacing={4}>
+          <Stack spacing={4} width={"full"}>
             <Heading size="sm">Fix your price</Heading>
 
             {/* Pricing Type */}
-            <FormControl isRequired>
+            <FormControl isRequired width={"full"}>
               <FormLabel fontSize="sm">Pricing Type</FormLabel>
               <Select
                 name="pricingType"
@@ -1336,13 +1384,15 @@ export default function ProviderOnboardingPage() {
             </FormControl>
 
             {/* Base Rate */}
-            <FormControl isRequired>
+            <FormControl isRequired width={"full"}>
               <FormLabel fontSize="sm">Base Rate</FormLabel>
               <Input
                 name="baseRate"
                 placeholder="Enter base rate"
                 value={formData.baseRate}
                 onChange={handleChange}
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </FormControl>
 
