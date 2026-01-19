@@ -7,26 +7,16 @@ import {
   Button,
   Container,
   Heading,
-  Input,
-  Select,
-  Stack,
-  Textarea,
-  Checkbox,
+  HStack,
   Progress,
   useToast,
-  HStack,
-  Text,
-  FormControl,
-  FormLabel,
-  InputGroup,
-  InputRightElement,
-  IconButton,
-  Flex,
-  RadioGroup,
-  Radio,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-import { useState, useEffect } from "react";
+import AccountStep from "@/app/components/onboarding/seeker/AccountStep";
+import BasicInfoStep from "@/app/components/onboarding/seeker/BasicInfoStep";
+import AddressStep from "@/app/components/onboarding/seeker/AddressStep";
+import EducationStep from "@/app/components/onboarding/seeker/EducationStep";
+import LegalStep from "@/app/components/onboarding/seeker/LegalStep";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const TOTAL_STEPS = 5;
@@ -332,7 +322,7 @@ export default function SeekerOnboarding() {
 
     // NORMAL NEXT - skip step 3 (education) for business users
     if (step === 2 && form.userType === "business") {
-      setStep(4); // Skip education, go to terms
+      setStep(4);
     } else {
       setStep((s) => s + 1);
     }
@@ -342,7 +332,7 @@ export default function SeekerOnboarding() {
     if (step > 0) {
       // Skip step 3 (education) for business users when going back
       if (step === 4 && form.userType === "business") {
-        setStep(2); // Skip education, go back to address
+        setStep(2);
       } else {
         setStep(step - 1);
       }
@@ -370,446 +360,51 @@ export default function SeekerOnboarding() {
         />
       </Box>
       {step === 0 && (
-        <Stack spacing={4}>
-          <Heading size="md">Account Details</Heading>
-          <FormControl isRequired>
-            <FormLabel>Email</FormLabel>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </FormControl>
-          <Flex gap={2}>
-            <FormControl isRequired>
-              <FormLabel>Password</FormLabel>
-              <InputGroup>
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
-                />
-                <InputRightElement>
-                  <IconButton
-                    variant="ghost"
-                    size="sm"
-                    icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                    onClick={() => setShowPassword(!showPassword)}
-                  />
-                </InputRightElement>
-              </InputGroup>
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel>Confirm Password</FormLabel>
-              <InputGroup>
-                <Input
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm Password"
-                  value={form.confirmPassword}
-                  onChange={(e) =>
-                    setForm({ ...form, confirmPassword: e.target.value })
-                  }
-                />
-                <InputRightElement>
-                  <IconButton
-                    variant="ghost"
-                    size="sm"
-                    icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  />
-                </InputRightElement>
-              </InputGroup>
-            </FormControl>
-          </Flex>
-
-          {!otpSent ? (
-            <Button
-              onClick={handleSendOtp}
-              isLoading={otpLoading}
-              variant="outline"
-              colorScheme="blue"
-              mt={2}
-            >
-              Send OTP to Verify
-            </Button>
-          ) : (
-            <Stack spacing={2}>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
-                  Enter OTP
-                </FormLabel>
-                <HStack>
-                  <Input
-                    name="otp"
-                    placeholder="######"
-                    value={form.otp}
-                    onChange={handleChange}
-                    maxLength={6}
-                    textAlign="center"
-                    letterSpacing={2}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleResendOtp}
-                    isDisabled={resendTimer > 0}
-                    color="blue.500"
-                  >
-                    {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
-                  </Button>
-                </HStack>
-              </FormControl>
-              <Button
-                onClick={handleNext}
-                isLoading={loading}
-                colorScheme="green"
-                width="full"
-                mt={2}
-              >
-                Verify & Finish
-              </Button>
-            </Stack>
-          )}
-        </Stack>
+        <Box
+        p="20px"
+        border="1px solid"
+        borderColor="gray.300"
+        borderRadius="md"
+        bg={"gray.50"}
+      >
+        <AccountStep
+          form={form}
+          setForm={setForm}
+          showPassword={showPassword}
+          setShowPassword={setShowPassword}
+          showConfirmPassword={showConfirmPassword}
+          setShowConfirmPassword={setShowConfirmPassword}
+          otpSent={otpSent}
+          handleSendOtp={handleSendOtp}
+          otpLoading={otpLoading}
+          handleChange={handleChange}
+          resendTimer={resendTimer}
+          handleResendOtp={handleResendOtp}
+          handleNext={handleNext}
+          loading={loading}
+        />
+        </Box>
       )}
 
-      {/* STEP 0 */}
       {step === 1 && (
-        <Stack spacing={4} alignItems={"center"} width="full">
-          <Heading size="md" color="gray.600">
-            Basic Details & Select type
-          </Heading>
-
-          <RadioGroup
-            value={form.userType}
-            onChange={(val) => setForm((p) => ({ ...p, userType: val }))}
-          >
-            <HStack>
-              <Radio value="individual">Individual</Radio>
-              <Radio value="business">Business</Radio>
-            </HStack>
-          </RadioGroup>
-
-          {/* INDIVIDUAL FIELDS */}
-          {form.userType === "individual" && (
-            <Box w="full">
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">First Name</FormLabel>
-                <Input
-                  name="firstName"
-                  placeholder="First Name"
-                  value={form.firstName}
-                  onChange={handleChange}
-                />
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Last Name</FormLabel>
-                <Input
-                  name="lastName"
-                  placeholder="Last Name"
-                  value={form.lastName}
-                  onChange={handleChange}
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Document Type</FormLabel>
-                <Select
-                  name="idType"
-                  value={form.idType}
-                  onChange={handleChange}
-                >
-                  <option value="" disabled>
-                    Select Document
-                  </option>
-                  <option value="Passport">Passport</option>
-                  <option value="Driving License">Driving License</option>
-                  <option value="National ID">National ID</option>
-                </Select>
-              </FormControl>
-
-              {/* ID NUMBER */}
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Document Number</FormLabel>
-                <Input
-                  name="idNumber"
-                  type="text"
-                  inputMode={form.idType === "Passport" ? "text" : "numeric"}
-                  pattern={form.idType === "Passport" ? undefined : "[0-9]*"}
-                  placeholder={
-                    form.idType === "Passport"
-                      ? "Passport Number (A1234567)"
-                      : "ID Number"
-                  }
-                  value={form.idNumber}
-                  onChange={(e) => {
-                    const { value } = e.target;
-                    const finalValue =
-                      form.idType === "Passport"
-                        ? value
-                        : value.replace(/\D/g, "");
-                    setForm((p) => ({ ...p, idNumber: finalValue }));
-                  }}
-                />
-              </FormControl>
-
-              {/* BACKGROUND CHECK */}
-              <FormControl>
-                <Checkbox
-                  isChecked={form.backgroundCheckConsent}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      backgroundCheckConsent: e.target.checked,
-                    }))
-                  }
-                >
-                  I consent to background check
-                </Checkbox>
-              </FormControl>
-            </Box>
-          )}
-
-          {/* BUSINESS FIELDS */}
-          {form.userType === "business" && (
-            <Stack spacing={4} width={"full"}>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Business Name</FormLabel>
-                <Input
-                  name="businessName"
-                  placeholder="Business Name"
-                  value={form.businessName}
-                  onChange={handleChange}
-                />
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Business Type</FormLabel>
-                <Select
-                  name="businessType"
-                  value={form.businessType}
-                  onChange={handleChange}
-                >
-                  <option value="Company">Company</option>
-                  <option value="Agency">Agency</option>
-                </Select>
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Registration Number</FormLabel>
-                <Input
-                  name="registrationNumber"
-                  placeholder="Registration Number"
-                  value={form.registrationNumber}
-                  onChange={handleChange}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Establishment Year</FormLabel>
-                <Input
-                  name="establishmentYear"
-                  placeholder="Establishment Year"
-                  value={form.establishmentYear}
-                  onChange={handleChange}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">TRN Number</FormLabel>
-                <Input
-                  name="trnNumber"
-                  placeholder="TRN Number"
-                  value={form.trnNumber}
-                  onChange={handleChange}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm">Expiry Date</FormLabel>
-                <Input
-                  name="expiryDate"
-                  type="date"
-                  placeholder="Expiry Date"
-                  value={form.expiryDate}
-                  onChange={handleChange}
-                />
-              </FormControl>
-            </Stack>
-          )}
-        </Stack>
+        <BasicInfoStep
+          form={form}
+          setForm={setForm}
+          handleChange={handleChange}
+        />
       )}
 
-      {step === 2 && (
-        <Stack spacing={4}>
-          <HStack>
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">City</FormLabel>
-              <Input
-                name="city"
-                placeholder="City"
-                value={form.city}
-                onChange={handleChange}
-              />
-            </FormControl>
+      {step === 2 && <AddressStep form={form} handleChange={handleChange} />}
 
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Zip Code</FormLabel>
-              <Input
-                name="zipCode"
-                placeholder="Zip Code"
-                value={form.zipCode}
-                onChange={handleChange}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </FormControl>
-          </HStack>
+      {step === 3 && <EducationStep form={form} setForm={setForm} />}
 
-          <FormControl isRequired>
-            <FormLabel fontSize="sm">State/Emirates/Governorate</FormLabel>
-            <Input
-              name="state"
-              placeholder="State"
-              value={form.state}
-              onChange={handleChange}
-            />
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel fontSize="sm">Country</FormLabel>
-            <Input
-              name="country"
-              placeholder="Country"
-              value={form.country}
-              onChange={handleChange}
-            />
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel fontSize="sm">Full Address</FormLabel>
-            <Textarea
-              name="address"
-              placeholder="Full Address"
-              value={form.address}
-              onChange={handleChange}
-            />
-          </FormControl>
-        </Stack>
-      )}
-
-      {/* STEP 1 */}
-      {step === 3 && (
-        <Stack spacing={4}>
-          <FormControl isRequired>
-            <FormLabel>Qualification</FormLabel>
-            <Select
-              placeholder="Select qualification"
-              value={form.education.qualification}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  education: {
-                    ...form.education,
-                    qualification: e.target.value,
-                  },
-                })
-              }
-            >
-              <option>High School</option>
-              <option>Diploma</option>
-              <option>Bachelor’s Degree</option>
-              <option>Master’s Degree</option>
-              <option>Doctorate</option>
-            </Select>
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel>Field of Study</FormLabel>
-            <Input
-              value={form.education.field}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  education: { ...form.education, field: e.target.value },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel>Institution</FormLabel>
-            <Input
-              value={form.education.institution}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  education: { ...form.education, institution: e.target.value },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl isRequired>
-            <FormLabel>Year of Completion</FormLabel>
-            <Input
-              value={form.education.year}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  education: {
-                    ...form.education,
-                    year: e.target.value.replace(/\D/g, ""),
-                  },
-                })
-              }
-              inputMode="numeric"
-              pattern="[0-9]*"
-            />
-          </FormControl>
-        </Stack>
-      )}
-
-      {/* STEP 2 */}
       {step === 4 && (
-        <Stack spacing={4}>
-          <Heading size="sm">Privacy Policy</Heading>
-          <Box
-            p={4}
-            borderWidth="1px"
-            borderRadius="md"
-            maxH="300px"
-            overflowY="auto"
-            bg="gray.800"
-            color="white"
-          >
-            <Text whiteSpace="pre-wrap" fontSize="sm">
-              {privacyPolicy || "Loading privacy policy..."}
-            </Text>
-          </Box>
-          <Checkbox
-            isChecked={form.termsAccepted}
-            onChange={(e) =>
-              setForm({ ...form, termsAccepted: e.target.checked })
-            }
-          >
-            I agree to Terms & Conditions *
-          </Checkbox>
-        </Stack>
+        <LegalStep
+          form={form}
+          setForm={setForm}
+          privacyPolicy={privacyPolicy}
+        />
       )}
-
-      {/* STEP 3 */}
 
       <HStack mt={6} justify="space-between">
         <Button variant="outline" onClick={handleBack} isDisabled={step === 0}>
@@ -819,7 +414,7 @@ export default function SeekerOnboarding() {
           {step === 0
             ? otpSent
               ? "Verify & Next"
-              : "Send OTP"
+              : "Next"
             : step === TOTAL_STEPS - 1
             ? "Finish"
             : "Next"}
