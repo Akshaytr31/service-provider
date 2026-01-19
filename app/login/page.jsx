@@ -139,6 +139,15 @@ export default function LoginPage() {
         <Button colorScheme="blue" onClick={handleContinue} width="100%">
           Sign In
         </Button>
+
+        <Center mt={2}>
+          <Link
+            href="/forgot-password"
+            style={{ color: "#2b6cb0", fontSize: "14px", fontWeight: "500" }}
+          >
+            Forgot Password?
+          </Link>
+        </Center>
       </Stack>
 
       <Divider my={6} />
