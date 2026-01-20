@@ -57,19 +57,25 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.200"
             borderRadius="md"
-            bg="gray.50"
+            gridColumn="1 / -1"
+            position="relative"
           >
             <Text
               fontWeight="semibold"
               mb="12px"
               fontSize="md"
+              position="absolute"
+              top="-17px"
+              zIndex="1"
+              p={'5px'}
+              bg="white"
+              color={'gray.600'}
             >
               Individual Details
             </Text>
-
-            <Stack spacing="14px">
+            <Stack spacing="14px" display={"grid"} gridTemplateColumns="repeat(2, 1fr)">
               <FormControl isRequired>
-                <FormLabel fontSize="sm">First Name</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">First Name</FormLabel>
                 <Input
                   name="firstName"
                   placeholder="First Name"
@@ -79,7 +85,7 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm">Last Name</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">Last Name</FormLabel>
                 <Input
                   name="lastName"
                   placeholder="Last Name"
@@ -89,7 +95,7 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm">Document Type</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">Document Type</FormLabel>
                 <Select
                   name="idType"
                   value={formData.idType}
@@ -105,7 +111,7 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm">Document Number</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">Document Number</FormLabel>
                 <Input
                   name="idNumber"
                   type="text"
@@ -154,7 +160,7 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.200"
             borderRadius="md"
-            bg="gray.50"
+            gridColumn="1 / -1"
           >
             <LicenseStep formData={formData} handleChange={handleChange} />
           </Box>
@@ -165,7 +171,7 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.200"
             borderRadius="md"
-            bg="gray.50"
+            gridColumn="1 / -1"
           >
             <EducationStep formData={formData} handleChange={handleChange} />
           </Box>
@@ -176,7 +182,7 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.200"
             borderRadius="md"
-            bg="gray.50"
+            gridColumn="1 / -1"
           >
             <PricingStep
               formData={formData}
@@ -192,7 +198,6 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.300"
             borderRadius="md"
-            bg={"gray.50"}
           >
             <ServiceStep
               formData={formData}
@@ -220,11 +225,13 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.300"
             borderRadius="md"
-            bg={"gray.50"}
+            position="relative"
           >
-            <Heading size="sm" marginBottom={"20px"}>Business Details</Heading>
+            <Heading size="sm" position="absolute" top="-17px" zIndex="1" bg="white" p={'5px'} color={'gray.600'}>Business Details</Heading>
+            <Box display={"grid"} gridTemplateColumns={"repeat(2, 1fr)"} gap={"20px"}>
+
             <FormControl isRequired>
-              <FormLabel fontSize="sm">Business Name</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="bold">Business Name</FormLabel>
               <Input
                 name="businessName"
                 placeholder="Business Name"
@@ -234,7 +241,7 @@ export default function BasicInfoStep({
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm">Business Type</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="bold">Business Type</FormLabel>
               <Select
                 name="businessType"
                 value={formData.businessType}
@@ -246,7 +253,7 @@ export default function BasicInfoStep({
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm">Registration Number</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="bold">Registration Number</FormLabel>
               <Input
                 name="registrationNumber"
                 placeholder="Registration Number"
@@ -258,7 +265,7 @@ export default function BasicInfoStep({
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel fontSize="sm">Establishment Year</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="bold">Establishment Year</FormLabel>
               <Input
                 name="establishmentYear"
                 placeholder="Establishment Year"
@@ -269,7 +276,7 @@ export default function BasicInfoStep({
               />
             </FormControl>
             <FormControl isRequired>
-              <FormLabel fontSize="sm">TRN Number</FormLabel>
+              <FormLabel fontSize="sm" fontWeight="bold">TRN Number</FormLabel>
               <Input
                 name="trnNumber"
                 placeholder="TRN Number"
@@ -279,6 +286,7 @@ export default function BasicInfoStep({
                 pattern="[0-9]*"
               />
             </FormControl>
+            </Box>
             {/* <FormControl isRequired>
               <FormLabel fontSize="sm">Expiry Date</FormLabel>
               <Input
@@ -295,7 +303,7 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.300"
             borderRadius="md"
-            bg={"gray.50"}
+            gridColumn="1 / -1"
           >
             <LicenseStep formData={formData} handleChange={handleChange} />
           </Box>
@@ -304,7 +312,7 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.300"
             borderRadius="md"
-            bg={"gray.50"}
+            gridColumn="1 / -1"
           >
             <PricingStep
               formData={formData}
@@ -318,7 +326,6 @@ export default function BasicInfoStep({
             border="1px solid"
             borderColor="gray.300"
             borderRadius="md"
-            bg={"gray.50"}
           >
             <ServiceStep
               formData={formData}

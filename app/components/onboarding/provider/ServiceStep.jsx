@@ -17,14 +17,14 @@ export default function ServiceStep({
   subCategories,
 }) {
   return (
-    <Stack spacing={4} width={"full"} >
-      <Heading size="sm">Service Details</Heading>
+    <Stack spacing={4} width={"full"} position="relative" >
+      <Heading size="sm" position="absolute" top="-35px" zIndex="1" bg="white" p={'5px'} color={'gray.600'} >Service Details</Heading>
 
       {/* CATEGORY */}
       <Box width={"full"} display={"grid"} gridTemplateColumns={"repeat(2, 1fr)"} gap={'10px'}>
 
       <FormControl isRequired width={"full"}>
-        <FormLabel fontSize="sm">Category</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Category</FormLabel>
         <Select
           name="categoryId"
           value={formData.categoryId}
@@ -50,7 +50,7 @@ export default function ServiceStep({
 
       {/* SUB CATEGORY */}
       <FormControl isRequired isDisabled={!formData.categoryId}>
-        <FormLabel fontSize="sm">Sub Category</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Sub Category</FormLabel>
         <Select
           name="subCategoryId"
           value={formData.subCategoryId}
@@ -72,7 +72,7 @@ export default function ServiceStep({
 
       {/* SERVICES OFFERED */}
       <FormControl>
-        <FormLabel fontSize="sm">Services Offered</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Services Offered</FormLabel>
         <Textarea
           name="servicesOfferedInput"
           placeholder="Services Offered (comma separated)"
@@ -83,7 +83,7 @@ export default function ServiceStep({
 
       {/* DESCRIPTION */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Service Description</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Service Description</FormLabel>
         <Textarea
           name="description"
           placeholder="Describe your service"
@@ -94,7 +94,7 @@ export default function ServiceStep({
 
       {/* EXPERIENCE */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Years of Experience</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Years of Experience</FormLabel>
         <Input
           name="yearsExperience"
           placeholder="Years of Experience"

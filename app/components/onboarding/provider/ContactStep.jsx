@@ -22,8 +22,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
       border="1px solid"
       borderColor="gray.300"
       borderRadius="md"
-      bg={"gray.50"}
-      width={"full"}
+      maxWidth={"800px"}
     >
       <HStack>
         <FormControl isRequired>

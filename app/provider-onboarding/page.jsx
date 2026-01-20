@@ -675,8 +675,8 @@ export default function ProviderOnboardingPage() {
   /* ================= UI ================= */
 
   return (
-    <Container maxW="container.xl" py={10} marginTop={"70px"}>
-      <VStack bg="white" p={8} spacing={6} borderRadius="lg" boxShadow="md">
+    <Container maxW="container.xl"  marginTop={"70px"}>
+      <VStack bg="white" p={8} spacing={3} borderRadius="lg" boxShadow="md" position="relative">
         <Heading size="lg" color="gray.600">
           Provider Registration
         </Heading>
@@ -700,7 +700,7 @@ export default function ProviderOnboardingPage() {
             />
           </Box>
 
-          <Text fontSize="sm" mt={1} textAlign="right">
+          <Text fontSize="sm" mt={1} textAlign="right" position="absolute" top="50px" right="20px">
             Step {step + 1} of {TOTAL_STEPS}
           </Text>
         </Box>

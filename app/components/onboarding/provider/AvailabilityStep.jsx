@@ -18,16 +18,18 @@ export default function AvailabilityStep({
     <Stack
       spacing={4}
       p="20px"
+      marginTop={'10px'}
       border="1px solid"
       borderColor="gray.300"
       borderRadius="md"
-      bg={"gray.50"}
+      maxWidth={"800px"}
+      position="relative"
     >
-      <Heading size="sm">Working days and time</Heading>
+      <Heading size="sm" fontWeight="bold" position="absolute" top="-16px" left="10px" zIndex={1} p="5px" bg="white"> Working days and time</Heading>
 
       {/* Working Days */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Available Days</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Available Days</FormLabel>
         <HStack wrap="wrap">
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
             <Checkbox
@@ -43,7 +45,7 @@ export default function AvailabilityStep({
 
       {/* Working Hours */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Working Hours</FormLabel>
+        <FormLabel fontSize="sm" fontWeight="bold">Working Hours</FormLabel>
         <HStack>
           <Input
             type="time"

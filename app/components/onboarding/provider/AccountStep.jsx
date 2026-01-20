@@ -139,7 +139,7 @@ export default function AccountStep({
             <Button
               onClick={handleSendOtp}
               isLoading={otpLoading}
-              variant="outline"
+              variant="solid"
               colorScheme="blue"
               width="full"
             >
