@@ -63,7 +63,7 @@ export async function POST(req) {
     if (!userType || !termsAccepted) {
       return NextResponse.json(
         { message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,7 +75,7 @@ export async function POST(req) {
     if (existingRequest && existingRequest.status === "PENDING") {
       return NextResponse.json(
         { message: "You already have a pending provider request." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -131,23 +131,41 @@ export async function POST(req) {
       });
 
       // Update User Status
+      // If user has role 'none', promote to 'provider' immediately (assuming upgrade request implies intent)
+      // BUT normally provider requests are PENDING.
+      // However, for Google Sign-In flow where they act as "Signup", we might want to set different status?
+      // The user asked to "login" (full access) only after form filling.
+      // For providers, full access usually means "waiting for approval" dashboard.
+
+      // Let's check current role
+      const currentUser = await tx.users.findUnique({
+        where: { id: Number(session.user.id) },
+      });
+
+      let updateData = {
+        providerRequestStatus: "PENDING",
+      };
+
+      if (currentUser.role === "none" || currentUser.role === "new_user") {
+        updateData.role = "provider";
+        updateData.isProviderAtFirst = true;
+      }
+
       await tx.users.update({
         where: { id: Number(session.user.id) },
-        data: {
-          providerRequestStatus: "PENDING",
-        },
+        data: updateData,
       });
     });
 
     return NextResponse.json(
       { message: "Provider request submitted successfully" },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Provider Upgrade Error:", error);
     return NextResponse.json(
       { message: `Error: ${error.message}` },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

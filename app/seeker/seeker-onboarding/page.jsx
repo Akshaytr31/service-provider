@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 import {
   Box,
@@ -22,11 +22,18 @@ import { useRouter } from "next/navigation";
 const TOTAL_STEPS = 5;
 
 export default function SeekerOnboarding() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const toast = useToast();
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      setStep(1); // Skip Account Step
+    }
+  }, [status]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
@@ -292,9 +299,26 @@ export default function SeekerOnboarding() {
 
         console.log(
           "Submitting Seeker Onboarding Payload:",
-          JSON.stringify(payload, null, 2)
+          JSON.stringify(payload, null, 2),
         );
 
+        if (status === "authenticated") {
+          // Authenticated User -> Update Profile
+          const res = await fetch("/api/seeker/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Profile update failed");
+
+          toast({ title: "Profile updated!", status: "success" });
+          router.push("/");
+          return;
+        }
+
+        // Unauthenticated -> Signup
         const res = await fetch("/api/auth/signup-seeker", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -361,28 +385,28 @@ export default function SeekerOnboarding() {
       </Box>
       {step === 0 && (
         <Box
-        p="20px"
-        border="1px solid"
-        borderColor="gray.300"
-        borderRadius="md"
-        bg={"gray.50"}
-      >
-        <AccountStep
-          form={form}
-          setForm={setForm}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          showConfirmPassword={showConfirmPassword}
-          setShowConfirmPassword={setShowConfirmPassword}
-          otpSent={otpSent}
-          handleSendOtp={handleSendOtp}
-          otpLoading={otpLoading}
-          handleChange={handleChange}
-          resendTimer={resendTimer}
-          handleResendOtp={handleResendOtp}
-          handleNext={handleNext}
-          loading={loading}
-        />
+          p="20px"
+          border="1px solid"
+          borderColor="gray.300"
+          borderRadius="md"
+          bg={"gray.50"}
+        >
+          <AccountStep
+            form={form}
+            setForm={setForm}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            showConfirmPassword={showConfirmPassword}
+            setShowConfirmPassword={setShowConfirmPassword}
+            otpSent={otpSent}
+            handleSendOtp={handleSendOtp}
+            otpLoading={otpLoading}
+            handleChange={handleChange}
+            resendTimer={resendTimer}
+            handleResendOtp={handleResendOtp}
+            handleNext={handleNext}
+            loading={loading}
+          />
         </Box>
       )}
 
@@ -416,8 +440,8 @@ export default function SeekerOnboarding() {
               ? "Verify & Next"
               : "Next"
             : step === TOTAL_STEPS - 1
-            ? "Finish"
-            : "Next"}
+              ? "Finish"
+              : "Next"}
         </Button>
       </HStack>
     </Container>

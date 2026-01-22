@@ -140,14 +140,14 @@ export default function LoginPage() {
           Sign In
         </Button>
 
-        <Center mt={2}>
+        <Box mt={2}>
           <Link
             href="/forgot-password"
-            style={{ color: "#2b6cb0", fontSize: "14px", fontWeight: "500" }}
+            style={{ color: "#8f9cabff", fontSize: "14px", fontWeight: "bold" }}
           >
             Forgot Password?
           </Link>
-        </Center>
+        </Box>
       </Stack>
 
       <Divider my={6} />

@@ -12,6 +12,8 @@ export default function PostLoginPage() {
   useEffect(() => {
     if (status !== "authenticated") return;
 
+    router.refresh();
+
     const user = session.user;
 
     /* ================= ADMIN ================= */
@@ -20,8 +22,8 @@ export default function PostLoginPage() {
       return;
     }
 
-    /* ================= NO ROLE ================= */
-    if (!user.role) {
+    /* ================= NO ROLE or NEW USER ================= */
+    if (!user.role || user.role === "new_user" || user.role === "none") {
       router.replace("/role-selection");
       return;
     }

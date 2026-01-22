@@ -34,11 +34,10 @@ export const authOptions = {
         // --- Handle Admin Registration ---
         // Only attempt registration if adminKey is provided (and not "undefined" string)
         if (adminKey && adminKey !== "undefined" && adminKey !== "null") {
-
           // Check if user already exists
           const [existing] = await db.query(
             "SELECT id FROM users WHERE email = ?",
-            [email]
+            [email],
           );
 
           if (existing.length === 0) {
@@ -55,25 +54,24 @@ export const authOptions = {
             const [result] = await db.query(
               `INSERT INTO users (email, password, role, providerRequestStatus, isProviderAtFirst, email_verified)
                  VALUES (?, ?, 'admin', 'none', false, true)`,
-              [email, hashedPassword]
+              [email, hashedPassword],
             );
 
             return {
               id: result.insertId,
               email: email,
-              role: 'admin',
-              providerRequestStatus: 'none',
-              isProviderAtFirst: false
+              role: "admin",
+              providerRequestStatus: "none",
+              isProviderAtFirst: false,
             };
           }
           // If user exists, fall through to normal login check (ignore adminKey)
         }
         // --- End Admin Registration ---
 
-        const [rows] = await db.query(
-          "SELECT * FROM users WHERE email = ?",
-          [email]
-        );
+        const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
+          email,
+        ]);
 
         if (rows.length === 0) {
           // No user found - return null to indicate failed login
@@ -94,7 +92,7 @@ export const authOptions = {
           role: user.role,
           providerRequestStatus: user.providerRequestStatus,
           isProviderAtFirst: user.isProviderAtFirst,
-          id: user.id
+          id: user.id,
         };
       },
     }),
@@ -107,26 +105,30 @@ export const authOptions = {
   callbacks: {
     // Google auto insert
     async signIn({ user, account }) {
-      console.log('user-acc', user, account);
+      console.log("user-acc", user, account);
 
       if (account.provider === "google") {
-        const [rows] = await db.query(
-          "SELECT id FROM users WHERE email = ?",
-          [user.email]
-        );
+        const [rows] = await db.query("SELECT id FROM users WHERE email = ?", [
+          user.email,
+        ]);
 
         if (rows.length === 0) {
           // New Google User - Create account
           // Split name if possible
-          const names = user.name ? user.name.split(' ') : ["", ""];
-          const firstName = names[0];
-          const lastName = names.length > 1 ? names.slice(1).join(' ') : "";
+          const names = user.name ? user.name.split(" ") : ["", ""];
+          // const firstName = names[0];
+          // const lastName = names.length > 1 ? names.slice(1).join(" ") : "";
 
-          // Default to seeker, user will select role in next step
+          // Check cookie for login mode
+          const cookieStore = await cookies();
+          const loginMode = cookieStore.get("loginMode")?.value;
+          const isProviderAtFirst = loginMode === "provider";
+
+          // Default to 'none' role, user will select role in next step
           await db.query(
-            `INSERT INTO users (name, firstName, lastName, email, image, role, providerRequestStatus, isProviderAtFirst)
-             VALUES (?, ?, ?, ?, ?, 'seeker', 'none', false)`,
-            [user.name, firstName, lastName, user.email, user.image]
+            `INSERT INTO users (name, email, image, role, providerRequestStatus, isProviderAtFirst)
+             VALUES (?, ?, ?, 'none', 'none', ?)`,
+            [user.name, user.email, user.image, isProviderAtFirst],
           );
         }
       }
@@ -141,7 +143,7 @@ export const authOptions = {
         // Fetch fresh data from DB to be sure
         const [rows] = await db.query(
           "SELECT role, providerRequestStatus, isProviderAtFirst FROM users WHERE email = ?",
-          [token.email]
+          [token.email],
         );
         if (rows.length > 0) {
           token.role = rows[0].role;
@@ -158,7 +160,7 @@ export const authOptions = {
 
       const [rows] = await db.query(
         "SELECT id, role, providerRequestStatus, isProviderAtFirst FROM users WHERE email = ?",
-        [email]
+        [email],
       );
 
       if (rows.length > 0) {

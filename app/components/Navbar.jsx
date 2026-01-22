@@ -35,14 +35,7 @@ export default function Navbar() {
   };
 
   return (
-    <Box
-      position="fixed"
-      top="0"
-      left="0"
-      right="0"
-      zIndex="1"
-      bg="white"
-    >
+    <Box position="fixed" top="0" left="0" right="0" zIndex="1" bg="white">
       <Box borderBottom="1px solid" borderColor="gray.200" bg="white">
         <Flex justify="space-between" p={3} align="center">
           {/* Logo + Search */}
@@ -95,49 +88,46 @@ export default function Navbar() {
               )}
 
             {/* PROVIDER */}
-            {user?.role === "provider" && (
-               // If isProviderAtFirst is true (1), ALWAYS show Provider Dashboard.
-               // If false (0), toggle based on path.
-               user.isProviderAtFirst ? (
-                  <Button
-                    bg="transparent"
-                    _hover={{ bg: "gray.100" }}
-                    _active={{ bg: "gray.200" }}
-                    _focus={{ boxShadow: "none" }}
-                    size="sm"
-                    onClick={() => router.push("/providerDashboard")}
-                  >
-                    Provider Dashboard
-                  </Button>
-               ) : (
-                  // Seeker-turned-Provider: Toggle Logic
-                  pathname.startsWith("/providerDashboard") ? (
-                     <Button
-                        bg="transparent"
-                        _hover={{ bg: "gray.100" }}
-                        _active={{ bg: "gray.200" }}
-                        _focus={{ boxShadow: "none" }}
-                        size="sm"
-                        onClick={() => router.push("/")}
-                        colorScheme="teal"
-                        variant="ghost"
-                      >
-                        Seeker Dashboard
-                      </Button>
-                  ) : (
-                      <Button
-                        bg="transparent"
-                        _hover={{ bg: "gray.100" }}
-                        _active={{ bg: "gray.200" }}
-                        _focus={{ boxShadow: "none" }}
-                        size="sm"
-                        onClick={() => router.push("/providerDashboard")}
-                      >
-                        Provider Dashboard
-                      </Button>
-                  )
-               )
-            )}
+            {user?.role === "provider" &&
+              // If isProviderAtFirst is true (1), ALWAYS show Provider Dashboard.
+              // If false (0), toggle based on path.
+              (user.isProviderAtFirst ? (
+                <Button
+                  bg="transparent"
+                  _hover={{ bg: "gray.100" }}
+                  _active={{ bg: "gray.200" }}
+                  _focus={{ boxShadow: "none" }}
+                  size="sm"
+                  onClick={() => router.push("/providerDashboard")}
+                >
+                  Provider Dashboard
+                </Button>
+              ) : // Seeker-turned-Provider: Toggle Logic
+              pathname.startsWith("/providerDashboard") ? (
+                <Button
+                  bg="transparent"
+                  _hover={{ bg: "gray.100" }}
+                  _active={{ bg: "gray.200" }}
+                  _focus={{ boxShadow: "none" }}
+                  size="sm"
+                  onClick={() => router.push("/")}
+                  colorScheme="teal"
+                  variant="ghost"
+                >
+                  Seeker Dashboard
+                </Button>
+              ) : (
+                <Button
+                  bg="transparent"
+                  _hover={{ bg: "gray.100" }}
+                  _active={{ bg: "gray.200" }}
+                  _focus={{ boxShadow: "none" }}
+                  size="sm"
+                  onClick={() => router.push("/providerDashboard")}
+                >
+                  Provider Dashboard
+                </Button>
+              ))}
 
             {/* ADMIN */}
             {user?.role === "admin" && (
@@ -154,18 +144,20 @@ export default function Navbar() {
             )}
 
             {/* AUTH / PROFILE ICON */}
-            <Avatar
-              size="sm"
-              name={user?.email?.charAt(0).toUpperCase()}
-              cursor="pointer"
-              bg="blue.500"
-              color="white"
-              onClick={() => router.push("/profile")}
-              fontWeight="800"
-            />
+            {user?.role !== "none" && (
+              <Avatar
+                size="sm"
+                name={user?.email?.charAt(0).toUpperCase()}
+                cursor="pointer"
+                bg="blue.500"
+                color="white"
+                onClick={() => router.push("/profile")}
+                fontWeight="800"
+              />
+            )}
 
             {/* AUTH */}
-            {status === "loading" ? null : session ? (
+            {status === "loading" ? null : session && user?.role !== "none" ? (
               <>
                 <Button colorScheme="gray" size="sm" onClick={onOpen}>
                   Logout
@@ -182,6 +174,10 @@ export default function Navbar() {
                 />
               </>
             ) : (
+              // If role is 'none', show nothing or just Sign In (which redirects to login, effectively refreshing or handled by middleware)
+              // But user wanted "not showing log in".
+              // If role is 'none', they are technically authenticated but "onboarding".
+              // We show "Sign In" to be consistent with "not logged in yet" from user perspective.
               <Button onClick={() => router.push("/login")}>Sign In</Button>
             )}
           </Flex>
