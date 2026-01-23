@@ -110,6 +110,7 @@ export default function ProviderOnboardingPage() {
     licenseAuth: "",
     licenseNumber: "",
     licenseExpiry: "",
+    licenseDocument: null,
 
     // STEP 5 – AVAILABILITY
     availableDays: [],
@@ -569,6 +570,7 @@ export default function ProviderOnboardingPage() {
                   authority: formData.licenseAuth,
                   number: formData.licenseNumber,
                   expiry: formData.licenseExpiry,
+                  document: formData.licenseDocument,
                 },
               ]
             : [],
@@ -649,7 +651,7 @@ export default function ProviderOnboardingPage() {
 
           if (signInRes?.error) {
             throw new Error(
-              "Account created but failed to login automatically"
+              "Account created but failed to login automatically",
             );
           }
 
@@ -675,8 +677,15 @@ export default function ProviderOnboardingPage() {
   /* ================= UI ================= */
 
   return (
-    <Container maxW="container.xl"  marginTop={"70px"}>
-      <VStack bg="white" p={8} spacing={3} borderRadius="lg" boxShadow="md" position="relative">
+    <Container maxW="container.xl" marginTop={"70px"}>
+      <VStack
+        bg="white"
+        p={8}
+        spacing={3}
+        borderRadius="lg"
+        boxShadow="md"
+        position="relative"
+      >
         <Heading size="lg" color="gray.600">
           Provider Registration
         </Heading>
@@ -700,7 +709,14 @@ export default function ProviderOnboardingPage() {
             />
           </Box>
 
-          <Text fontSize="sm" mt={1} textAlign="right" position="absolute" top="50px" right="20px">
+          <Text
+            fontSize="sm"
+            mt={1}
+            textAlign="right"
+            position="absolute"
+            top="50px"
+            right="20px"
+          >
             Step {step + 1} of {TOTAL_STEPS}
           </Text>
         </Box>

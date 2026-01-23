@@ -67,15 +67,21 @@ export default function BasicInfoStep({
               position="absolute"
               top="-17px"
               zIndex="1"
-              p={'5px'}
+              p={"5px"}
               bg="white"
-              color={'gray.600'}
+              color={"gray.600"}
             >
               Individual Details
             </Text>
-            <Stack spacing="14px" display={"grid"} gridTemplateColumns="repeat(2, 1fr)">
+            <Stack
+              spacing="14px"
+              display={"grid"}
+              gridTemplateColumns="repeat(2, 1fr)"
+            >
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">First Name</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  First Name
+                </FormLabel>
                 <Input
                   name="firstName"
                   placeholder="First Name"
@@ -85,7 +91,9 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">Last Name</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Last Name
+                </FormLabel>
                 <Input
                   name="lastName"
                   placeholder="Last Name"
@@ -95,7 +103,9 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">Document Type</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Document Type
+                </FormLabel>
                 <Select
                   name="idType"
                   value={formData.idType}
@@ -111,7 +121,9 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">Document Number</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Document Number
+                </FormLabel>
                 <Input
                   name="idNumber"
                   type="text"
@@ -162,7 +174,11 @@ export default function BasicInfoStep({
             borderRadius="md"
             gridColumn="1 / -1"
           >
-            <LicenseStep formData={formData} handleChange={handleChange} />
+            <LicenseStep
+              formData={formData}
+              handleChange={handleChange}
+              setFormData={setFormData}
+            />
           </Box>
 
           {/* Education */}
@@ -227,65 +243,88 @@ export default function BasicInfoStep({
             borderRadius="md"
             position="relative"
           >
-            <Heading size="sm" position="absolute" top="-17px" zIndex="1" bg="white" p={'5px'} color={'gray.600'}>Business Details</Heading>
-            <Box display={"grid"} gridTemplateColumns={"repeat(2, 1fr)"} gap={"20px"}>
+            <Heading
+              size="sm"
+              position="absolute"
+              top="-17px"
+              zIndex="1"
+              bg="white"
+              p={"5px"}
+              color={"gray.600"}
+            >
+              Business Details
+            </Heading>
+            <Box
+              display={"grid"}
+              gridTemplateColumns={"repeat(2, 1fr)"}
+              gap={"20px"}
+            >
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Business Name
+                </FormLabel>
+                <Input
+                  name="businessName"
+                  placeholder="Business Name"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                />
+              </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold">Business Name</FormLabel>
-              <Input
-                name="businessName"
-                placeholder="Business Name"
-                value={formData.businessName}
-                onChange={handleChange}
-              />
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Business Type
+                </FormLabel>
+                <Select
+                  name="businessType"
+                  value={formData.businessType}
+                  onChange={handleChange}
+                >
+                  <option value="Company">Company</option>
+                  <option value="Agency">Agency</option>
+                </Select>
+              </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold">Business Type</FormLabel>
-              <Select
-                name="businessType"
-                value={formData.businessType}
-                onChange={handleChange}
-              >
-                <option value="Company">Company</option>
-                <option value="Agency">Agency</option>
-              </Select>
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Registration Number
+                </FormLabel>
+                <Input
+                  name="registrationNumber"
+                  placeholder="Registration Number"
+                  value={formData.registrationNumber}
+                  onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold">Registration Number</FormLabel>
-              <Input
-                name="registrationNumber"
-                placeholder="Registration Number"
-                value={formData.registrationNumber}
-                onChange={handleChange}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </FormControl>
-
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold">Establishment Year</FormLabel>
-              <Input
-                name="establishmentYear"
-                placeholder="Establishment Year"
-                value={formData.establishmentYear}
-                onChange={handleChange}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel fontSize="sm" fontWeight="bold">TRN Number</FormLabel>
-              <Input
-                name="trnNumber"
-                placeholder="TRN Number"
-                value={formData.trnNumber}
-                onChange={handleChange}
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Establishment Year
+                </FormLabel>
+                <Input
+                  name="establishmentYear"
+                  placeholder="Establishment Year"
+                  value={formData.establishmentYear}
+                  onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  TRN Number
+                </FormLabel>
+                <Input
+                  name="trnNumber"
+                  placeholder="TRN Number"
+                  value={formData.trnNumber}
+                  onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
+              </FormControl>
             </Box>
             {/* <FormControl isRequired>
               <FormLabel fontSize="sm">Expiry Date</FormLabel>
@@ -305,7 +344,11 @@ export default function BasicInfoStep({
             borderRadius="md"
             gridColumn="1 / -1"
           >
-            <LicenseStep formData={formData} handleChange={handleChange} />
+            <LicenseStep
+              formData={formData}
+              handleChange={handleChange}
+              setFormData={setFormData}
+            />
           </Box>
           <Box
             p="20px"

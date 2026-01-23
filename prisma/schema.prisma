@@ -140,7 +140,16 @@ model ProviderRequest {
   qualifications     Json?    // Array of objects { degree, institution, year }
   
   // 6. Certifications & Licenses
-  licenses           Json?    // Array of objects { name, authority, number, expiry, fileUrl }
+  licenses Json? 
+  /// Array of license objects:
+  /// {
+  ///   name,
+  ///   authority,
+  ///   number,
+  ///   expiry,
+  ///   document: { provider, publicId, format }
+  /// }
+
 
   // 7. Availability
   availability       Json?    // Object { days: [], hours: { start, end }, emergency: bool }

@@ -36,6 +36,17 @@ export default function ProviderRequestDetails() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
+  const getDocumentUrl = (doc) => {
+    if (!doc || doc.provider !== "cloudinary") return null;
+
+    // Cloudinary secure delivery (view-only)
+    console.log("cloud name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
+    const resourceType = doc.resourceType || "image";
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+    return `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${doc.publicId}.${doc.format}`;
+  };
+
   const InfoCard = ({ title, children }) => (
     <Box
       bg="gray.800"
@@ -129,8 +140,8 @@ export default function ProviderRequestDetails() {
           status === "PENDING"
             ? "yellow"
             : status === "APPROVED"
-            ? "green"
-            : "red"
+              ? "green"
+              : "red"
         }
       >
         {status}
@@ -265,16 +276,40 @@ export default function ProviderRequestDetails() {
         )}
 
         {/* LICENSES */}
+        {/* LICENSES */}
         <InfoCard title="Licenses">
           {(providerRequest.licenses || []).length > 0 ? (
-            providerRequest.licenses.map((l, i) => (
-              <Box key={i} p={3} bg="gray.700" borderRadius="md">
-                <Text fontWeight="bold">{l.name}</Text>
-                <Text fontSize="sm">
-                  {l.authority} • {l.number}
-                </Text>
-              </Box>
-            ))
+            providerRequest.licenses.map((l, i) => {
+              const docUrl = getDocumentUrl(l.document);
+
+              return (
+                <Box key={i} p={3} bg="gray.700" borderRadius="md">
+                  <Text fontWeight="bold">{l.name}</Text>
+
+                  <Text fontSize="sm">
+                    {l.authority} • {l.number}
+                  </Text>
+
+                  {l.expiry && <Text fontSize="sm">Expiry: {l.expiry}</Text>}
+
+                  {docUrl ? (
+                    <Button
+                      size="sm"
+                      mt={2}
+                      colorScheme="blue"
+                      variant="outline"
+                      onClick={() => window.open(docUrl, "_blank")}
+                    >
+                      View Document
+                    </Button>
+                  ) : (
+                    <Text fontSize="xs" color="gray.400" mt={2}>
+                      No document uploaded
+                    </Text>
+                  )}
+                </Box>
+              );
+            })
           ) : (
             <Text>-</Text>
           )}

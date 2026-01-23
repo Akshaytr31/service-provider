@@ -32,13 +32,13 @@ export async function POST(req) {
     /* ========== PROVIDER REQUEST (SAFE CREATE) ========== */
     const [existing] = await db.query(
       "SELECT id FROM provider_requests WHERE user_id = ?",
-      [userId]
+      [userId],
     );
 
     if (!existing.length) {
       await db.query(
         "INSERT INTO provider_requests (user_id, status, created_at) VALUES (?, 'PENDING', NOW())",
-        [userId]
+        [userId],
       );
     }
 
@@ -51,13 +51,13 @@ export async function POST(req) {
       if (!otp) {
         return NextResponse.json(
           { message: "OTP is required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       const [rows] = await db.query(
         "SELECT otp, expires_at FROM email_otps WHERE email = ? ORDER BY id DESC LIMIT 1",
-        [email]
+        [email],
       );
 
       if (!rows.length) {
@@ -93,7 +93,7 @@ export async function POST(req) {
     console.error("ONBOARDING ERROR:", err.sqlMessage || err.message);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -162,7 +162,7 @@ async function saveStepData(step, data, userId) {
           userType === "business" ? establishmentYear : null,
 
           userId,
-        ]
+        ],
       );
     }
 
@@ -180,7 +180,7 @@ async function saveStepData(step, data, userId) {
           data.serviceRadius || null,
           JSON.stringify(data.serviceAreas || []),
           userId,
-        ]
+        ],
       );
 
     case 2:
@@ -194,7 +194,7 @@ async function saveStepData(step, data, userId) {
           data.description,
           data.yearsExperience,
           userId,
-        ]
+        ],
       );
 
     case 3:
@@ -206,23 +206,26 @@ async function saveStepData(step, data, userId) {
         `UPDATE provider_requests
      SET qualifications = ?
      WHERE user_id = ?`,
-        [JSON.stringify(data.qualifications || []), userId]
+        [JSON.stringify(data.qualifications || []), userId],
       );
 
-    case 4:
+    case 4: {
+      const { licenses } = data;
+
       return db.query(
         `UPDATE provider_requests
-         SET licenses = ?
-         WHERE user_id = ?`,
-        [JSON.stringify(data.licenses || []), userId]
+     SET licenses = ?
+     WHERE user_id = ?`,
+        [JSON.stringify(licenses || []), userId],
       );
+    }
 
     case 5:
       return db.query(
         `UPDATE provider_requests
          SET availability = ?
          WHERE user_id = ?`,
-        [JSON.stringify(data.availability), userId]
+        [JSON.stringify(data.availability), userId],
       );
 
     case 6:
@@ -235,7 +238,7 @@ async function saveStepData(step, data, userId) {
           data.baseRate,
           JSON.stringify(data.paymentMethods || []),
           userId,
-        ]
+        ],
       );
 
     case 7:
@@ -248,7 +251,7 @@ async function saveStepData(step, data, userId) {
           data.idNumber,
           data.backgroundCheckConsent || false,
           userId,
-        ]
+        ],
       );
 
     case 8:
@@ -256,7 +259,7 @@ async function saveStepData(step, data, userId) {
         `UPDATE provider_requests
          SET terms_accepted = ?, privacy_accepted = ?, rules_accepted = ?
          WHERE user_id = ?`,
-        [data.termsAccepted, data.privacyAccepted, data.rulesAccepted, userId]
+        [data.termsAccepted, data.privacyAccepted, data.rulesAccepted, userId],
       );
 
     default:
