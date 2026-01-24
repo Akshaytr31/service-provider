@@ -59,11 +59,22 @@ export default function ProviderRequestDetails() {
   const getDocumentUrl = (doc) => {
     if (!doc || doc.provider !== "cloudinary") return null;
 
-    // Cloudinary secure delivery (view-only)
-    const resourceType = doc.resourceType || "image";
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    // Use stored secure URL if available (most reliable)
+    if (doc.secureUrl) return doc.secureUrl;
 
-    return `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${doc.publicId}.${doc.format}`;
+    const resourceType = doc.resourceType || "image";
+    const cloudName =
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dgalhzf0o";
+
+    // For raw files, the extension is already part of the publicId
+    if (resourceType === "raw") {
+      return `https://res.cloudinary.com/${cloudName}/raw/upload/${doc.version ? `v${doc.version}/` : ""}${doc.publicId}`;
+    }
+
+    // For images/videos, we append the format if available
+    const extension = doc.format ? `.${doc.format}` : "";
+    const versionSegment = doc.version ? `v${doc.version}/` : "";
+    return `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${versionSegment}${doc.publicId}${extension}`;
   };
 
   /* ================= FETCH ================= */
@@ -400,15 +411,23 @@ export default function ProviderRequestDetails() {
                 >
                   <VStack align="stretch" w="full" spacing={4}>
                     {providerRequest.qualifications?.map((q, i) => (
-                      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" key={i} borderRadius="lg" gap='10px'>
+                      <Box
+                        display="grid"
+                        gridTemplateColumns="repeat(2, 1fr)"
+                        key={i}
+                        borderRadius="lg"
+                        gap="10px"
+                      >
                         <Text color="#34d399" fontWeight="bold">
                           {q.degree}
                         </Text>
                         <Text color="gray.400">
-                          <b>Institusion:</b>{q.institution}
+                          <b>Institusion:</b>
+                          {q.institution}
                         </Text>
                         <Text color="gray.400">
-                          <b>Year of completion:</b>{q.year}
+                          <b>Year of completion:</b>
+                          {q.year}
                         </Text>
                       </Box>
                     ))}

@@ -28,20 +28,25 @@ export async function POST(req) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  console.log("Starting Cloudinary upload...");
+  const resourceType = file.type === "application/pdf" ? "raw" : "auto";
+
+  console.log(`Starting Cloudinary upload (type: ${resourceType})...`);
   const upload = await new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
           folder: "provider-licenses",
-          resource_type: "auto",
+          resource_type: resourceType,
         },
         (err, result) => {
           if (err) {
             console.error("Cloudinary Upload Error:", err);
             reject(err);
           }
-          console.log("Cloudinary Upload Success:", result.public_id);
+          console.log(
+            "Cloudinary Upload Result:",
+            JSON.stringify(result, null, 2),
+          );
           resolve(result);
         },
       )
@@ -52,5 +57,7 @@ export async function POST(req) {
     publicId: upload.public_id,
     format: upload.format,
     resourceType: upload.resource_type,
+    version: upload.version,
+    secureUrl: upload.secure_url,
   });
 }

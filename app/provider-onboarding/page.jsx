@@ -693,7 +693,7 @@ export default function ProviderOnboardingPage() {
         <Box w="100%">
           <Box
             position="fixed"
-            top="62px"
+            top="71px"
             left="0"
             width="100vw"
             zIndex="1"
@@ -704,7 +704,7 @@ export default function ProviderOnboardingPage() {
             <Progress
               h="4px"
               value={((step + 1) / TOTAL_STEPS) * 100}
-              colorScheme="blue"
+              colorScheme="green"
               borderRadius="md"
             />
           </Box>

@@ -41,6 +41,8 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
           publicId: data.publicId,
           format: data.format,
           resourceType: data.resourceType,
+          version: data.version,
+          secureUrl: data.secureUrl,
         },
       }));
 
@@ -157,7 +159,6 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
               isDisabled={uploading}
               size="sm"
               borderRadius="lg"
-
               focusBorderColor="green.400"
               onChange={(e) => {
                 const file = e.target.files?.[0];

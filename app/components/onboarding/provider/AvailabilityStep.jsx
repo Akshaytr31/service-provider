@@ -18,6 +18,7 @@ export default function AvailabilityStep({
     <Stack
       spacing={6}
       p={8}
+      marginTop={"10px"}
       bg="white"
       border="1px solid"
       borderColor="gray.100"
