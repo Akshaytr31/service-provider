@@ -787,7 +787,7 @@ export default function ProviderOnboardingPage() {
           >
             Back
           </Button>
-          <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
+          <Button colorScheme="green" onClick={handleNext} isLoading={loading}>
             {step === TOTAL_STEPS - 1 ? "Finish" : "Next"}
           </Button>
         </HStack>

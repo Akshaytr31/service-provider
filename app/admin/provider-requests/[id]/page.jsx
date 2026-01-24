@@ -138,9 +138,9 @@ export default function ProviderRequestDetails() {
         display="flex"
         alignItems="center"
         justifyContent="center"
-        bg="slate.900"
+        bg="gray.50"
       >
-        <Spinner size="xl" color="emerald.400" thickness="4px" />
+        <Spinner size="xl" color="green.500" thickness="4px" />
       </Box>
     );
   }
@@ -156,26 +156,26 @@ export default function ProviderRequestDetails() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      bg="whiteAlpha.50"
-      backdropFilter="blur(12px)"
-      p={6}
+      bg="white"
+      p={8}
       borderRadius="2xl"
       border="1px solid"
-      borderColor="whiteAlpha.100"
-      boxShadow="xl"
+      borderColor="gray.100"
+      boxShadow="sm"
       _hover={{
         transform: "translateY(-4px)",
-        borderColor: "whiteAlpha.300",
+        borderColor: "green.100",
+        boxShadow: "xl",
         transition: "all 0.3s",
       }}
     >
-      <HStack mb={4} spacing={3}>
-        {icon && <Icon as={icon} color="emerald.400" w={5} h={5} />}
+      <HStack mb={6} spacing={3}>
+        {icon && <Icon as={icon} color="green.500" w={5} h={5} />}
         <Heading
           size="xs"
           textTransform="uppercase"
           letterSpacing="widest"
-          color="gray.400"
+          color="gray.500"
         >
           {title}
         </Heading>
@@ -197,7 +197,7 @@ export default function ProviderRequestDetails() {
       >
         {label}
       </Text>
-      <Text fontSize="md" color="whiteAlpha.900" fontWeight="medium">
+      <Text fontSize="sm" color="gray.800" fontWeight="bold">
         {value || "-"}
       </Text>
     </Box>
@@ -206,36 +206,37 @@ export default function ProviderRequestDetails() {
   /* ================= UI ================= */
 
   return (
-    <Box minH="100vh" bg="#0f172a" pb={12} pt="70px">
+    <Box minH="100vh" bg="gray.50" pb={12} pt="90px">
       {/* Page Header (Sub-header below Global Navbar) */}
       <Box
         position="sticky"
         top="60px"
         zIndex={10}
-        bg="rgba(15, 23, 42, 0.8)"
+        bg="whiteAlpha.800"
         backdropFilter="blur(20px)"
         borderBottom="1px solid"
-        borderColor="whiteAlpha.100"
-        py={4}
-        mb={8}
+        borderColor="gray.100"
+        py={5}
+        mb={10}
       >
         <Container maxW="container.xl">
           <HStack justify="space-between" wrap="wrap" gap={4}>
             <HStack spacing={4}>
               <Button
                 leftIcon={<ArrowBackIcon />}
-                variant="ghost"
-                color="gray.400"
-                _hover={{ color: "white", bg: "whiteAlpha.100" }}
+                variant="outline"
+                borderColor="gray.200"
+                color="gray.600"
+                _hover={{ bg: "gray.50" }}
                 onClick={() => router.back()}
               >
                 Back
               </Button>
               <VStack align="start" spacing={0}>
-                <Heading size="md" color="white">
-                  Provider Request Details
+                <Heading size="md" color="gray.800">
+                  Provider Request
                 </Heading>
-                <Text fontSize="xs" color="gray.400">
+                <Text fontSize="xs" color="gray.500" fontWeight="bold">
                   REF ID: {id?.slice(-8).toUpperCase()}
                 </Text>
               </VStack>
@@ -264,22 +265,27 @@ export default function ProviderRequestDetails() {
                   <Button
                     size="sm"
                     variant="outline"
-                    borderColor="#f43f5e"
-                    color="#f43f5e"
-                    _hover={{ bg: "#f43f5e", color: "white" }}
+                    borderColor="red.500"
+                    color="red.500"
+                    borderRadius="xl"
+                    px={6}
+                    _hover={{ bg: "red.50" }}
                     onClick={onOpen}
                   >
-                    Reject
+                    Reject Application
                   </Button>
                   <Button
                     size="sm"
-                    bg="#10b981"
+                    bg="green.500"
                     color="white"
-                    _hover={{ bg: "#059669", transform: "scale(1.02)" }}
+                    borderRadius="xl"
+                    px={8}
+                    boxShadow="0 10px 15px -3px rgba(72, 187, 120, 0.4)"
+                    _hover={{ bg: "green.600", transform: "scale(1.02)" }}
                     transition="all 0.2s"
                     onClick={() => handleAction("approve")}
                   >
-                    Approve
+                    Approve Request
                   </Button>
                 </HStack>
               )}
@@ -422,7 +428,7 @@ export default function ProviderRequestDetails() {
                           {q.degree}
                         </Text>
                         <Text color="gray.400">
-                          <b>Institusion:</b>
+                          <b>Institution:</b>
                           {q.institution}
                         </Text>
                         <Text color="gray.400">
@@ -444,7 +450,7 @@ export default function ProviderRequestDetails() {
                         <Grid
                           templateColumns="repeat(2, 1fr)"
                           gap={3}
-                          color="gray.500"
+                          color="gray.600"
                         >
                           <Text color="#34d399" fontWeight="bold">
                             {l.name}
@@ -567,53 +573,58 @@ export default function ProviderRequestDetails() {
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
         <ModalOverlay backdropFilter="blur(5px)" bg="rgba(0,0,0,0.7)" />
         <ModalContent
-          bg="#1e293b"
-          color="white"
-          borderRadius="2xl"
+          bg="white"
+          color="gray.800"
+          borderRadius="3xl"
           border="1px solid"
-          borderColor="whiteAlpha.200"
+          borderColor="gray.100"
+          boxShadow="2xl"
         >
-          <ModalHeader borderBottom="1px solid" borderColor="whiteAlpha.100">
+          <ModalHeader borderBottom="1px solid" borderColor="gray.50" py={6}>
             Reject Request
           </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody py={6}>
-            <Text mb={4} color="gray.400" fontSize="sm">
-              Please provide a reason for rejection:
+          <ModalCloseButton mt={2} />
+          <ModalBody py={8}>
+            <Text
+              mb={4}
+              color="gray.500"
+              fontSize="xs"
+              fontWeight="bold"
+              textTransform="uppercase"
+            >
+              Reason for rejection
             </Text>
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Reason for rejection..."
-              bg="rgba(0,0,0,0.3)"
-              borderColor="whiteAlpha.200"
-              _hover={{ borderColor: "red.400" }}
+              placeholder="e.g. Incomplete documentation or incorrect details..."
+              bg="gray.50"
+              borderColor="gray.100"
+              _hover={{ borderColor: "green.200" }}
               _focus={{
-                borderColor: "red.400",
-                boxShadow: "0 0 0 1px #f43f5e",
+                borderColor: "green.400",
+                boxShadow: "0 0 0 1px green.400",
               }}
               h="150px"
-              borderRadius="xl"
+              borderRadius="2xl"
+              fontSize="sm"
             />
           </ModalBody>
 
-          <ModalFooter bg="whiteAlpha.50" borderBottomRadius="2xl">
-            <Button
-              variant="ghost"
-              mr={3}
-              onClick={onClose}
-              _hover={{ bg: "whiteAlpha.100" }}
-            >
+          <ModalFooter bg="gray.50" borderBottomRadius="3xl" py={6}>
+            <Button variant="ghost" mr={3} onClick={onClose} borderRadius="xl">
               Cancel
             </Button>
             <Button
-              colorScheme="red"
-              bg="#f43f5e"
-              _hover={{ bg: "#e11d48" }}
+              bg="red.500"
+              color="white"
+              borderRadius="xl"
+              px={8}
+              _hover={{ bg: "red.600" }}
               onClick={confirmReject}
               isDisabled={!rejectionReason.trim()}
             >
-              Reject & Send Email
+              Confirm Rejection
             </Button>
           </ModalFooter>
         </ModalContent>
