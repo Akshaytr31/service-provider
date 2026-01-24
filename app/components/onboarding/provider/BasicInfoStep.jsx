@@ -29,17 +29,22 @@ export default function BasicInfoStep({
 }) {
   return (
     <Stack spacing={4} alignItems={"center"} width="full">
-      <Heading size="md" color="gray.600">
-        Basic Details & Select type
+      <Heading size="sm" color="green.700" fontWeight="bold">
+        Basic Details & Type
       </Heading>
 
       <RadioGroup
         value={formData.userType}
         onChange={(val) => setFormData((p) => ({ ...p, userType: val }))}
+        colorScheme="green"
       >
-        <HStack>
-          <Radio value="individual">Individual</Radio>
-          <Radio value="business">Business</Radio>
+        <HStack spacing={8}>
+          <Radio value="individual" size="sm">
+            Individual
+          </Radio>
+          <Radio value="business" size="sm">
+            Business
+          </Radio>
         </HStack>
       </RadioGroup>
 
@@ -53,23 +58,28 @@ export default function BasicInfoStep({
         >
           {/* Individual Details */}
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.200"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
             position="relative"
           >
             <Text
-              fontWeight="semibold"
+              fontWeight="bold"
               mb="12px"
-              fontSize="md"
+              fontSize="xs"
               position="absolute"
-              top="-17px"
+              top="-11px"
+              left="20px"
               zIndex="1"
-              p={"5px"}
+              px={2}
               bg="white"
-              color={"gray.600"}
+              color={"green.600"}
+              textTransform="uppercase"
+              letterSpacing="wider"
             >
               Individual Details
             </Text>
@@ -79,35 +89,44 @@ export default function BasicInfoStep({
               gridTemplateColumns="repeat(2, 1fr)"
             >
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   First Name
                 </FormLabel>
                 <Input
                   name="firstName"
                   placeholder="First Name"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.firstName}
                   onChange={handleChange}
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Last Name
                 </FormLabel>
                 <Input
                   name="lastName"
                   placeholder="Last Name"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.lastName}
                   onChange={handleChange}
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Document Type
                 </FormLabel>
                 <Select
                   name="idType"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.idType}
                   onChange={handleChange}
                 >
@@ -121,12 +140,15 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Document Number
                 </FormLabel>
                 <Input
                   name="idNumber"
                   type="text"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   inputMode={
                     formData.idType === "Passport" ? "text" : "numeric"
                   }
@@ -152,6 +174,8 @@ export default function BasicInfoStep({
 
               <FormControl>
                 <Checkbox
+                  colorScheme="green"
+                  size="sm"
                   isChecked={formData.backgroundCheckConsent}
                   onChange={(e) =>
                     setFormData((p) => ({
@@ -168,10 +192,12 @@ export default function BasicInfoStep({
 
           {/* License */}
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.200"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
           >
             <LicenseStep
@@ -183,10 +209,12 @@ export default function BasicInfoStep({
 
           {/* Education */}
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.200"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
           >
             <EducationStep formData={formData} handleChange={handleChange} />
@@ -194,10 +222,12 @@ export default function BasicInfoStep({
 
           {/* Pricing */}
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.200"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
           >
             <PricingStep
@@ -210,10 +240,12 @@ export default function BasicInfoStep({
           {/* Services – Full Width */}
           <Box
             gridColumn="1 / -1"
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.300"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
           >
             <ServiceStep
               formData={formData}
@@ -237,20 +269,25 @@ export default function BasicInfoStep({
         >
           <Box
             gridColumn="1 / -1"
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.300"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             position="relative"
           >
             <Heading
-              size="sm"
+              size="xs"
               position="absolute"
-              top="-17px"
+              top="-11px"
+              left="20px"
               zIndex="1"
               bg="white"
-              p={"5px"}
-              color={"gray.600"}
+              px={2}
+              color={"green.600"}
+              textTransform="uppercase"
+              letterSpacing="wider"
             >
               Business Details
             </Heading>
@@ -260,23 +297,29 @@ export default function BasicInfoStep({
               gap={"20px"}
             >
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Business Name
                 </FormLabel>
                 <Input
                   name="businessName"
                   placeholder="Business Name"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.businessName}
                   onChange={handleChange}
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Business Type
                 </FormLabel>
                 <Select
                   name="businessType"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.businessType}
                   onChange={handleChange}
                 >
@@ -286,12 +329,15 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Registration Number
                 </FormLabel>
                 <Input
                   name="registrationNumber"
                   placeholder="Registration Number"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.registrationNumber}
                   onChange={handleChange}
                   inputMode="numeric"
@@ -300,12 +346,15 @@ export default function BasicInfoStep({
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   Establishment Year
                 </FormLabel>
                 <Input
                   name="establishmentYear"
                   placeholder="Establishment Year"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.establishmentYear}
                   onChange={handleChange}
                   inputMode="numeric"
@@ -313,12 +362,15 @@ export default function BasicInfoStep({
                 />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="bold">
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   TRN Number
                 </FormLabel>
                 <Input
                   name="trnNumber"
                   placeholder="TRN Number"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
                   value={formData.trnNumber}
                   onChange={handleChange}
                   inputMode="numeric"
@@ -338,10 +390,12 @@ export default function BasicInfoStep({
             </FormControl> */}
           </Box>
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.300"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
           >
             <LicenseStep
@@ -351,10 +405,12 @@ export default function BasicInfoStep({
             />
           </Box>
           <Box
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.300"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
             gridColumn="1 / -1"
           >
             <PricingStep
@@ -365,10 +421,12 @@ export default function BasicInfoStep({
           </Box>
           <Box
             gridColumn="1 / -1"
-            p="20px"
+            p={8}
+            bg="white"
             border="1px solid"
-            borderColor="gray.300"
-            borderRadius="md"
+            borderColor="gray.100"
+            borderRadius="2xl"
+            boxShadow="sm"
           >
             <ServiceStep
               formData={formData}

@@ -30,24 +30,44 @@ export default function AccountStep({
   loading,
 }) {
   return (
-    <Stack spacing={4}>
-      <Heading size="md">Account Details</Heading>
+    <Stack
+      spacing={6}
+      p={8}
+      bg="white"
+      border="1px solid"
+      borderColor="gray.100"
+      borderRadius="2xl"
+      boxShadow="sm"
+    >
+      <Heading size="sm" color="green.700" fontWeight="bold">
+        Account Details
+      </Heading>
       <FormControl isRequired>
-        <FormLabel>Email</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Email
+        </FormLabel>
         <Input
           type="email"
-          placeholder="Email"
+          placeholder="Email Address"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
       </FormControl>
       <Flex gap={2}>
         <FormControl isRequired>
-          <FormLabel>Password</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Password
+          </FormLabel>
           <InputGroup>
             <Input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
@@ -63,11 +83,16 @@ export default function AccountStep({
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel>Confirm Password</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Confirm Password
+          </FormLabel>
           <InputGroup>
             <Input
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm Password"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.confirmPassword}
               onChange={(e) =>
                 setForm({ ...form, confirmPassword: e.target.value })
@@ -89,22 +114,41 @@ export default function AccountStep({
         <Button
           onClick={handleSendOtp}
           isLoading={otpLoading}
-          variant="outline"
-          colorScheme="blue"
+          variant="solid"
+          bg="green.500"
+          color="white"
+          _hover={{ bg: "green.600" }}
+          width="full"
+          borderRadius="xl"
+          fontSize="sm"
+          height="45px"
           mt={2}
         >
           Send OTP to Verify
         </Button>
       ) : (
-        <Stack spacing={2}>
+        <Stack
+          spacing={4}
+          bg="green.50"
+          p={4}
+          borderRadius="xl"
+          border="1px solid"
+          borderColor="green.100"
+        >
           <FormControl isRequired>
-            <FormLabel fontSize="sm" fontWeight="bold">
+            <FormLabel fontSize="xs" fontWeight="bold" color="green.700">
               Enter OTP
             </FormLabel>
             <HStack>
               <Input
                 name="otp"
                 placeholder="######"
+                size="sm"
+                borderRadius="lg"
+                focusBorderColor="green.400"
+                bg="white"
+                fontSize="lg"
+                fontWeight="bold"
                 value={form.otp}
                 onChange={handleChange}
                 maxLength={6}
@@ -118,7 +162,8 @@ export default function AccountStep({
                 variant="ghost"
                 onClick={handleResendOtp}
                 isDisabled={resendTimer > 0}
-                color="blue.500"
+                color="green.600"
+                _hover={{ bg: "green.100" }}
               >
                 {resendTimer > 0 ? `Resend (${resendTimer})` : "Resend"}
               </Button>
@@ -127,8 +172,13 @@ export default function AccountStep({
           <Button
             onClick={handleNext}
             isLoading={loading}
-            colorScheme="green"
+            bg="green.600"
+            color="white"
+            _hover={{ bg: "green.700" }}
             width="full"
+            borderRadius="xl"
+            fontSize="sm"
+            height="45px"
             mt={2}
           >
             Verify & Finish

@@ -14,46 +14,81 @@ import {
 
 export default function BasicInfoStep({ form, setForm, handleChange }) {
   return (
-    <Stack spacing={4} alignItems={"center"} width="full">
-      <Heading size="md" color="gray.600">
-        Basic Details & Select type
+    <Stack spacing={6} alignItems={"center"} width="full">
+      <Heading size="sm" color="green.700" fontWeight="bold">
+        Basic Details & Type
       </Heading>
 
       <RadioGroup
         value={form.userType}
         onChange={(val) => setForm((p) => ({ ...p, userType: val }))}
+        colorScheme="green"
       >
-        <HStack>
-          <Radio value="individual">Individual</Radio>
-          <Radio value="business">Business</Radio>
+        <HStack spacing={8}>
+          <Radio value="individual" size="sm">
+            Individual
+          </Radio>
+          <Radio value="business" size="sm">
+            Business
+          </Radio>
         </HStack>
       </RadioGroup>
 
       {/* INDIVIDUAL FIELDS */}
       {form.userType === "individual" && (
-        <Box w="full">
+        <Box
+          w="full"
+          display="grid"
+          gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          p={8}
+          bg="white"
+          border="1px solid"
+          borderColor="gray.100"
+          borderRadius="2xl"
+          boxShadow="sm"
+        >
           <FormControl isRequired>
-            <FormLabel fontSize="sm">First Name</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              First Name
+            </FormLabel>
             <Input
               name="firstName"
               placeholder="First Name"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.firstName}
               onChange={handleChange}
             />
           </FormControl>
 
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Last Name</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Last Name
+            </FormLabel>
             <Input
               name="lastName"
               placeholder="Last Name"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.lastName}
               onChange={handleChange}
             />
           </FormControl>
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Document Type</FormLabel>
-            <Select name="idType" value={form.idType} onChange={handleChange}>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Document Type
+            </FormLabel>
+            <Select
+              name="idType"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
+              value={form.idType}
+              onChange={handleChange}
+            >
               <option value="" disabled>
                 Select Document
               </option>
@@ -65,10 +100,15 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
 
           {/* ID NUMBER */}
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Document Number</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Document Number
+            </FormLabel>
             <Input
               name="idNumber"
               type="text"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               inputMode={form.idType === "Passport" ? "text" : "numeric"}
               pattern={form.idType === "Passport" ? undefined : "[0-9]*"}
               placeholder={
@@ -87,8 +127,10 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
           </FormControl>
 
           {/* BACKGROUND CHECK */}
-          <FormControl>
+          <FormControl gridColumn="1 / -1">
             <Checkbox
+              colorScheme="green"
+              size="sm"
               isChecked={form.backgroundCheckConsent}
               onChange={(e) =>
                 setForm((p) => ({
@@ -105,21 +147,42 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
 
       {/* BUSINESS FIELDS */}
       {form.userType === "business" && (
-        <Stack spacing={4} width={"full"}>
+        <Box
+          w="full"
+          display="grid"
+          gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+          gap={6}
+          p={8}
+          bg="white"
+          border="1px solid"
+          borderColor="gray.100"
+          borderRadius="2xl"
+          boxShadow="sm"
+        >
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Business Name</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Business Name
+            </FormLabel>
             <Input
               name="businessName"
               placeholder="Business Name"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.businessName}
               onChange={handleChange}
             />
           </FormControl>
 
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Business Type</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Business Type
+            </FormLabel>
             <Select
               name="businessType"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.businessType}
               onChange={handleChange}
             >
@@ -129,10 +192,15 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
           </FormControl>
 
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Registration Number</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Registration Number
+            </FormLabel>
             <Input
               name="registrationNumber"
               placeholder="Registration Number"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.registrationNumber}
               onChange={handleChange}
               inputMode="numeric"
@@ -141,10 +209,15 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
           </FormControl>
 
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Establishment Year</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Establishment Year
+            </FormLabel>
             <Input
               name="establishmentYear"
               placeholder="Establishment Year"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.establishmentYear}
               onChange={handleChange}
               inputMode="numeric"
@@ -152,10 +225,15 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
             />
           </FormControl>
           <FormControl isRequired>
-            <FormLabel fontSize="sm">TRN Number</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              TRN Number
+            </FormLabel>
             <Input
               name="trnNumber"
               placeholder="TRN Number"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               value={form.trnNumber}
               onChange={handleChange}
               inputMode="numeric"
@@ -163,16 +241,21 @@ export default function BasicInfoStep({ form, setForm, handleChange }) {
             />
           </FormControl>
           <FormControl isRequired>
-            <FormLabel fontSize="sm">Expiry Date</FormLabel>
+            <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+              Expiry Date
+            </FormLabel>
             <Input
               name="expiryDate"
               type="date"
+              size="sm"
+              borderRadius="lg"
+              focusBorderColor="green.400"
               placeholder="Expiry Date"
               value={form.expiryDate}
               onChange={handleChange}
             />
           </FormControl>
-        </Stack>
+        </Box>
       )}
     </Stack>
   );

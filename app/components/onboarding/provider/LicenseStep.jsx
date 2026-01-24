@@ -68,48 +68,61 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
   return (
     <Stack spacing={4} width="full" position="relative">
       <Heading
-        size="sm"
+        size="xs"
         position="absolute"
-        top="-35px"
+        top="-45px"
+        left="0"
         zIndex="1"
         bg="white"
-        p="5px"
-        color="gray.600"
+        px={2}
+        color="green.600"
+        textTransform="uppercase"
+        letterSpacing="wider"
+        fontWeight="bold"
       >
         License
       </Heading>
 
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap="20px">
+      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={6}>
         <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="bold">
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             License Name
           </FormLabel>
           <Input
             name="licenseName"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.licenseName}
             onChange={handleChange}
-            placeholder="License Name"
+            placeholder="e.g. Master Electrician License"
           />
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="bold">
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             Issuing Authority
           </FormLabel>
           <Input
             name="licenseAuth"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.licenseAuth}
             onChange={handleChange}
-            placeholder="Issuing Authority"
+            placeholder="e.g. City Council"
           />
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="bold">
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             License Number
           </FormLabel>
           <Input
             name="licenseNumber"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.licenseNumber}
             onChange={handleChange}
             placeholder="License Number"
@@ -117,12 +130,15 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="bold">
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             License Expiry Date
           </FormLabel>
           <Input
             name="licenseExpiry"
             type="date"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.licenseExpiry}
             onChange={handleChange}
           />
@@ -139,6 +155,10 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               isDisabled={uploading}
+              size="sm"
+              borderRadius="lg"
+
+              focusBorderColor="green.400"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleFileUpload(file);
@@ -150,13 +170,13 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
                 position="absolute"
                 right="10px"
                 top="10px"
-                color="blue.500"
+                color="green.500"
               />
             )}
           </Box>
           {formData.licenseDocument && !uploading && (
-            <Text fontSize="xs" color="green.600" mt={1}>
-              Document uploaded successfully
+            <Text fontSize="10px" color="green.600" mt={1} fontWeight="bold">
+              ✓ Document uploaded successfully
             </Text>
           )}
         </FormControl>

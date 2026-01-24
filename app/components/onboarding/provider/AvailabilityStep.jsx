@@ -16,26 +16,45 @@ export default function AvailabilityStep({
 }) {
   return (
     <Stack
-      spacing={4}
-      p="20px"
-      marginTop={'10px'}
+      spacing={6}
+      p={8}
+      bg="white"
       border="1px solid"
-      borderColor="gray.300"
-      borderRadius="md"
+      borderColor="gray.100"
+      borderRadius="2xl"
+      boxShadow="sm"
       maxWidth={"800px"}
       position="relative"
     >
-      <Heading size="sm" fontWeight="bold" position="absolute" top="-16px" left="10px" zIndex={1} p="5px" bg="white"> Working days and time</Heading>
+      <Heading
+        size="xs"
+        fontWeight="bold"
+        position="absolute"
+        top="-12px"
+        left="20px"
+        zIndex={1}
+        px={2}
+        bg="white"
+        color="green.600"
+        textTransform="uppercase"
+        letterSpacing="wider"
+      >
+        Working days and time
+      </Heading>
 
       {/* Working Days */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm" fontWeight="bold">Available Days</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Available Days
+        </FormLabel>
         <HStack wrap="wrap">
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
             <Checkbox
               key={day}
+              colorScheme="green"
               isChecked={formData.availableDays.includes(day)}
               onChange={() => handleArrayToggle("availableDays", day)}
+              size="sm"
             >
               {day}
             </Checkbox>
@@ -45,19 +64,27 @@ export default function AvailabilityStep({
 
       {/* Working Hours */}
       <FormControl isRequired>
-        <FormLabel fontSize="sm" fontWeight="bold">Working Hours</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Working Hours
+        </FormLabel>
         <HStack>
           <Input
             type="time"
             name="availableHoursStart"
             value={formData.availableHoursStart}
             onChange={handleChange}
+            borderRadius="lg"
+            fontSize="sm"
+            focusBorderColor="green.400"
           />
           <Input
             type="time"
             name="availableHoursEnd"
             value={formData.availableHoursEnd}
             onChange={handleChange}
+            borderRadius="lg"
+            fontSize="sm"
+            focusBorderColor="green.400"
           />
         </HStack>
       </FormControl>
@@ -65,10 +92,12 @@ export default function AvailabilityStep({
       {/* Emergency Availability */}
       <FormControl>
         <Checkbox
+          colorScheme="green"
           isChecked={formData.emergency}
           onChange={(e) =>
             setFormData((p) => ({ ...p, emergency: e.target.checked }))
           }
+          size="sm"
         >
           Emergency / After-hours available
         </Checkbox>

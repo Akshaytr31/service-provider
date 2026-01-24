@@ -1,12 +1,35 @@
-import { Stack, FormControl, FormLabel, Select, Input } from "@chakra-ui/react";
+import {
+  Stack,
+  FormControl,
+  FormLabel,
+  Select,
+  Input,
+  Heading,
+} from "@chakra-ui/react";
 
 export default function EducationStep({ form, setForm }) {
   return (
-    <Stack spacing={4}>
+    <Stack
+      spacing={6}
+      p={8}
+      bg="white"
+      border="1px solid"
+      borderColor="gray.100"
+      borderRadius="2xl"
+      boxShadow="sm"
+    >
+      <Heading size="sm" color="green.700" fontWeight="bold">
+        Education Details
+      </Heading>
       <FormControl isRequired>
-        <FormLabel>Qualification</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Qualification
+        </FormLabel>
         <Select
           placeholder="Select qualification"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={form.education.qualification}
           onChange={(e) =>
             setForm({
@@ -27,8 +50,14 @@ export default function EducationStep({ form, setForm }) {
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel>Field of Study</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Field of Study
+        </FormLabel>
         <Input
+          placeholder="e.g. Computer Science"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={form.education.field}
           onChange={(e) =>
             setForm({
@@ -40,8 +69,14 @@ export default function EducationStep({ form, setForm }) {
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel>Institution</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Institution
+        </FormLabel>
         <Input
+          placeholder="e.g. University Name"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={form.education.institution}
           onChange={(e) =>
             setForm({
@@ -53,8 +88,14 @@ export default function EducationStep({ form, setForm }) {
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel>Year of Completion</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Year of Completion
+        </FormLabel>
         <Input
+          placeholder="YYYY"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={form.education.year}
           onChange={(e) =>
             setForm({

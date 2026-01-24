@@ -18,38 +18,52 @@ export default function PricingStep({
   return (
     <Stack spacing={4} width={"full"} position="relative">
       <Heading
-        size="sm"
+        size="xs"
         position="absolute"
-        top="-35px"
+        top="-45px"
+        left="0"
         zIndex="1"
         bg="white"
-        p={"5px"}
-        color={"gray.600"}
+        px={2}
+        color={"green.600"}
+        textTransform="uppercase"
+        letterSpacing="wider"
+        fontWeight="bold"
       >
-        Fix your price
+        Pricing Detail
       </Heading>
 
       {/* Pricing Type */}
-      <Box display={"grid"} gridTemplateColumns={"repeat(2, 1fr)"} gap={"20px"}>
+      <Box display={"grid"} gridTemplateColumns={"repeat(2, 1fr)"} gap={6}>
         <FormControl isRequired width={"full"}>
-          <FormLabel fontSize="sm" fontWeight="bold">Pricing Type</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Pricing Type
+          </FormLabel>
           <Select
             name="pricingType"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.pricingType}
             onChange={handleChange}
           >
-            <option value="hourly">Hourly</option>
-            <option value="fixed">Fixed</option>
+            <option value="hourly">Hourly Rate</option>
+            <option value="fixed">Fixed Price</option>
             <option value="project">Per Project</option>
           </Select>
         </FormControl>
 
         {/* Base Rate */}
         <FormControl isRequired width={"full"}>
-          <FormLabel fontSize="sm" fontWeight="bold">Base Rate</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Base Rate
+          </FormLabel>
           <Input
             name="baseRate"
-            placeholder="Enter base rate"
+            placeholder="e.g. 500"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.baseRate}
             onChange={handleChange}
             inputMode="numeric"
@@ -59,11 +73,15 @@ export default function PricingStep({
 
         {/* Payment Methods */}
         <FormControl isRequired>
-          <FormLabel fontSize="sm">Payment Methods</FormLabel>
-          <HStack spacing={4}>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Payment Methods
+          </FormLabel>
+          <HStack spacing={6}>
             {["Bank", "App"].map((p) => (
               <Checkbox
                 key={p}
+                size="sm"
+                colorScheme="green"
                 isChecked={formData.paymentMethods.includes(p)}
                 onChange={() => handleArrayToggle("paymentMethods", p)}
               >

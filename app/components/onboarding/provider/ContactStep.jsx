@@ -17,29 +17,41 @@ import {
 export default function ContactStep({ formData, handleChange, setFormData }) {
   return (
     <Stack
-      spacing={4}
-      p="20px"
+      spacing={6}
+      p={8}
+      bg="white"
       border="1px solid"
-      borderColor="gray.300"
-      borderRadius="md"
+      borderColor="gray.100"
+      borderRadius="2xl"
+      boxShadow="sm"
       maxWidth={"800px"}
     >
-      <HStack>
+      <HStack spacing={4}>
         <FormControl isRequired>
-          <FormLabel fontSize="sm">City</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            City
+          </FormLabel>
           <Input
             name="city"
             placeholder="City"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.city}
             onChange={handleChange}
           />
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel fontSize="sm">Zip Code</FormLabel>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Zip Code
+          </FormLabel>
           <Input
             name="zipCode"
             placeholder="Zip Code"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
             value={formData.zipCode}
             onChange={handleChange}
             inputMode="numeric"
@@ -49,38 +61,61 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
       </HStack>
 
       <FormControl isRequired>
-        <FormLabel fontSize="sm">State/Emirates/Governorate</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          State/Emirates/Governorate
+        </FormLabel>
         <Input
           name="state"
           placeholder="State"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={formData.state}
           onChange={handleChange}
         />
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Country</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Country
+        </FormLabel>
         <Input
           name="country"
           placeholder="Country"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={formData.country}
           onChange={handleChange}
         />
       </FormControl>
 
       <FormControl isRequired>
-        <FormLabel fontSize="sm">Full Address</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Full Address
+        </FormLabel>
         <Textarea
           name="address"
           placeholder="Full Address"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={formData.address}
           onChange={handleChange}
+          rows={3}
         />
       </FormControl>
 
       <FormControl isRequired>
-        <Card padding={"20px"} border={"1px solid #e2e8f0"} boxShadow={"none"}>
-          <FormLabel fontSize="sm">
+        <Card
+          p={6}
+          bg="green.50"
+          border="1px solid"
+          borderColor="green.100"
+          boxShadow="none"
+          borderRadius="xl"
+        >
+          <FormLabel fontSize="xs" fontWeight="bold" color="green.700" mb={8}>
             Service Radius (km): {formData.serviceRadius || 0}
           </FormLabel>
 
@@ -88,6 +123,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
             min={0}
             max={100}
             step={1}
+            colorScheme="green"
             value={Number(formData.serviceRadius) || 0}
             onChange={(val) =>
               setFormData((prev) => ({
@@ -96,22 +132,40 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
               }))
             }
           >
-            <SliderMark value={0} mt="2" ml="-2" fontSize="xs">
+            <SliderMark
+              value={0}
+              mt="2"
+              ml="-2"
+              fontSize="10px"
+              color="gray.400"
+            >
               0
             </SliderMark>
-            <SliderMark value={50} mt="2" ml="-2" fontSize="xs">
+            <SliderMark
+              value={50}
+              mt="2"
+              ml="-2"
+              fontSize="10px"
+              color="gray.400"
+            >
               50
             </SliderMark>
-            <SliderMark value={100} mt="2" ml="-4" fontSize="xs">
+            <SliderMark
+              value={100}
+              mt="2"
+              ml="-4"
+              fontSize="10px"
+              color="gray.400"
+            >
               100
             </SliderMark>
 
-            <SliderTrack>
-              <SliderFilledTrack />
+            <SliderTrack bg="white">
+              <SliderFilledTrack bg="green.400" />
             </SliderTrack>
 
-            <SliderThumb boxSize={6} backgroundColor="blue.500">
-              <Box color="white" fontSize="10px">
+            <SliderThumb boxSize={7} bg="green.500">
+              <Box color="white" fontSize="10px" fontWeight="bold">
                 KM
               </Box>
             </SliderThumb>
@@ -120,12 +174,18 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
       </FormControl>
 
       <FormControl>
-        <FormLabel fontSize="sm">Service Locality</FormLabel>
+        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+          Service Locality
+        </FormLabel>
         <Textarea
           name="serviceAreasInput"
           placeholder="Service Locality (comma separated)"
+          size="sm"
+          borderRadius="lg"
+          focusBorderColor="green.400"
           value={formData.serviceAreasInput}
           onChange={handleChange}
+          rows={3}
         />
       </FormControl>
     </Stack>
