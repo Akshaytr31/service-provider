@@ -245,9 +245,8 @@ export default function Navbar() {
               </>
             ) : (
               <Button
-                bg="green.500"
-                color="white"
-                _hover={{ bg: "green.600" }}
+                variant="ghost"
+                colorScheme="green"
                 borderRadius="full"
                 onClick={() => router.push("/login")}
               >

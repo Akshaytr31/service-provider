@@ -207,7 +207,7 @@ function ServiceCard({ service }) {
       }}
       whileHover={{ y: -10, transition: { duration: 0.3 } }}
       bg="white"
-      borderRadius="3xl"
+      borderRadius="lg"
       border="1px solid"
       borderColor="gray.100"
       overflow="hidden"
