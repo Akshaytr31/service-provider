@@ -93,12 +93,8 @@ export default function ProviderOnboardingPage() {
     serviceRadius: "",
     serviceAreasInput: "",
 
-    // STEP 2 – SERVICE
-    categoryId: "",
-    subCategoryId: "",
-    servicesOfferedInput: "",
-    description: "",
-    yearsExperience: "",
+    // STEP 2 – SERVICES (Multiple support)
+    services: [],
 
     // STEP 3 – EDUCATION
     degree: "",
@@ -106,11 +102,8 @@ export default function ProviderOnboardingPage() {
     yearOfCompletion: "",
 
     // STEP 4 – CERTS
-    licenseName: "",
-    licenseAuth: "",
-    licenseNumber: "",
-    licenseExpiry: "",
-    licenseDocument: null,
+    // STEP 4 – CERTS (Multiple support)
+    licenses: [],
 
     // STEP 5 – AVAILABILITY
     availableDays: [],
@@ -254,9 +247,7 @@ export default function ProviderOnboardingPage() {
       "establishmentYear",
       "registrationNumber",
       "trnNumber",
-      "yearsExperience",
       "yearOfCompletion",
-      "licenseNumber",
       "baseRate",
       "onSiteCharges",
       "otp",
@@ -408,17 +399,21 @@ export default function ProviderOnboardingPage() {
         }
 
         // Common for both in profile step
-        if (
-          !formData.categoryId ||
-          !formData.subCategoryId ||
-          !formData.description
-        ) {
-          return "Please complete service details";
+        if (formData.services.length === 0) {
+          return "Please add at least one service";
         }
-        if (!formData.servicesOfferedInput)
-          return "Please add at least one service offered";
 
-        if (!formData.yearsExperience) return "Years of experience is required";
+        if (
+          formData.services.some(
+            (s) =>
+              !s.categoryId ||
+              !s.subCategoryId ||
+              !s.description ||
+              !s.yearsExperience,
+          )
+        ) {
+          return "Please complete all fields for each added service (Category, Sub-Category, Description, Experience)";
+        }
 
         if (
           !formData.pricingType ||
@@ -543,13 +538,7 @@ export default function ProviderOnboardingPage() {
             : [],
 
           // Service
-          categoryId: formData.categoryId,
-          subCategoryId: formData.subCategoryId,
-          servicesOffered: formData.servicesOfferedInput
-            ? formData.servicesOfferedInput.split(",").map((s) => s.trim())
-            : [],
-          description: formData.description,
-          yearsExperience: formData.yearsExperience,
+          services: formData.services || [],
 
           // Education
           qualifications: formData.degree
@@ -563,17 +552,7 @@ export default function ProviderOnboardingPage() {
             : [],
 
           // License
-          licenses: formData.licenseName
-            ? [
-                {
-                  name: formData.licenseName,
-                  authority: formData.licenseAuth,
-                  number: formData.licenseNumber,
-                  expiry: formData.licenseExpiry,
-                  document: formData.licenseDocument,
-                },
-              ]
-            : [],
+          licenses: formData.licenses || [],
 
           // Availability
           availability: {

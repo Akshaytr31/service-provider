@@ -131,6 +131,7 @@ model ProviderRequest {
   serviceAreas       Json?    @map("service_areas")  // Array of cities/areas
 
   // 4. Service Details
+  categoryId         Int?     @map("category_id")
   subCategoryId      Int?     @map("sub_category_id")
   servicesOffered    Json?    @map("services_offered") // Array of service names
   description        String?  @db.Text // Service Description

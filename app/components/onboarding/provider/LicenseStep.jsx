@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Stack,
   Heading,
@@ -10,14 +10,66 @@ import {
   Text,
   useToast,
   Spinner,
+  IconButton,
+  Divider,
 } from "@chakra-ui/react";
+import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 
 export default function LicenseStep({ formData, handleChange, setFormData }) {
-  const [uploading, setUploading] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState(null);
   const toast = useToast();
 
-  const handleFileUpload = async (file) => {
-    setUploading(true);
+  // Initialize with one empty license if none exists
+  useEffect(() => {
+    if (!formData.licenses || formData.licenses.length === 0) {
+      setFormData((prev) => ({
+        ...prev,
+        licenses: [
+          {
+            name: "",
+            authority: "",
+            number: "",
+            expiry: "",
+            document: null,
+          },
+        ],
+      }));
+    }
+  }, [formData.licenses, setFormData]);
+
+  const addLicense = () => {
+    setFormData((prev) => ({
+      ...prev,
+      licenses: [
+        ...(prev.licenses || []),
+        {
+          name: "",
+          authority: "",
+          number: "",
+          expiry: "",
+          document: null,
+        },
+      ],
+    }));
+  };
+
+  const removeLicense = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      licenses: prev.licenses.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleLicenseChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newLicenses = [...(prev.licenses || [])];
+      newLicenses[index] = { ...newLicenses[index], [field]: value };
+      return { ...prev, licenses: newLicenses };
+    });
+  };
+
+  const handleFileUpload = async (index, file) => {
+    setUploadingIndex(index);
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -34,17 +86,21 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
       }
 
       // Save secure reference (NOT URL)
-      setFormData((prev) => ({
-        ...prev,
-        licenseDocument: {
-          provider: "cloudinary",
-          publicId: data.publicId,
-          format: data.format,
-          resourceType: data.resourceType,
-          version: data.version,
-          secureUrl: data.secureUrl,
-        },
-      }));
+      setFormData((prev) => {
+        const newLicenses = [...(prev.licenses || [])];
+        newLicenses[index] = {
+          ...newLicenses[index],
+          document: {
+            provider: "cloudinary",
+            publicId: data.publicId,
+            format: data.format,
+            resourceType: data.resourceType,
+            version: data.version,
+            secureUrl: data.secureUrl,
+          },
+        };
+        return { ...prev, licenses: newLicenses };
+      });
 
       toast({
         title: "Upload Successful",
@@ -63,12 +119,12 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
         isClosable: true,
       });
     } finally {
-      setUploading(false);
+      setUploadingIndex(null);
     }
   };
 
   return (
-    <Stack spacing={4} width="full" position="relative">
+    <Stack spacing={8} width="full" position="relative">
       <Heading
         size="xs"
         position="absolute"
@@ -82,106 +138,154 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
         letterSpacing="wider"
         fontWeight="bold"
       >
-        License
+        Licenses
       </Heading>
 
-      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={6}>
-        <FormControl isRequired>
-          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-            License Name
-          </FormLabel>
-          <Input
-            name="licenseName"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
-            value={formData.licenseName}
-            onChange={handleChange}
-            placeholder="e.g. Master Electrician License"
-          />
-        </FormControl>
+      {(formData.licenses || []).map((license, index) => (
+        <Box key={index} position="relative" pt={index > 0 ? 4 : 0}>
+          {index > 0 && <Divider mb={8} />}
+          <Stack spacing={6}>
+            <Box display="flex" justifyContent="space-between" align="center">
+              <Text fontWeight="bold" color="gray.600" fontSize="sm">
+                License #{index + 1}
+              </Text>
+              {index > 0 && (
+                <IconButton
+                  size="xs"
+                  colorScheme="red"
+                  variant="ghost"
+                  icon={<DeleteIcon />}
+                  onClick={() => removeLicense(index)}
+                  aria-label="Remove License"
+                />
+              )}
+            </Box>
 
-        <FormControl isRequired>
-          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-            Issuing Authority
-          </FormLabel>
-          <Input
-            name="licenseAuth"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
-            value={formData.licenseAuth}
-            onChange={handleChange}
-            placeholder="e.g. City Council"
-          />
-        </FormControl>
+            <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={6}>
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  License Name
+                </FormLabel>
+                <Input
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.name}
+                  onChange={(e) =>
+                    handleLicenseChange(index, "name", e.target.value)
+                  }
+                  placeholder="e.g. Master Electrician License"
+                />
+              </FormControl>
 
-        <FormControl isRequired>
-          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-            License Number
-          </FormLabel>
-          <Input
-            name="licenseNumber"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
-            value={formData.licenseNumber}
-            onChange={handleChange}
-            placeholder="License Number"
-          />
-        </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  Issuing Authority
+                </FormLabel>
+                <Input
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.authority}
+                  onChange={(e) =>
+                    handleLicenseChange(index, "authority", e.target.value)
+                  }
+                  placeholder="e.g. City Council"
+                />
+              </FormControl>
 
-        <FormControl isRequired>
-          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-            License Expiry Date
-          </FormLabel>
-          <Input
-            name="licenseExpiry"
-            type="date"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
-            value={formData.licenseExpiry}
-            onChange={handleChange}
-          />
-        </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  License Number
+                </FormLabel>
+                <Input
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.number}
+                  onChange={(e) =>
+                    handleLicenseChange(
+                      index,
+                      "number",
+                      e.target.value.replace(/\D/g, ""),
+                    )
+                  }
+                  placeholder="License Number"
+                  inputMode="numeric"
+                />
+              </FormControl>
 
-        {/* ✅ Upload field (FULL WIDTH) */}
-        <FormControl isRequired>
-          <FormLabel fontSize="sm" fontWeight="bold">
-            Upload License Document (PDF / JPG / PNG)
-          </FormLabel>
-          <Box position="relative">
-            <Input
-              alignContent={"center"}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              isDisabled={uploading}
-              size="sm"
-              borderRadius="lg"
-              focusBorderColor="green.400"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFileUpload(file);
-              }}
-            />
-            {uploading && (
-              <Spinner
-                size="sm"
-                position="absolute"
-                right="10px"
-                top="10px"
-                color="green.500"
-              />
-            )}
-          </Box>
-          {formData.licenseDocument && !uploading && (
-            <Text fontSize="10px" color="green.600" mt={1} fontWeight="bold">
-              ✓ Document uploaded successfully
-            </Text>
-          )}
-        </FormControl>
-      </Box>
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  License Expiry Date
+                </FormLabel>
+                <Input
+                  type="date"
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.expiry}
+                  onChange={(e) =>
+                    handleLicenseChange(index, "expiry", e.target.value)
+                  }
+                />
+              </FormControl>
+
+              <FormControl isRequired gridColumn="1 / -1">
+                <FormLabel fontSize="sm" fontWeight="bold">
+                  Upload License Document (PDF / JPG / PNG)
+                </FormLabel>
+                <Box position="relative">
+                  <Input
+                    alignContent={"center"}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    isDisabled={uploadingIndex !== null}
+                    size="sm"
+                    borderRadius="lg"
+                    focusBorderColor="green.400"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(index, file);
+                    }}
+                  />
+                  {uploadingIndex === index && (
+                    <Spinner
+                      size="sm"
+                      position="absolute"
+                      right="10px"
+                      top="10px"
+                      color="green.500"
+                    />
+                  )}
+                </Box>
+                {license.document && uploadingIndex !== index && (
+                  <Text
+                    fontSize="10px"
+                    color="green.600"
+                    mt={1}
+                    fontWeight="bold"
+                  >
+                    ✓ Document uploaded successfully
+                  </Text>
+                )}
+              </FormControl>
+            </Box>
+          </Stack>
+        </Box>
+      ))}
+
+      <Button
+        leftIcon={<AddIcon size="xs" />}
+        colorScheme="green"
+        variant="ghost"
+        size="sm"
+        onClick={addLicense}
+        alignSelf="flex-start"
+        _hover={{ bg: "green.50" }}
+      >
+        Add more license
+      </Button>
     </Stack>
   );
 }

@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
+  let body = {};
   try {
-    const body = await req.json();
+    body = await req.json();
     const {
       email,
       password,
@@ -28,11 +29,8 @@ export async function POST(req) {
       address,
       serviceRadius,
       serviceAreas,
-      // Service
-      categoryId,
-      subCategoryId,
-      servicesOffered,
-      description,
+      // Service details (Multiple support)
+      services,
       yearsExperience,
       // Education
       qualifications,
@@ -59,7 +57,7 @@ export async function POST(req) {
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,7 +69,7 @@ export async function POST(req) {
     if (existingUser) {
       return NextResponse.json(
         { message: "User already exists with this email" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -141,9 +139,14 @@ export async function POST(req) {
           serviceRadius: serviceRadius ? parseInt(serviceRadius) : null,
           serviceAreas: serviceAreas || [], // JSON
 
-          subCategoryId: subCategoryId ? parseInt(subCategoryId) : null,
-          servicesOffered: servicesOffered || [], // JSON
-          description,
+          categoryId: services?.[0]?.categoryId
+            ? parseInt(services[0].categoryId)
+            : null,
+          subCategoryId: services?.[0]?.subCategoryId
+            ? parseInt(services[0].subCategoryId)
+            : null,
+          servicesOffered: services || [], // JSON array of service objects
+          description: services?.[0]?.description || "",
           yearsExperience,
 
           qualifications: qualifications || [],
@@ -172,14 +175,14 @@ export async function POST(req) {
 
     return NextResponse.json(
       { message: "Provider account created successfully" },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Provider Signup Error:", error);
-    // Return the specific error message for debugging purposes
+    console.error("Request Body was:", JSON.stringify(body, null, 2)); // Log the body on error
     return NextResponse.json(
       { message: `Error: ${error.message}` },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -51,6 +51,7 @@ export default function ProviderRequestDetails() {
   const router = useRouter();
 
   const [data, setData] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rejectionReason, setRejectionReason] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -83,6 +84,7 @@ export default function ProviderRequestDetails() {
     try {
       const res = await fetch(`/api/admin/provider-requests/${id}`);
       const json = await res.json();
+      console.log(json, "json");
       setData(json);
     } catch (err) {
       console.error("Fetch failed", err);
@@ -91,8 +93,19 @@ export default function ProviderRequestDetails() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      const json = await res.json();
+      setCategories(json.categories || json);
+    } catch (err) {
+      console.error("Fetch categories failed", err);
+    }
+  };
+
   useEffect(() => {
     fetchRequest();
+    fetchCategories();
   }, [id]);
 
   /* ================= ACTION ================= */
@@ -375,36 +388,172 @@ export default function ProviderRequestDetails() {
             </InfoCard>
 
             {/* Services */}
-            <InfoCard title="Services" icon={AtSignIcon} delay={0.3}>
-              <Grid templateColumns="repeat(2, 1fr)" gap={3} width={"full"}>
-                <LabelValue
-                  label="Description"
-                  value={providerRequest.description}
-                  isFullWidth
-                />
-                <Box pt={2}>
-                  <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2}>
-                    SERVICES OFFERED
+            <InfoCard title="Services Offered" icon={AtSignIcon} delay={0.3}>
+              <Stack spacing={6} w="full">
+                {Array.isArray(providerRequest.servicesOffered) &&
+                providerRequest.servicesOffered.length > 0 ? (
+                  providerRequest.servicesOffered.map((serviceEntry, i) => {
+                    const isObject =
+                      typeof serviceEntry === "object" && serviceEntry !== null;
+
+                    if (isObject) {
+                      const category = categories.find(
+                        (c) => c.id === Number(serviceEntry.categoryId),
+                      );
+                      const subCategory = category?.subCategories?.find(
+                        (sc) => sc.id === Number(serviceEntry.subCategoryId),
+                      );
+
+                      return (
+                        <Box
+                          key={i}
+                          p={5}
+                          bg="gray.50"
+                          borderRadius="2xl"
+                          border="1px solid"
+                          borderColor="gray.100"
+                        >
+                          <HStack justify="space-between" mb={4}>
+                            <Text
+                              fontWeight="bold"
+                              color="green.600"
+                              fontSize="sm"
+                            >
+                              Service Entry #{i + 1}
+                            </Text>
+                            <Badge
+                              colorScheme="green"
+                              variant="subtle"
+                              borderRadius="full"
+                              px={3}
+                            >
+                              {category?.name || "Detailed Service"}
+                            </Badge>
+                          </HStack>
+
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                            <Box>
+                              <Text
+                                fontSize="2xs"
+                                fontWeight="bold"
+                                color="gray.400"
+                                textTransform="uppercase"
+                              >
+                                Category
+                              </Text>
+                              <Text fontSize="sm" fontWeight="bold">
+                                {category?.name ||
+                                  `ID: ${serviceEntry.categoryId || "-"}`}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text
+                                fontSize="2xs"
+                                fontWeight="bold"
+                                color="gray.400"
+                                textTransform="uppercase"
+                              >
+                                Sub-Category
+                              </Text>
+                              <Text fontSize="sm" fontWeight="bold">
+                                {subCategory?.name ||
+                                  `ID: ${serviceEntry.subCategoryId || "-"}`}
+                              </Text>
+                            </Box>
+                            <Box>
+                              <Text
+                                fontSize="2xs"
+                                fontWeight="bold"
+                                color="gray.400"
+                                textTransform="uppercase"
+                              >
+                                Years of Experience
+                              </Text>
+                              <Text fontSize="sm" fontWeight="bold">
+                                {serviceEntry.yearsExperience
+                                  ? `${serviceEntry.yearsExperience} Years`
+                                  : "-"}
+                              </Text>
+                            </Box>
+                            <Box gridColumn="1 / -1">
+                              <Text
+                                fontSize="2xs"
+                                fontWeight="bold"
+                                color="gray.400"
+                                textTransform="uppercase"
+                                mb={1}
+                              >
+                                Description
+                              </Text>
+                              <Text fontSize="sm" color="gray.700">
+                                {serviceEntry.description || "-"}
+                              </Text>
+                            </Box>
+
+                            {/* Nested Extra Skills for this entry */}
+                            {Array.isArray(serviceEntry.extraSkills) &&
+                              serviceEntry.extraSkills.length > 0 && (
+                                <Box gridColumn="1 / -1">
+                                  <Text
+                                    fontSize="2xs"
+                                    fontWeight="bold"
+                                    color="gray.400"
+                                    textTransform="uppercase"
+                                    mb={2}
+                                  >
+                                    Additional Skills / Services Offered
+                                  </Text>
+                                  <HStack wrap="wrap" spacing={2}>
+                                    {serviceEntry.extraSkills.map(
+                                      (skill, si) => (
+                                        <Tag
+                                          key={si}
+                                          size="sm"
+                                          variant="outline"
+                                          colorScheme="green"
+                                          borderRadius="full"
+                                        >
+                                          {skill}
+                                        </Tag>
+                                      ),
+                                    )}
+                                  </HStack>
+                                </Box>
+                              )}
+                          </SimpleGrid>
+                        </Box>
+                      );
+                    } else {
+                      return (
+                        <Tag
+                          key={i}
+                          size="md"
+                          variant="solid"
+                          colorScheme="green"
+                          borderRadius="full"
+                          mr={2}
+                          mb={2}
+                        >
+                          {serviceEntry}
+                        </Tag>
+                      );
+                    }
+                  })
+                ) : (
+                  <Text color="gray.400" fontSize="sm">
+                    No services listed.
                   </Text>
-                  <HStack wrap="wrap" spacing={2}>
-                    {providerRequest.servicesOffered?.map((s, i) => (
-                      <Tag
-                        key={i}
-                        size="md"
-                        variant="solid"
-                        colorScheme="green"
-                        borderRadius="full"
-                      >
-                        {s}
-                      </Tag>
-                    ))}
-                  </HStack>
+                )}
+
+                <Divider />
+
+                <Box>
+                  <LabelValue
+                    label="Overall Experience"
+                    value={`${providerRequest.yearsExperience || "0"} Years`}
+                  />
                 </Box>
-                <LabelValue
-                  label="Experience"
-                  value={`${providerRequest.yearsExperience} Years`}
-                />
-              </Grid>
+              </Stack>
             </InfoCard>
 
             {/* Qualifications & Licenses */}

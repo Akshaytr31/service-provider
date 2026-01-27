@@ -140,7 +140,7 @@ export default function LoginPage() {
           borderRadius="xl"
           bg="white"
           boxShadow="0 25px 50px -12px rgba(72, 187, 120, 0.12)"
-          border="1px solid"
+          border="1px solid "
           borderColor="gray.100"
         >
           <Flex direction={{ base: "column", md: "row" }} >
@@ -156,6 +156,8 @@ export default function LoginPage() {
               alignItems="center"
               textAlign="center"
               position="relative"
+              border="1px solid"
+              borderColor={"gray.500"}
               _after={{
                 content: '""',
                 position: "absolute",

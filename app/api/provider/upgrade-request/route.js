@@ -32,11 +32,8 @@ export async function POST(req) {
       address,
       serviceRadius,
       serviceAreas,
-      // Service
-      categoryId,
-      subCategoryId,
-      servicesOffered,
-      description,
+      // Service details (Multiple support)
+      services,
       yearsExperience,
       // Education
       qualifications,
@@ -103,9 +100,14 @@ export async function POST(req) {
           serviceRadius: serviceRadius ? parseInt(serviceRadius) : null,
           serviceAreas: serviceAreas || [],
 
-          subCategoryId: subCategoryId ? parseInt(subCategoryId) : null,
-          servicesOffered: servicesOffered || [],
-          description,
+          categoryId: services?.[0]?.categoryId
+            ? parseInt(services[0].categoryId)
+            : null,
+          subCategoryId: services?.[0]?.subCategoryId
+            ? parseInt(services[0].subCategoryId)
+            : null,
+          servicesOffered: services || [],
+          description: services?.[0]?.description || "",
           yearsExperience,
 
           qualifications: qualifications || [],
