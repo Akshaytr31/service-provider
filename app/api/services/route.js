@@ -6,10 +6,24 @@ import { NextResponse } from "next/server";
 /**
  * GET → Seeker sees all services
  */
-export async function GET() {
-  const [services] = await db.query(
-    "SELECT * FROM services ORDER BY createdAt DESC",
-  );
+export async function GET(req) {
+  const session = await getServerSession(authOptions);
+  const { searchParams } = new URL(req.url);
+  const mine = searchParams.get("mine");
+
+  let query = "SELECT * FROM services ORDER BY createdAt DESC";
+  let params = [];
+
+  if (mine === "true") {
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    query =
+      "SELECT * FROM services WHERE providerEmail = ? ORDER BY createdAt DESC";
+    params = [session.user.email];
+  }
+
+  const [services] = await db.query(query, params);
 
   return NextResponse.json(services);
 }

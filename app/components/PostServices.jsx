@@ -13,8 +13,24 @@ import {
   Image,
   Text,
   Spinner,
+  Icon,
+  VStack,
+  HStack,
+  InputGroup,
+  InputLeftElement,
+  useColorModeValue,
+  Container,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
+import {
+  FiUpload,
+  FiMapPin,
+  FiDollarSign,
+  FiType,
+  FiFileText,
+  FiCheck,
+  FiImage,
+} from "react-icons/fi";
 
 export default function PostService() {
   const [form, setForm] = useState({
@@ -32,6 +48,9 @@ export default function PostService() {
   const [serviceRadius, setServiceRadius] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const bg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("green.100", "green.900");
 
   useEffect(() => {
     async function fetchData() {
@@ -171,133 +190,270 @@ export default function PostService() {
   };
 
   if (loading) {
-    return <Box>Loading...</Box>;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="400px"
+      >
+        <Spinner size="xl" color="green.500" />
+      </Box>
+    );
   }
 
   return (
-    <Box maxW="600px" mx="auto" mt={10}>
-      <Heading mb={6}>Provide Services</Heading>
-
-      <Stack spacing={4}>
-        <FormControl>
-          <FormLabel>Category</FormLabel>
-          <Select
-            placeholder="Select Category"
-            value={selectedCategory}
-            isDisabled={true} // Lock selection
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              // setForm({ ...form, subCategoryId: "" }); // Don't reset if it's predetermined
-            }}
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl isDisabled={!selectedCategory}>
-          <FormLabel>Sub Category</FormLabel>
-          <Select
-            placeholder="Select Sub Category"
-            name="subCategoryId"
-            value={form.subCategoryId}
-            isDisabled={true} // Lock selection
-            onChange={handleChange}
-          >
-            {availableSubCategories.map((sub) => (
-              <option key={sub.id} value={sub.id}>
-                {sub.name}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl>
-          <FormLabel>Service Radius (km)</FormLabel>
-          <Input
-            value={serviceRadius || "N/A"}
-            isReadOnly
-            variant="filled"
-            cursor="not-allowed"
-          />
-        </FormControl>
-
-        <Input
-          placeholder="Service Title (e.g. Electrician)"
-          name="title"
-          value={form.title}
-          onChange={handleChange}
-        />
-
-        <Textarea
-          placeholder="Service Description"
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-        />
-
-        <Input
-          placeholder="Location"
-          name="location"
-          value={form.location}
-          onChange={handleChange}
-        />
-
-        <Input
-          placeholder="Price / Rate"
-          name="price"
-          value={form.price}
-          onChange={handleChange}
-        />
-
-        <FormControl>
-          <FormLabel>Cover Photo</FormLabel>
-          <Box position="relative">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              p={1}
-              isDisabled={uploading}
-            />
-            {uploading && (
-              <Spinner
-                size="sm"
-                position="absolute"
-                right="10px"
-                top="10px"
-                color="blue.500"
-              />
-            )}
+    <Container maxW="3xl">
+      <Box
+        bg={bg}
+        p={8}
+        borderRadius="2xl"
+        boxShadow="xl"
+        border="1px solid"
+        borderColor={borderColor}
+      >
+        <VStack spacing={8} align="stretch">
+          <Box textAlign="center">
+            <Text
+              fontSize="sm"
+              fontWeight="bold"
+              color="green.500"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              New Listing
+            </Text>
+            <Heading size="xl" mt={2} color="gray.700">
+              Publish a Service
+            </Heading>
+            <Text color="gray.500" mt={2}>
+              Create a new service listing to reach more customers.
+            </Text>
           </Box>
-          {form.coverPhoto && (
-            <Box mt={2}>
-              <Text fontSize="sm" color="green.500" mb={1}>
-                Cover photo uploaded:
-              </Text>
-              <Image
-                src={form.coverPhoto}
-                alt="Cover Preview"
-                boxSize="100px"
-                objectFit="cover"
-                borderRadius="md"
-              />
-            </Box>
-          )}
-        </FormControl>
 
-        <Button
-          colorScheme="blue"
-          onClick={handleSubmit}
-          isDisabled={uploading}
-          isLoading={uploading}
-        >
-          Publish Service
-        </Button>
-      </Stack>
-    </Box>
+          <Stack spacing={6}>
+            <HStack spacing={4}>
+              <FormControl>
+                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                  Category
+                </FormLabel>
+                <Select
+                  placeholder="Select Category"
+                  value={selectedCategory}
+                  isDisabled={true}
+                  bg="gray.50"
+                  borderColor="gray.200"
+                  icon={<Icon as={FiCheck} color="green.500" />}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl isDisabled={!selectedCategory}>
+                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                  Sub Category
+                </FormLabel>
+                <Select
+                  placeholder="Select Sub Category"
+                  name="subCategoryId"
+                  value={form.subCategoryId}
+                  isDisabled={true}
+                  bg="gray.50"
+                  borderColor="gray.200"
+                  icon={<Icon as={FiCheck} color="green.500" />}
+                >
+                  {availableSubCategories.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+            </HStack>
+
+            <HStack>
+              <FormControl>
+                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                  Service Radius
+                </FormLabel>
+                <InputGroup>
+                  <InputLeftElement pointerEvents="none">
+                    <Icon as={FiMapPin} color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    value={serviceRadius ? `${serviceRadius} km` : "N/A"}
+                    isReadOnly
+                    bg="gray.50"
+                    borderColor="gray.200"
+                    color="gray.500"
+                  />
+                </InputGroup>
+              </FormControl>
+              <FormControl>
+                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                  Price / Rate
+                </FormLabel>
+                <InputGroup>
+                  <InputLeftElement pointerEvents="none">
+                    <Icon as={FiDollarSign} color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="e.g. $50/hr or Fixed"
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    focusBorderColor="green.500"
+                  />
+                </InputGroup>
+              </FormControl>
+            </HStack>
+
+            <FormControl>
+              <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                Service Title
+              </FormLabel>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={FiType} color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="e.g. Professional Home Cleaning"
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  focusBorderColor="green.500"
+                  size="lg"
+                  fontWeight="medium"
+                />
+              </InputGroup>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                Description
+              </FormLabel>
+              <InputGroup>
+                <Textarea
+                  placeholder="Describe your service in detail..."
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  focusBorderColor="green.500"
+                  rows={4}
+                />
+              </InputGroup>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                Location
+              </FormLabel>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={FiMapPin} color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Service Location"
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  focusBorderColor="green.500"
+                />
+              </InputGroup>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                Cover Photo
+              </FormLabel>
+              <Box
+                border="2px dashed"
+                borderColor={form.coverPhoto ? "green.400" : "gray.300"}
+                borderRadius="xl"
+                p={6}
+                textAlign="center"
+                bg={form.coverPhoto ? "green.50" : "transparent"}
+                transition="all 0.2s"
+                _hover={{ borderColor: "green.500", bg: "green.50" }}
+                position="relative"
+              >
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  isDisabled={uploading}
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  height="100%"
+                  width="100%"
+                  opacity="0"
+                  cursor="pointer"
+                />
+
+                {uploading ? (
+                  <VStack>
+                    <Spinner color="green.500" />
+                    <Text fontSize="sm" color="gray.500">
+                      Uploading...
+                    </Text>
+                  </VStack>
+                ) : form.coverPhoto ? (
+                  <HStack spacing={4} justify="center">
+                    <Image
+                      src={form.coverPhoto}
+                      alt="Cover Preview"
+                      boxSize="80px"
+                      objectFit="cover"
+                      borderRadius="lg"
+                      boxShadow="md"
+                    />
+                    <Box textAlign="left">
+                      <Text fontWeight="bold" color="green.600">
+                        Photo Uploaded
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        Click to replace
+                      </Text>
+                    </Box>
+                  </HStack>
+                ) : (
+                  <VStack spacing={2}>
+                    <Icon as={FiImage} boxSize={8} color="gray.400" />
+                    <Text color="gray.500" fontWeight="medium">
+                      Click to upload cover photo
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">
+                      SVG, PNG, JPG or GIF (max. 800x400px)
+                    </Text>
+                  </VStack>
+                )}
+              </Box>
+            </FormControl>
+
+            <Button
+              colorScheme="green"
+              size="lg"
+              onClick={handleSubmit}
+              isDisabled={uploading}
+              isLoading={uploading}
+              loadingText="Publishing..."
+              w="full"
+              mt={4}
+              height="56px"
+              fontSize="lg"
+              boxShadow="lg"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
+            >
+              Publish Service
+            </Button>
+          </Stack>
+        </VStack>
+      </Box>
+    </Container>
   );
 }

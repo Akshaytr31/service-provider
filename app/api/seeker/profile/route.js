@@ -12,14 +12,36 @@ export async function GET() {
 
     const user = await prisma.users.findUnique({
       where: { email: session.user.email },
-      include: { seekerProfile: true },
+      include: {
+        seekerProfile: true,
+        providerRequests: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
     });
 
-    if (!user?.seekerProfile) {
-      return NextResponse.json({ profile: null }, { status: 200 });
+    if (!user) {
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ profile: user.seekerProfile }, { status: 200 });
+    const userData = {
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      dateOfBirth: user.dateOfBirth,
+      image: user.image,
+      isProviderAtFirst: user.isProviderAtFirst,
+    };
+
+    return NextResponse.json(
+      {
+        user: userData,
+        profile: user.seekerProfile || null,
+        providerRequest: user.providerRequests?.[0] || null,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error fetching seeker profile:", error);
     return NextResponse.json(
