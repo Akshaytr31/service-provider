@@ -64,6 +64,7 @@ model services {
   description   String   @db.Text
   location      String?  @db.VarChar(255)
   price         String?  @db.VarChar(100)
+  coverPhoto    String?  @db.Text
   createdAt     DateTime @default(now()) @db.Timestamp(0)
   
   subCategoryId Int         @map("sub_category_id")

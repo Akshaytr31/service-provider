@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
  */
 export async function GET() {
   const [services] = await db.query(
-    "SELECT * FROM services ORDER BY createdAt DESC"
+    "SELECT * FROM services ORDER BY createdAt DESC",
   );
 
   return NextResponse.json(services);
@@ -25,18 +25,19 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-  const { title, description, location, price, subCategoryId } = body;
+  const { title, description, location, price, subCategoryId, coverPhoto } =
+    body;
 
   if (!title || !description || !subCategoryId) {
     return NextResponse.json(
       { error: "Title, description, and subcategory are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   await db.query(
-    `INSERT INTO services (providerEmail, title, description, location, price, sub_category_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO services (providerEmail, title, description, location, price, sub_category_id, coverPhoto)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       session.user.email,
       title,
@@ -44,7 +45,8 @@ export async function POST(req) {
       location,
       price,
       subCategoryId,
-    ]
+      coverPhoto,
+    ],
   );
 
   return NextResponse.json({ success: true });
