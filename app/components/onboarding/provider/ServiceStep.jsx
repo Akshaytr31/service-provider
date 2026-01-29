@@ -15,6 +15,10 @@ import {
   Tag,
   TagLabel,
   TagCloseButton,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 import { useEffect } from "react";
@@ -298,22 +302,30 @@ export default function ServiceStep({
                     <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                       Years of Experience (for this service)
                     </FormLabel>
-                    <Input
-                      placeholder="e.g. 5"
-                      size="sm"
-                      borderRadius="lg"
-                      focusBorderColor="green.400"
-                      value={service.yearsExperience || ""}
-                      onChange={(e) =>
+
+                    <Slider
+                      min={0}
+                      max={30}
+                      step={1}
+                      value={Number(service.yearsExperience) || 0}
+                      onChange={(value) =>
                         handleServiceChange(
                           index,
                           "yearsExperience",
-                          e.target.value,
+                          String(value),
                         )
                       }
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                    />
+                      focusThumbOnChange={false}
+                    >
+                      <SliderTrack bg="gray.300">
+                        <SliderFilledTrack bg="green.400" />
+                      </SliderTrack>
+                      <SliderThumb boxSize={5} bg="green.500" />
+                    </Slider>
+
+                    <Text fontSize="xs" mt={1} color="gray.500">
+                      {service.yearsExperience || 0} years
+                    </Text>
                   </FormControl>
                 </Box>
               </Box>

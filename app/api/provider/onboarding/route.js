@@ -173,7 +173,7 @@ async function saveStepData(step, data, userId) {
          WHERE user_id = ?`,
         [
           data.city,
-          data.zipCode,
+          data.zipCode?.trim() || null,
           data.state,
           data.country,
           data.address,

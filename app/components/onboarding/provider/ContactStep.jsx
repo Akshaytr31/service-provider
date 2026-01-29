@@ -12,11 +12,12 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Box,
+  Heading,
 } from "@chakra-ui/react";
 
 export default function ContactStep({ formData, handleChange, setFormData }) {
   return (
-    <Stack
+    <Stack 
       spacing={6}
       p={8}
       bg="white"
@@ -25,7 +26,25 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
       borderRadius="2xl"
       boxShadow="sm"
       maxWidth={"800px"}
+      width={"full"}
+      position="relative"
+      marginTop={"10px"}
     >
+      <Heading
+        size="xs"
+        fontWeight="bold"
+        position="absolute"
+        top="-10px"
+        left="20px"
+        zIndex={1}
+        px={2}
+        bg="white"
+        color="green.600"
+        textTransform="uppercase"
+        letterSpacing="wider"
+      >
+        Contact Information
+      </Heading>
       <HStack spacing={4}>
         <FormControl isRequired>
           <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
@@ -42,7 +61,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           />
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             Zip Code
           </FormLabel>
@@ -59,7 +78,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           />
         </FormControl>
       </HStack>
-
+      <HStack spacing={4}>
       <FormControl isRequired>
         <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
           State/Emirates/Governorate
@@ -89,6 +108,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           onChange={handleChange}
         />
       </FormControl>
+      </HStack>
 
       <FormControl isRequired>
         <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">

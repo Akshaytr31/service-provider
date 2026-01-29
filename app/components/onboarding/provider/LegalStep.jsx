@@ -8,6 +8,8 @@ export default function LegalStep({ formData, setFormData, privacyPolicy }) {
       </Heading>
       <Box
         p={6}
+        maxWidth={"700px"}
+        width={"full"}
         border="1px solid"
         borderColor="gray.100"
         borderRadius="2xl"

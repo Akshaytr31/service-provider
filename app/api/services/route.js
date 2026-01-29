@@ -44,7 +44,7 @@ export async function POST(req) {
   if (!title || !description || !subCategoryId) {
     return NextResponse.json(
       { error: "Title, description, and subcategory are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -52,30 +52,30 @@ export async function POST(req) {
     `SELECT service_radius, services_offered
      FROM provider_requests
      WHERE user_id = ? AND status = 'APPROVED'`,
-    [session.user.id]
+    [session.user.id],
   );
 
   if (!providerRows.length) {
     return NextResponse.json(
-      { error: "Provider request not approved" },
-      { status: 403 }
+      { error: "Provider not approved" },
+      { status: 403 },
     );
   }
 
-  let servicesOfferedForThisService = null;
-  const allServicesOffered = providerRows[0].services_offered;
+  let extraSkillsForService = null;
+  const rawServicesOffered = providerRows[0].services_offered;
 
-  if (allServicesOffered) {
+  if (rawServicesOffered) {
     const parsed =
-      typeof allServicesOffered === "string"
-        ? JSON.parse(allServicesOffered)
-        : allServicesOffered;
+      typeof rawServicesOffered === "string"
+        ? JSON.parse(rawServicesOffered)
+        : rawServicesOffered;
 
-    const match = parsed.find(
-      (item) => Number(item.subCategoryId) === Number(subCategoryId)
+    const matchedService = parsed.find(
+      (item) => String(item.subCategoryId) === String(subCategoryId),
     );
 
-    servicesOfferedForThisService = match?.services || null;
+    extraSkillsForService = matchedService?.extraSkills || null;
   }
 
   await db.query(
@@ -91,10 +91,8 @@ export async function POST(req) {
       subCategoryId,
       coverPhoto,
       providerRows[0].service_radius,
-      servicesOfferedForThisService
-        ? JSON.stringify(servicesOfferedForThisService)
-        : null,
-    ]
+      extraSkillsForService ? JSON.stringify(extraSkillsForService) : null,
+    ],
   );
 
   return NextResponse.json({ success: true });

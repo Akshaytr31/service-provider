@@ -219,7 +219,6 @@ export default function ProviderOnboardingPage() {
             expiryDate: p.businessExpiryDate || "",
             // Address fields
             city: p.city || "",
-            zipCode: p.zipCode || "",
             state: p.state || "",
             country: p.country || "",
             address: p.address || "",
@@ -429,7 +428,6 @@ export default function ProviderOnboardingPage() {
         // Contact Details
         if (
           !formData.city ||
-          !formData.zipCode ||
           !formData.state ||
           !formData.country ||
           !formData.address ||

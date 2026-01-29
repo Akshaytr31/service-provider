@@ -24,8 +24,9 @@ export default function AvailabilityStep({
       borderColor="gray.100"
       borderRadius="2xl"
       boxShadow="sm"
-      maxWidth={"800px"}
+      maxWidth={"700px"}
       position="relative"
+      width={"full"}
     >
       <Heading
         size="xs"
