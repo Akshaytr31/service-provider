@@ -38,20 +38,50 @@ export async function POST(req) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
   const { title, description, location, price, subCategoryId, coverPhoto } =
-    body;
+    await req.json();
 
   if (!title || !description || !subCategoryId) {
     return NextResponse.json(
       { error: "Title, description, and subcategory are required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
+  const [providerRows] = await db.query(
+    `SELECT service_radius, services_offered
+     FROM provider_requests
+     WHERE user_id = ? AND status = 'APPROVED'`,
+    [session.user.id]
+  );
+
+  if (!providerRows.length) {
+    return NextResponse.json(
+      { error: "Provider request not approved" },
+      { status: 403 }
+    );
+  }
+
+  let servicesOfferedForThisService = null;
+  const allServicesOffered = providerRows[0].services_offered;
+
+  if (allServicesOffered) {
+    const parsed =
+      typeof allServicesOffered === "string"
+        ? JSON.parse(allServicesOffered)
+        : allServicesOffered;
+
+    const match = parsed.find(
+      (item) => Number(item.subCategoryId) === Number(subCategoryId)
+    );
+
+    servicesOfferedForThisService = match?.services || null;
+  }
+
   await db.query(
-    `INSERT INTO services (providerEmail, title, description, location, price, sub_category_id, coverPhoto)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO services
+     (providerEmail, title, description, location, price, sub_category_id, coverPhoto, service_radius, services_offered)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.user.email,
       title,
@@ -60,7 +90,11 @@ export async function POST(req) {
       price,
       subCategoryId,
       coverPhoto,
-    ],
+      providerRows[0].service_radius,
+      servicesOfferedForThisService
+        ? JSON.stringify(servicesOfferedForThisService)
+        : null,
+    ]
   );
 
   return NextResponse.json({ success: true });

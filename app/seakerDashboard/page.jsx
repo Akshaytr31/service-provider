@@ -37,6 +37,7 @@ export default function SeekerDashboard() {
         }
 
         const data = await res.json();
+        console.log(data);
         setServices(data);
       } catch (error) {
         console.error("Failed to fetch services", error);

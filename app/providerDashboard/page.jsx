@@ -12,8 +12,20 @@ import {
   Spinner,
   Container,
   VStack,
+  HStack,
   useColorModeValue,
   IconButton,
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  StatArrow,
+  Avatar,
+  Divider,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -26,6 +38,12 @@ import {
   FiArrowLeft,
   FiClock,
   FiCheckCircle,
+  FiTrendingUp,
+  FiUsers,
+  FiEye,
+  FiStar,
+  FiBriefcase,
+  FiMoreHorizontal,
 } from "react-icons/fi";
 
 export default function ProviderDashboard() {
@@ -44,7 +62,7 @@ export default function ProviderDashboard() {
   const user = session?.user;
   if (!user) return null;
 
-  /* ================= STATUS: NONE ================= */
+  /* ================= STATUS CHECKS ================= */
   if (user.providerRequestStatus === "none") {
     return (
       <Box p={20} textAlign="center">
@@ -59,7 +77,6 @@ export default function ProviderDashboard() {
     );
   }
 
-  /* ================= STATUS: PENDING ================= */
   if (user.providerRequestStatus === "PENDING") {
     return (
       <Box p={6} marginTop={"70px"} textAlign="center">
@@ -84,7 +101,6 @@ export default function ProviderDashboard() {
     );
   }
 
-  /* ================= STATUS: REJECTED ================= */
   if (
     user.providerRequestStatus === "rejected" ||
     user.providerRequestStatus === "REJECTED"
@@ -92,7 +108,7 @@ export default function ProviderDashboard() {
     return <RejectedView />;
   }
 
-  /* ================= STATUS: APPROVED (DASHBOARD) ================= */
+  /* ================= DASHBOARD ROUTING ================= */
 
   const renderContent = () => {
     switch (activeView) {
@@ -115,98 +131,383 @@ export default function ProviderDashboard() {
           </Box>
         );
       default:
-        return <DashboardHome user={user} onNavigate={setActiveView} />;
+        return <DashboardOverview user={user} onNavigate={setActiveView} />;
     }
   };
 
   return (
-    <Box minH="100vh" bg={bg} marginTop={"70px"}>
-      <Container maxW="container.xl" py={10}>
+    <Box minH="100vh" bg={bg} marginTop={"70px"} pb={10}>
+      <Container maxW="container.xl" py={8}>
         {renderContent()}
       </Container>
     </Box>
   );
 }
 
-// ---------------- SUB-COMPONENTS ---------------- //
+// ---------------- DASHBOARD OVERVIEW (NEW) ---------------- //
 
-function DashboardHome({ user, onNavigate }) {
+function DashboardOverview({ user, onNavigate }) {
+  const router = useRouter();
+  // Mock Data for Stats
+  const [stats, setStats] = useState({
+    revenue: 12500,
+    activeJobs: 3,
+    views: 450,
+    rating: 4.8,
+  });
+
   return (
-    <Stack spacing={8}>
-      <Box>
-        <Heading color="green.600" mb={2}>
-          Welcome back, {user.name || "Provider"}!
-        </Heading>
-        <Text color="gray.500">
-          Manage your services and requests from here.
-        </Text>
-      </Box>
+    <VStack spacing={8} align="stretch">
+      {/* Header */}
+      <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+        <Box>
+          <Heading size="lg" color="gray.800" mb={1}>
+            Overview
+          </Heading>
+          <Text color="gray.500">
+            Welcome back, {user.name}. Here's what's happening today.
+          </Text>
+        </Box>
+        <HStack>
+          <Button
+            leftIcon={<FiPlusCircle />}
+            colorScheme="green"
+            onClick={() => onNavigate("post")}
+          >
+            Post New Service
+          </Button>
+        </HStack>
+      </Flex>
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-        <DashboardTile
-          title="Seeker Requests"
-          description="View and manage all incoming requests from seekers."
-          icon={FiList}
-          color="blue"
-          onClick={() => onNavigate("requests")}
-        />
-        <DashboardTile
-          title="Posted Services"
-          description="View your active services listed on the platform."
-          icon={FiCheckCircle}
+      {/* Stats Cards */}
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+        <StatCard
+          label="Total Revenue"
+          value={`$${stats.revenue.toLocaleString()}`}
+          helperText="Total Earnings"
+          icon={FiTrendingUp}
           color="green"
-          onClick={() => onNavigate("services")}
+          trend="+12%"
         />
-        <DashboardTile
-          title="Post New Service"
-          description="Create and publish a new service listing."
-          icon={FiPlusCircle}
+        <StatCard
+          label="Active Jobs"
+          value={stats.activeJobs}
+          helperText="In Progress"
+          icon={FiBriefcase}
+          color="blue"
+        />
+        <StatCard
+          label="Profile Views"
+          value={stats.views}
+          helperText="Last 30 Days"
+          icon={FiEye}
           color="purple"
-          onClick={() => onNavigate("post")}
+          trend="+5%"
+        />
+        <StatCard
+          label="Avg. Rating"
+          value={stats.rating}
+          helperText="From 24 reviews"
+          icon={FiStar}
+          color="orange"
         />
       </SimpleGrid>
-    </Stack>
+
+      {/* Main Content Grid */}
+      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
+        {/* Left Column (Content) */}
+        <Box gridColumn={{ lg: "span 2" }}>
+          <VStack spacing={6} align="stretch" h="full">
+            {/* Recent Requests Card */}
+            <Card borderRadius="xl" boxShadow="sm" flex="1">
+              <CardHeader pb={0}>
+                <Flex justify="space-between" align="center">
+                  <Heading size="md" color="gray.700">
+                    Recent Requests
+                  </Heading>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="green"
+                    onClick={() => onNavigate("requests")}
+                  >
+                    View All
+                  </Button>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <RequestsPreview onNavigate={onNavigate} />
+              </CardBody>
+            </Card>
+
+            {/* Services Card */}
+            <Card borderRadius="xl" boxShadow="sm">
+              <CardHeader pb={0}>
+                <Flex justify="space-between" align="center">
+                  <Heading size="md" color="gray.700">
+                    Your Services
+                  </Heading>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="green"
+                    onClick={() => onNavigate("services")}
+                  >
+                    Manage All
+                  </Button>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                <ServicesPreviewPreview />
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
+
+        {/* Right Column (Sidebar) */}
+        <Box>
+          <VStack spacing={6} align="stretch">
+            {/* Quick Actions Grid */}
+            <Card borderRadius="xl" boxShadow="sm">
+              <CardHeader>
+                <Heading size="sm" color="gray.600">
+                  Quick Actions
+                </Heading>
+              </CardHeader>
+              <CardBody pt={0}>
+                <SimpleGrid columns={2} spacing={3}>
+                  <Button
+                    height="80px"
+                    flexDirection="column"
+                    gap={2}
+                    variant="outline"
+                    borderRadius="xl"
+                    onClick={() => onNavigate("requests")}
+                    _hover={{ bg: "blue.50", borderColor: "blue.200" }}
+                  >
+                    <Icon as={FiList} color="blue.500" boxSize={5} />
+                    <Text fontSize="xs">Requests</Text>
+                  </Button>
+                  <Button
+                    height="80px"
+                    flexDirection="column"
+                    gap={2}
+                    variant="outline"
+                    borderRadius="xl"
+                    onClick={() => onNavigate("services")}
+                    _hover={{ bg: "green.50", borderColor: "green.200" }}
+                  >
+                    <Icon as={FiBriefcase} color="green.500" boxSize={5} />
+                    <Text fontSize="xs">Services</Text>
+                  </Button>
+                  <Button
+                    height="80px"
+                    flexDirection="column"
+                    gap={2}
+                    variant="outline"
+                    borderRadius="xl"
+                    _hover={{ bg: "purple.50", borderColor: "purple.200" }}
+                  >
+                    <Icon as={FiUsers} color="purple.500" boxSize={5} />
+                    <Text fontSize="xs">Reviews</Text>
+                  </Button>
+                  <Button
+                    height="80px"
+                    flexDirection="column"
+                    gap={2}
+                    variant="outline"
+                    borderRadius="xl"
+                    onClick={() => router.push("/profile")}
+                    _hover={{ bg: "orange.50", borderColor: "orange.200" }}
+                  >
+                    <Icon as={FiUsers} color="orange.500" boxSize={5} />
+                    <Text fontSize="xs">Profile</Text>
+                  </Button>
+                </SimpleGrid>
+              </CardBody>
+            </Card>
+
+            {/* Pro Tip */}
+            <Card
+              borderRadius="xl"
+              bgGradient="linear(to-br, blue.50, white)"
+              border="1px solid"
+              borderColor="blue.100"
+              boxShadow="none"
+            >
+              <CardBody>
+                <Flex mb={3} align="center">
+                  <Box p={2} bg="blue.100" borderRadius="lg" mr={3}>
+                    <Icon as={FiClock} color="blue.600" />
+                  </Box>
+                  <Text fontWeight="bold" color="blue.700" fontSize="sm">
+                    Pro Tip
+                  </Text>
+                </Flex>
+                <Text fontSize="sm" color="gray.600" lineHeight="tall">
+                  Updating your service photos regularly can increase your
+                  profile views by up to approximately 30%.
+                </Text>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
+      </SimpleGrid>
+    </VStack>
   );
 }
 
-function DashboardTile({ title, description, icon, color, onClick }) {
+function StatCard({ label, value, helperText, icon, color, trend }) {
   return (
-    <Box
-      bg="white"
-      p={8}
-      borderRadius="2xl"
-      boxShadow="lg"
-      cursor="pointer"
-      transition="all 0.3s ease"
-      _hover={{ transform: "translateY(-5px)", boxShadow: "xl" }}
-      onClick={onClick}
+    <Card
+      borderRadius="xl"
+      boxShadow="sm"
       borderTop="4px solid"
       borderColor={`${color}.400`}
     >
-      <Flex align="center" mb={4}>
-        <Box bg={`${color}.50`} p={3} borderRadius="lg" mr={4}>
-          <Icon as={icon} boxSize={6} color={`${color}.500`} />
-        </Box>
-        <Heading size="md" color="gray.700">
-          {title}
-        </Heading>
-      </Flex>
-      <Text color="gray.500" fontSize="sm">
-        {description}
-      </Text>
-    </Box>
+      <CardBody>
+        <Flex justify="space-between" align="start" mb={2}>
+          <Stat>
+            <StatLabel color="gray.500">{label}</StatLabel>
+            <StatNumber fontSize="2xl" fontWeight="bold" color="gray.700">
+              {value}
+            </StatNumber>
+            <StatHelpText mb={0}>
+              {trend && <StatArrow type="increase" />}
+              {helperText}
+            </StatHelpText>
+          </Stat>
+          <Box p={2} bg={`${color}.50`} borderRadius="lg">
+            <Icon as={icon} color={`${color}.500`} boxSize={5} />
+          </Box>
+        </Flex>
+      </CardBody>
+    </Card>
   );
 }
+
+function RequestsPreview({ onNavigate }) {
+  // Using simplified logic from RequestsView but only showing top 3
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchJobs() {
+      try {
+        const res = await fetch("/api/provider/jobs");
+        if (res.ok) {
+          const data = await res.json();
+          setJobs(Array.isArray(data) ? data.slice(0, 3) : []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch jobs", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchJobs();
+  }, []);
+
+  if (loading)
+    return (
+      <Flex p={6} justify="center">
+        <Spinner color="green.500" />
+      </Flex>
+    );
+  if (jobs.length === 0)
+    return (
+      <Box p={6} textAlign="center">
+        <Text color="gray.500">No active requests.</Text>
+      </Box>
+    );
+
+  return (
+    <VStack divider={<Divider />} spacing={0} align="stretch">
+      {jobs.map((job) => (
+        <Flex
+          key={job.id}
+          p={4}
+          justify="space-between"
+          align="center"
+          _hover={{ bg: "gray.50" }}
+          transition="bg 0.2s"
+        >
+          <Box>
+            <Text fontWeight="bold" color="gray.700" noOfLines={1}>
+              {job.title || "Request"}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              {job.description
+                ? job.description.substring(0, 50) + "..."
+                : "No details"}
+            </Text>
+          </Box>
+          <Badge colorScheme="green">{job.status || "New"}</Badge>
+        </Flex>
+      ))}
+      <Box p={2} textAlign="center">
+        <Button
+          size="xs"
+          variant="ghost"
+          colorScheme="green"
+          onClick={() => onNavigate("requests")}
+        >
+          View All Activity
+        </Button>
+      </Box>
+    </VStack>
+  );
+}
+
+function ServicesPreviewPreview() {
+  // Just a quick visual placeholder using simplified fetch
+  const [count, setCount] = useState(null);
+
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const res = await fetch("/api/services?mine=true");
+        if (res.ok) {
+          const data = await res.json();
+          setCount(data.length);
+        }
+      } catch (e) {}
+    }
+    fetchServices();
+  }, []);
+
+  return (
+    <Flex align="center" justify="space-between">
+      <HStack>
+        <Box p={3} bg="green.50" borderRadius="full">
+          <Icon as={FiBriefcase} color="green.500" />
+        </Box>
+        <Box>
+          <Text fontWeight="bold" color="gray.700">
+            Active Services
+          </Text>
+          <Text fontSize="sm" color="gray.500">
+            Currently listed on platform
+          </Text>
+        </Box>
+      </HStack>
+      <Text fontSize="2xl" fontWeight="bold" color="green.600">
+        {count !== null ? count : "-"}
+      </Text>
+    </Flex>
+  );
+}
+
+// ---------------- EXISTING SUB-COMPONENTS (Modified Style) ---------------- //
 
 function RequestsView({ onBack }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch jobs/requests meant for this provider
     async function fetchJobs() {
       try {
-        const res = await fetch("/api/provider/jobs"); // Assuming this endpoint exists/works
+        const res = await fetch("/api/provider/jobs");
         if (res.ok) {
           const data = await res.json();
           setJobs(Array.isArray(data) ? data : []);
@@ -221,12 +522,15 @@ function RequestsView({ onBack }) {
   }, []);
 
   return (
-    <Box>
+    <Box mt={6}>
       <Button
-        leftIcon={<FiArrowLeft />}
+        position={"absolute"}
+        top={"0"}
+        left={"0"}
         variant="ghost"
-        mb={6}
+        colorScheme="black"
         onClick={onBack}
+        leftIcon={<FiArrowLeft />}
       >
         Back to Dashboard
       </Button>
@@ -251,28 +555,29 @@ function RequestsView({ onBack }) {
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
           {jobs.map((job, idx) => (
-            <Box
+            <Card
               key={job.id || idx}
-              bg="white"
-              p={6}
               borderRadius="xl"
               boxShadow="md"
               borderLeft="4px solid"
               borderColor="green.400"
+              overflow="hidden"
             >
-              <Heading size="sm" mb={2} color="gray.700">
-                {job.title || "Request"}
-              </Heading>
-              <Text fontSize="sm" color="gray.500" mb={4}>
-                {job.description}
-              </Text>
-              <Flex justify="space-between" align="center">
-                <Badge colorScheme="green">{job.status || "Open"}</Badge>
-                <Text fontSize="xs" color="gray.400">
-                  {new Date(job.createdAt || Date.now()).toLocaleDateString()}
+              <CardBody>
+                <Heading size="sm" mb={2} color="gray.700">
+                  {job.title || "Request"}
+                </Heading>
+                <Text fontSize="sm" color="gray.500" mb={4}>
+                  {job.description}
                 </Text>
-              </Flex>
-            </Box>
+                <Flex justify="space-between" align="center">
+                  <Badge colorScheme="green">{job.status || "Open"}</Badge>
+                  <Text fontSize="xs" color="gray.400">
+                    {new Date(job.createdAt || Date.now()).toLocaleDateString()}
+                  </Text>
+                </Flex>
+              </CardBody>
+            </Card>
           ))}
         </SimpleGrid>
       )}
@@ -302,12 +607,15 @@ function ServicesView({ onBack }) {
   }, []);
 
   return (
-    <Box>
+    <Box mt={6}>
       <Button
-        leftIcon={<FiArrowLeft />}
+        position={"absolute"}
+        top={"0"}
+        left={"0"}
         variant="ghost"
-        mb={6}
+        colorScheme="black"
         onClick={onBack}
+        leftIcon={<FiArrowLeft />}
       >
         Back to Dashboard
       </Button>
@@ -332,13 +640,12 @@ function ServicesView({ onBack }) {
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
           {services.map((service) => (
-            <Box
+            <Card
               key={service.id}
-              bg="white"
               borderRadius="xl"
               boxShadow="md"
               overflow="hidden"
-              _hover={{ boxShadow: "xl" }}
+              _hover={{ boxShadow: "xl", transform: "translateY(-2px)" }}
               transition="all 0.2s"
             >
               {service.coverPhoto ? (
@@ -359,7 +666,7 @@ function ServicesView({ onBack }) {
                   <Icon as={FiGrid} boxSize={10} color="green.300" />
                 </Box>
               )}
-              <Box p={5}>
+              <CardBody p={5}>
                 <Heading size="md" mb={2} color="gray.700" noOfLines={1}>
                   {service.title}
                 </Heading>
@@ -374,8 +681,8 @@ function ServicesView({ onBack }) {
                     {service.price}
                   </Text>
                 </Flex>
-              </Box>
-            </Box>
+              </CardBody>
+            </Card>
           ))}
         </SimpleGrid>
       )}
@@ -451,6 +758,3 @@ function RejectedView() {
     </Box>
   );
 }
-
-// Helper to make the code cleaner (Added Stack import to replacement above)
-import { Stack } from "@chakra-ui/react";

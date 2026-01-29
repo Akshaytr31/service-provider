@@ -4,43 +4,27 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-/* ================= USERS ================= */
-
 model users {
-  id                    Int      @id @default(autoincrement())
-  
-  // Basic Info
-  // firstName             String?  @db.VarChar(255)
-  // lastName              String?  @db.VarChar(255)
-  // Maintaining 'name' for backward compatibility or easy full name access if needed, 
-  // but we will primarily use firstName/lastName
-  name                  String?  @db.VarChar(255) 
-  
-  email                 String?  @unique @db.VarChar(255)
-  image                 String?  @db.Text
-  role                  String   @default("seeker") @db.VarChar(20)
-  providerRequestStatus String   @default("none") @db.VarChar(20)
-  isProviderAtFirst     Boolean  @default(false)
-
-  email_verified        Boolean  @default(false)
-
-  // Auth & Verification
-  password              String?  @db.VarChar(255)
-  mobile                String?  @db.VarChar(20)
-  otp                   String?  @db.VarChar(10)
+  id                    Int               @id @default(autoincrement())
+  name                  String?           @db.VarChar(255)
+  email                 String?           @unique @db.VarChar(255)
+  image                 String?           @db.Text
+  role                  String            @default("seeker") @db.VarChar(20)
+  providerRequestStatus String            @default("none") @db.VarChar(20)
+  isProviderAtFirst     Boolean           @default(false)
+  password              String?           @db.VarChar(255)
+  mobile                String?           @db.VarChar(20)
+  createdAt             DateTime          @default(now()) @db.Timestamp(0)
+  dateOfBirth           String?           @db.VarChar(50)
+  languages             String?           @db.Text
+  otp                   String?           @db.VarChar(10)
   otpExpiry             DateTime?
-  
-  // Personal Details
-  dateOfBirth           String?  @db.VarChar(50) // Store as string for flexibility or DateTime if preferred
-  languages             String?  @db.Text        // JSON string or CSV
-  
-  createdAt             DateTime @default(now()) @db.Timestamp(0)
-
-  providerRequests ProviderRequest[]
-  seekerProfile SeekerProfile?
+  email_verified        Boolean           @default(false)
+  seekerProfile         SeekerProfile?
+  providerRequests      ProviderRequest[]
 
   @@map("users")
 }
@@ -55,25 +39,23 @@ model EmailOtp {
   @@map("email_otps")
 }
 
-/* ================= SERVICES ================= */
-
 model services {
-  id            Int      @id @default(autoincrement())
-  providerEmail String   @db.VarChar(255)
-  title         String   @db.VarChar(255)
-  description   String   @db.Text
-  location      String?  @db.VarChar(255)
-  price         String?  @db.VarChar(100)
-  coverPhoto    String?  @db.Text
-  createdAt     DateTime @default(now()) @db.Timestamp(0)
-  
+  id            Int         @id @default(autoincrement())
+  providerEmail String      @db.VarChar(255)
+  title         String      @db.VarChar(255)
+  description   String      @db.Text
+  location      String?     @db.VarChar(255)
+  price         String?     @db.VarChar(100)
+  createdAt     DateTime    @default(now()) @db.Timestamp(0)
   subCategoryId Int         @map("sub_category_id")
+  coverPhoto    String?     @db.Text
+  serviceRadius Int?        @map("service_radius")
+  servicesOffered Json?     @map("services_offered")
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
-
+   
+  @@index([subCategoryId], map: "services_sub_category_id_fkey")
   @@map("services")
 }
-
-/* ================= CATEGORIES ================= */
 
 model Category {
   id            Int           @id @default(autoincrement())
@@ -88,150 +70,93 @@ model SubCategory {
   id         Int        @id @default(autoincrement())
   name       String     @db.VarChar(255)
   categoryId Int        @map("category_id")
-  category   Category   @relation(fields: [categoryId], references: [id])
   services   services[]
+  category   Category   @relation(fields: [categoryId], references: [id])
 
+  @@index([categoryId], map: "sub_categories_category_id_fkey")
   @@map("sub_categories")
 }
 
-/* ============ PROVIDER REQUEST ============ */
-
 model ProviderRequest {
-  id           Int      @id @default(autoincrement())
+  id                 Int                      @id @default(autoincrement())
+  userId             Int                      @map("user_id")
+  profilePhoto       String?                  @map("profile_photo") @db.Text
+  status             provider_requests_status @default(PENDING)
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  subCategoryId      Int?                     @map("sub_category_id")
+  address            String?                  @db.Text
+  availability       Json?
+  backgroundCheck    Boolean                  @default(false) @map("background_check_consent")
+  baseRate           String?                  @map("base_rate") @db.VarChar(100)
+  businessName       String?                  @map("business_name") @db.VarChar(255)
+  businessType       String?                  @map("business_type") @db.VarChar(50)
+  city               String?                  @db.VarChar(100)
+  companyLogo        String?                  @map("company_logo") @db.Text
+  contactMethod      String?                  @map("contact_method") @db.VarChar(50)
+  country            String?                  @db.VarChar(100)
+  dateOfBirth        String?                  @map("date_of_birth") @db.VarChar(50)
+  description        String?                  @db.Text
+  establishmentYear  String?                  @map("establishment_year") @db.VarChar(4)
+  gender             String?                  @db.VarChar(20)
+  idNumber           String?                  @map("id_number") @db.VarChar(100)
+  idProofUrl         String?                  @map("id_proof_url") @db.Text
+  idType             String?                  @map("id_type") @db.VarChar(50)
+  licenses           Json?
+  onSiteCharges      String?                  @map("on_site_charges") @db.VarChar(100)
+  paymentMethods     Json?                    @map("payment_methods")
+  pricingType        String?                  @map("pricing_type") @db.VarChar(50)
+  privacyAccepted    Boolean                  @default(false) @map("privacy_accepted")
+  qualifications     Json?
+  registrationNumber String?                  @map("registration_number") @db.VarChar(100)
+  rulesAccepted      Boolean                  @default(false) @map("rules_accepted")
+  serviceAreas       Json?                    @map("service_areas")
+  serviceRadius      Int?                     @map("service_radius")
+  servicesOffered    Json?                    @map("services_offered")
+  state              String?                  @db.VarChar(100)
+  termsAccepted      Boolean                  @default(false) @map("terms_accepted")
+  yearsExperience    String?                  @map("years_experience") @db.VarChar(50)
+  zipCode            String?                  @map("zip_code") @db.VarChar(20)
+  firstName          String?                  @map("first_name") @db.VarChar(255)
+  lastName           String?                  @map("last_name") @db.VarChar(255)
+  userType           String?                  @map("user_type") @db.VarChar(20)
+  businessExpiryDate String?                  @map("business_expiry_date") @db.VarChar(50)
+  rejectionReason    String?                  @map("rejection_reason") @db.Text
+  trnNumber          String?                  @map("trn_number") @db.VarChar(100)
+  categoryId         Int?                     @map("category_id")
+  user               users                    @relation(fields: [userId], references: [id])
 
-  userId       Int      @map("user_id")
-  
-  // 1. Account Info is in `users` table (email, phone, etc)
-
-    userType String? @map("user_type") @db.VarChar(20)
-
-  // Individual provider
-  firstName String? @map("first_name") @db.VarChar(255)
-  lastName  String? @map("last_name") @db.VarChar(255)
-
-  // 2. Personal / Business Details
-  businessName       String?  @map("business_name") @db.VarChar(255)
-  businessType       String?  @map("business_type") @db.VarChar(50) // Individual, Company, Agency
-  registrationNumber String?  @map("registration_number") @db.VarChar(100)
-  trnNumber          String?  @map("trn_number") @db.VarChar(100)
-  businessExpiryDate String?  @map("business_expiry_date") @db.VarChar(50)
-  establishmentYear  String?  @map("establishment_year") @db.VarChar(4) // Year
-  companyLogo        String?  @map("company_logo") @db.Text
-  
-  gender             String?  @db.VarChar(20)
-  dateOfBirth        String?  @map("date_of_birth") @db.VarChar(50)
-  profilePhoto       String?  @map("profile_photo") @db.Text
-
-  // 3. Contact & Location
-  country            String?  @db.VarChar(100)
-  state              String?  @db.VarChar(100)
-  city               String?  @db.VarChar(100)
-  zipCode            String?  @map("zip_code") @db.VarChar(20)
-  address            String?  @db.Text
-  serviceRadius      Int?     @map("service_radius") // in km/miles
-  serviceAreas       Json?    @map("service_areas")  // Array of cities/areas
-
-  // 4. Service Details
-  categoryId         Int?     @map("category_id")
-  subCategoryId      Int?     @map("sub_category_id")
-  servicesOffered    Json?    @map("services_offered") // Array of service names
-  description        String?  @db.Text // Service Description
-  yearsExperience    String?  @map("years_experience") @db.VarChar(50)
-
-  // 5. Education & Qualifications
-  qualifications     Json?    // Array of objects { degree, institution, year }
-  
-  // 6. Certifications & Licenses
-  licenses Json? 
-  /// Array of license objects:
-  /// {
-  ///   name,
-  ///   authority,
-  ///   number,
-  ///   expiry,
-  ///   document: { provider, publicId, format }
-  /// }
-
-
-  // 7. Availability
-  availability       Json?    // Object { days: [], hours: { start, end }, emergency: bool }
-  
-  // 8. Pricing & Payment
-  pricingType        String?  @map("pricing_type") @db.VarChar(50) // Hourly, Fixed, etc
-  baseRate           String?  @map("base_rate") @db.VarChar(100)
-  onSiteCharges      String?  @map("on_site_charges") @db.VarChar(100)
-  paymentMethods     Json?    @map("payment_methods") // Array of strings
-
-  // 9. Identity & Verification
-  idType             String?  @map("id_type") @db.VarChar(50)
-  idNumber           String?  @map("id_number") @db.VarChar(100)
-  idProofUrl         String?  @map("id_proof_url") @db.Text
-  backgroundCheck    Boolean  @default(false) @map("background_check_consent")
-
-  rejectionReason    String?  @map("rejection_reason") @db.Text
-
-  // 11. Communication (Stored in preferences or just assumed)
-  contactMethod      String?  @map("contact_method") @db.VarChar(50)
-
-  // 12. Legal
-  termsAccepted      Boolean  @default(false) @map("terms_accepted")
-  privacyAccepted    Boolean  @default(false) @map("privacy_accepted")
-  rulesAccepted      Boolean  @default(false) @map("rules_accepted")
-
-  status       provider_requests_status @default(PENDING)
-  createdAt    DateTime                 @default(now()) @map("created_at")
-
-  user users @relation(fields: [userId], references: [id])
-
+  @@index([userId], map: "provider_requests_user_id_fkey")
   @@map("provider_requests")
 }
 
-/* ================= ENUM ================= */
-
-enum provider_requests_status {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model SeekerProfile {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @unique
-  userType        String
-
-  // Individual
-  firstName       String?
-  lastName        String?
-  idType          String?
-  idNumber        String?
-  backgroundCheck Boolean  @default(false)
-
-  // Business
-  businessName       String?
-  businessType       String?
-  registrationNumber String?
-  establishmentYear  String?
-  trnNumber          String?
-  businessExpiryDate String?
-
-  // Common
-  gender            String?
-  address           String?
-  city              String?
-  state             String?
-  country           String?
-  zipCode           String?
-
-  // Education
-  qualifications    Json?
-  fieldOfStudy      String?
-  institution       String?
-  year              String?
-
-  acceptedTermsandconditions Boolean @default(false)
-  createdAt         DateTime @default(now())
-
-  user users @relation(fields: [userId], references: [id])
+  id                         Int      @id @default(autoincrement())
+  userId                     Int      @unique
+  userType                   String
+  firstName                  String?
+  lastName                   String?
+  idType                     String?
+  idNumber                   String?
+  backgroundCheck            Boolean  @default(false)
+  qualifications             Json?
+  gender                     String?
+  address                    String?
+  createdAt                  DateTime @default(now())
+  businessExpiryDate         String?
+  businessName               String?
+  businessType               String?
+  establishmentYear          String?
+  registrationNumber         String?
+  trnNumber                  String?
+  acceptedTermsandconditions Boolean  @default(false)
+  fieldOfStudy               String?
+  institution                String?
+  year                       String?
+  city                       String?
+  country                    String?
+  state                      String?
+  zipCode                    String?
+  user                       users    @relation(fields: [userId], references: [id])
 }
 
 model PrivacyPolicy {
@@ -242,7 +167,8 @@ model PrivacyPolicy {
   @@map("privacy_policy")
 }
 
-
-
-
-
+enum provider_requests_status {
+  PENDING
+  APPROVED
+  REJECTED
+}

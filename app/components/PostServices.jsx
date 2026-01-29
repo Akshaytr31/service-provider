@@ -42,9 +42,9 @@ export default function PostService() {
     coverPhoto: "",
   });
 
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [availableSubCategories, setAvailableSubCategories] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [approvedServices, setApprovedServices] = useState([]); // Array of {categoryId, subCategoryId, categoryName, subCategoryName}
+  const [selectedServiceIndex, setSelectedServiceIndex] = useState(0); // Index of selected service combo
   const [serviceRadius, setServiceRadius] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -62,49 +62,76 @@ export default function PostService() {
           fetch("/api/provider/current-request"),
         ]);
 
-        const allCategories = await categoriesRes.json();
+        const categories = await categoriesRes.json();
+        setAllCategories(categories);
 
         if (providerRes.ok) {
           const providerRequest = await providerRes.json();
 
-          if (providerRequest.categoryId && providerRequest.subCategoryId) {
-            // Filter Category
-            const filteredCategory = allCategories.find(
-              (c) => c.id === providerRequest.categoryId,
-            );
-
-            if (filteredCategory) {
-              // Filter Subcategory
-              const filteredSubCategories =
-                filteredCategory.subCategories.filter(
-                  (sub) => sub.id === providerRequest.subCategoryId,
+          // Extract all services from servicesOffered array
+          if (
+            providerRequest.servicesOffered &&
+            Array.isArray(providerRequest.servicesOffered) &&
+            providerRequest.servicesOffered.length > 0
+          ) {
+            // Map each service to include category and subcategory names
+            const servicesWithNames = providerRequest.servicesOffered.map(
+              (service) => {
+                const category = categories.find(
+                  (c) => c.id === parseInt(service.categoryId),
+                );
+                const subCategory = category?.subCategories.find(
+                  (sub) => sub.id === parseInt(service.subCategoryId),
                 );
 
-              // Update category with filtered subcategories
-              const finalCategory = {
-                ...filteredCategory,
-                subCategories: filteredSubCategories,
-              };
+                return {
+                  categoryId: service.categoryId,
+                  subCategoryId: service.subCategoryId,
+                  categoryName: category?.name || "Unknown Category",
+                  subCategoryName: subCategory?.name || "Unknown Subcategory",
+                };
+              },
+            );
 
-              setCategories([finalCategory]);
-              setSelectedCategory(filteredCategory.id.toString());
-              setAvailableSubCategories(filteredSubCategories);
+            setApprovedServices(servicesWithNames);
+
+            // Set the first service as default
+            if (servicesWithNames.length > 0) {
+              setSelectedServiceIndex(0);
+              setForm((prev) => ({
+                ...prev,
+                subCategoryId: servicesWithNames[0].subCategoryId.toString(),
+              }));
+            }
+          } else {
+            // Fallback: Use categoryId and subCategoryId from providerRequest (legacy format)
+            if (providerRequest.categoryId && providerRequest.subCategoryId) {
+              const category = categories.find(
+                (c) => c.id === providerRequest.categoryId,
+              );
+              const subCategory = category?.subCategories.find(
+                (sub) => sub.id === providerRequest.subCategoryId,
+              );
+
+              setApprovedServices([
+                {
+                  categoryId: providerRequest.categoryId,
+                  subCategoryId: providerRequest.subCategoryId,
+                  categoryName: category?.name || "Unknown Category",
+                  subCategoryName: subCategory?.name || "Unknown Subcategory",
+                },
+              ]);
+
               setForm((prev) => ({
                 ...prev,
                 subCategoryId: providerRequest.subCategoryId.toString(),
               }));
             }
-          } else {
-            // Fallback if no specific category in request (though unlikely for approved provider)
-            setCategories(allCategories);
           }
 
           if (providerRequest.serviceRadius) {
             setServiceRadius(providerRequest.serviceRadius);
           }
-        } else {
-          // Fallback if provider request fetch fails
-          setCategories(allCategories);
         }
       } catch (error) {
         console.error("Failed to fetch data", error);
@@ -115,19 +142,16 @@ export default function PostService() {
     fetchData();
   }, []);
 
-  // Update available subcategories if selectedCategory changes (mostly for manual change if logic allows)
+  // Update form when selectedServiceIndex changes
   useEffect(() => {
-    if (selectedCategory && categories.length > 0) {
-      const category = categories.find(
-        (c) => c.id === parseInt(selectedCategory),
-      );
-      // If we already filtered the subcategories in the initial fetch, use those.
-      // Otherwise (fallback case), use all subcategories of the category with matching ID.
-      if (category) {
-        setAvailableSubCategories(category.subCategories);
-      }
+    if (approvedServices.length > 0 && selectedServiceIndex >= 0) {
+      const selectedService = approvedServices[selectedServiceIndex];
+      setForm((prev) => ({
+        ...prev,
+        subCategoryId: selectedService.subCategoryId.toString(),
+      }));
     }
-  }, [selectedCategory, categories]);
+  }, [selectedServiceIndex, approvedServices]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -232,48 +256,31 @@ export default function PostService() {
           </Box>
 
           <Stack spacing={6}>
-            <HStack spacing={4}>
-              <FormControl>
-                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
-                  Category
-                </FormLabel>
-                <Select
-                  placeholder="Select Category"
-                  value={selectedCategory}
-                  isDisabled={true}
-                  bg="gray.50"
-                  borderColor="gray.200"
-                  icon={<Icon as={FiCheck} color="green.500" />}
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <FormControl isDisabled={!selectedCategory}>
-                <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
-                  Sub Category
-                </FormLabel>
-                <Select
-                  placeholder="Select Sub Category"
-                  name="subCategoryId"
-                  value={form.subCategoryId}
-                  isDisabled={true}
-                  bg="gray.50"
-                  borderColor="gray.200"
-                  icon={<Icon as={FiCheck} color="green.500" />}
-                >
-                  {availableSubCategories.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-            </HStack>
+            <FormControl>
+              <FormLabel color="gray.600" fontSize="sm" fontWeight="semibold">
+                Service Type
+                {approvedServices.length > 1 && (
+                  <Text as="span" color="green.500" fontSize="xs" ml={2}>
+                    (You have {approvedServices.length} approved service types)
+                  </Text>
+                )}
+              </FormLabel>
+              <Select
+                value={selectedServiceIndex}
+                onChange={(e) =>
+                  setSelectedServiceIndex(parseInt(e.target.value))
+                }
+                bg="gray.50"
+                borderColor="gray.200"
+                icon={<Icon as={FiCheck} color="green.500" />}
+              >
+                {approvedServices.map((service, index) => (
+                  <option key={index} value={index}>
+                    {service.categoryName} → {service.subCategoryName}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
 
             <HStack>
               <FormControl>
