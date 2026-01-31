@@ -20,7 +20,7 @@
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "firebase": "^12.7.0",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.29.2",
     "leaflet": "^1.9.4",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",

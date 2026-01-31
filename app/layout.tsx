@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "./providerds";
 import Navbar from "./components/Navbar";
-// import ProviderRequestForm from "./providerRequestForm/page"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,13 +25,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <Navbar />
           {children}
-          {/* <ProviderRequestForm/> */}
         </Providers>
       </body>
     </html>
