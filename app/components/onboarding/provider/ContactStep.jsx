@@ -14,6 +14,7 @@ import {
   Box,
   Heading,
 } from "@chakra-ui/react";
+import GoogleMap from "../../googleMap/page";
 
 export default function ContactStep({ formData, handleChange, setFormData }) {
   return (
@@ -110,7 +111,7 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
       </FormControl>
       </HStack>
 
-      <FormControl isRequired>
+      {/* <FormControl isRequired>
         <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
           Full Address
         </FormLabel>
@@ -124,7 +125,9 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           onChange={handleChange}
           rows={3}
         />
-      </FormControl>
+      </FormControl> */}
+      
+      <GoogleMap formData={formData} setFormData={setFormData}/>
 
       <FormControl isRequired>
         <Card
