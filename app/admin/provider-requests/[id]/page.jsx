@@ -60,6 +60,8 @@ export default function ProviderRequestDetails() {
   const [loading, setLoading] = useState(true);
   const [rejectionReason, setRejectionReason] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const clarificationDisclosure = useDisclosure();
+  const [clarificationMessage, setClarificationMessage] = useState("");
   const toast = useToast();
 
   const getDocumentUrl = (doc) => {
@@ -147,6 +149,34 @@ export default function ProviderRequestDetails() {
   const confirmReject = () => {
     handleAction("reject", rejectionReason);
     onClose();
+  };
+
+  const sendClarification = async () => {
+    try {
+      const res = await fetch(`/api/admin/provider-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "clarify",
+          reason: clarificationMessage,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send clarification");
+      }
+
+      toast({
+        title: "Clarification Sent",
+        description: "Email sent to the provider.",
+        status: "success",
+        duration: 3000,
+      });
+      clarificationDisclosure.onClose();
+      setClarificationMessage("");
+    } catch (err) {
+      toast({ title: "Error", description: err.message, status: "error" });
+    }
   };
 
   if (loading) {
@@ -280,6 +310,18 @@ export default function ProviderRequestDetails() {
               </Badge>
               {status === "PENDING" && (
                 <HStack spacing={3}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    borderColor="orange.400"
+                    color="orange.500"
+                    borderRadius="xl"
+                    px={4}
+                    _hover={{ bg: "orange.50" }}
+                    onClick={clarificationDisclosure.onOpen}
+                  >
+                    Ask Clarification
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -793,6 +835,77 @@ export default function ProviderRequestDetails() {
               isDisabled={!rejectionReason.trim()}
             >
               Confirm Rejection
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* CLARIFICATION MODAL */}
+      <Modal
+        isOpen={clarificationDisclosure.isOpen}
+        onClose={clarificationDisclosure.onClose}
+        isCentered
+        size="lg"
+      >
+        <ModalOverlay backdropFilter="blur(5px)" bg="rgba(0,0,0,0.7)" />
+        <ModalContent
+          bg="white"
+          color="gray.800"
+          borderRadius="3xl"
+          border="1px solid"
+          borderColor="gray.100"
+          boxShadow="2xl"
+        >
+          <ModalHeader borderBottom="1px solid" borderColor="gray.50" py={6}>
+            Request Clarification
+          </ModalHeader>
+          <ModalCloseButton mt={2} />
+          <ModalBody py={8}>
+            <Text
+              mb={4}
+              color="gray.500"
+              fontSize="xs"
+              fontWeight="bold"
+              textTransform="uppercase"
+            >
+              Message to Provider
+            </Text>
+            <Textarea
+              value={clarificationMessage}
+              onChange={(e) => setClarificationMessage(e.target.value)}
+              placeholder="e.g. Please upload a clearer copy of your ID..."
+              bg="gray.50"
+              borderColor="gray.100"
+              _hover={{ borderColor: "blue.200" }}
+              _focus={{
+                borderColor: "blue.400",
+                boxShadow: "0 0 0 1px blue.400",
+              }}
+              h="150px"
+              borderRadius="2xl"
+              fontSize="sm"
+            />
+          </ModalBody>
+
+          <ModalFooter bg="gray.50" borderBottomRadius="3xl" py={6}>
+            <Button
+              variant="ghost"
+              mr={3}
+              onClick={clarificationDisclosure.onClose}
+              borderRadius="xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              bg="blue.500"
+              color="white"
+              borderRadius="xl"
+              px={8}
+              _hover={{ bg: "blue.600" }}
+              onClick={sendClarification}
+              isDisabled={!clarificationMessage.trim()}
+            >
+              Send Clarification
             </Button>
           </ModalFooter>
         </ModalContent>
