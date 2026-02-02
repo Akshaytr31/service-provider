@@ -347,7 +347,6 @@ export default function ProviderOnboardingPage() {
     //         otp: "",
     //       };
     //       let hasError = false;
-
     //       if (!formData.email) {
     //         newErrors.email = "Email is required";
     //         hasError = true;
@@ -364,14 +363,12 @@ export default function ProviderOnboardingPage() {
     //         newErrors.otp = "Please enter OTP";
     //         hasError = true;
     //       }
-
     //       if (hasError) {
     //         setAccountErrors(newErrors);
     //         return "Please fix account errors";
     //       }
     //     }
     //     return null;
-
     //   case 1:
     //     // Profile Mega Step (Basic Info, Identity, Service, Pricing)
     //     if (formData.userType === "individual") {
@@ -396,12 +393,10 @@ export default function ProviderOnboardingPage() {
     //         return "Please complete all business details";
     //       }
     //     }
-
     //     // Common for both in profile step
     //     if (formData.services.length === 0) {
     //       return "Please add at least one service";
     //     }
-
     //     if (
     //       formData.services.some(
     //         (s) =>
@@ -413,7 +408,6 @@ export default function ProviderOnboardingPage() {
     //     ) {
     //       return "Please complete all fields for each added service (Category, Sub-Category, Description, Experience)";
     //     }
-
     //     if (
     //       !formData.pricingType ||
     //       !formData.baseRate ||
@@ -421,9 +415,7 @@ export default function ProviderOnboardingPage() {
     //     ) {
     //       return "Please complete pricing details";
     //     }
-
     //     return null;
-
     //   case 2:
     //     // Contact Details
     //     if (
@@ -436,7 +428,6 @@ export default function ProviderOnboardingPage() {
     //       return "Please fill all contact details";
     //     }
     //     return null;
-
     //   case 3:
     //     // Availability
     //     if (
@@ -447,14 +438,12 @@ export default function ProviderOnboardingPage() {
     //       return "Please set availability details";
     //     }
     //     return null;
-
     //   case 4:
     //     // Terms
     //     if (!formData.termsAccepted) {
     //       return "You must accept the terms and conditions";
     //     }
     //     return null;
-
     //   default:
     //     return null;
     // }
@@ -531,6 +520,8 @@ export default function ProviderOnboardingPage() {
           country: formData.country,
           address: formData.address,
           serviceRadius: formData.serviceRadius,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           serviceAreas: formData.serviceAreasInput
             ? formData.serviceAreasInput.split(",").map((s) => s.trim())
             : [],

@@ -32,6 +32,8 @@ export async function POST(req) {
       address,
       serviceRadius,
       serviceAreas,
+      latitude,
+      longitude,
       // Service details (Multiple support)
       services,
       yearsExperience,
@@ -99,6 +101,8 @@ export async function POST(req) {
           address,
           serviceRadius: serviceRadius ? parseInt(serviceRadius) : null,
           serviceAreas: serviceAreas || [],
+          latitude: latitude || null,
+          longitude: longitude || null,
 
           categoryId: services?.[0]?.categoryId
             ? parseInt(services[0].categoryId)

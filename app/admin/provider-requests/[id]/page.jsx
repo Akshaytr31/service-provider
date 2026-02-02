@@ -42,6 +42,11 @@ import {
   ExternalLinkIcon,
   ArrowBackIcon,
 } from "@chakra-ui/icons";
+import dynamic from "next/dynamic";
+
+const GoogleMap = dynamic(() => import("../../../components/googleMap/page"), {
+  ssr: false,
+});
 
 const MotionBox = motion(Box);
 const MotionHStack = motion(HStack);
@@ -366,6 +371,7 @@ export default function ProviderRequestDetails() {
                 <LabelValue label="City" value={providerRequest.city} />
                 <LabelValue label="State" value={providerRequest.state} />
                 <LabelValue label="Country" value={providerRequest.country} />
+                <LabelValue label="Zip Code" value={providerRequest.zipCode} />
                 <LabelValue
                   label="Radius"
                   value={`${providerRequest.serviceRadius} KM`}
@@ -378,11 +384,31 @@ export default function ProviderRequestDetails() {
                   isFullWidth
                 />
               </Box>
-              <Box pt={2}>
+              {/* <Box pt={2}>
                 <LabelValue
                   label="Address"
                   value={providerRequest.address}
                   isFullWidth
+                />
+              </Box> */}
+
+              <Box pt={4} w="full">
+                <Text
+                  fontSize="xs"
+                  fontWeight="bold"
+                  color="gray.500"
+                  textTransform="uppercase"
+                  mb={2}
+                >
+                  Map Location
+                </Text>
+                <Heading size="sm" mb={3} color="gray.700">
+                  {providerRequest.address || ""}
+                </Heading>
+                <GoogleMap
+                  formData={providerRequest}
+                  setFormData={setData}
+                  viewOnly={true}
                 />
               </Box>
             </InfoCard>
