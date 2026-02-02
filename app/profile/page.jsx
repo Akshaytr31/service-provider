@@ -47,6 +47,7 @@ import {
   EmailIcon,
   AtSignIcon,
   TimeIcon,
+  LinkIcon,
 } from "@chakra-ui/icons";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -59,6 +60,20 @@ export default function ProfilePage() {
   const { data: session, update } = useSession();
   const user = session?.user;
   const toast = useToast();
+
+  // Share functionality
+  const handleShare = () => {
+    if (!user?.id) return;
+    const shareUrl = `${window.location.origin}/profile/${user.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Profile link copied to clipboard.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -301,18 +316,33 @@ export default function ProfilePage() {
                 </Stack>
               </Flex>
 
-              {!isEditing && (
-                <Button
-                  leftIcon={<EditIcon />}
-                  colorScheme="green"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                  borderRadius="xl"
-                  _hover={{ bg: "green.50" }}
-                >
-                  Edit Profile
-                </Button>
-              )}
+              <HStack spacing={3}>
+                {!isEditing && (
+                  <Button
+                    leftIcon={<LinkIcon />}
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={handleShare}
+                    borderRadius="xl"
+                    _hover={{ bg: "blue.50" }}
+                  >
+                    Share Profile
+                  </Button>
+                )}
+
+                {!isEditing && (
+                  <Button
+                    leftIcon={<EditIcon />}
+                    colorScheme="green"
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                    borderRadius="xl"
+                    _hover={{ bg: "green.50" }}
+                  >
+                    Edit Profile
+                  </Button>
+                )}
+              </HStack>
 
               {isEditing && (
                 <HStack spacing={3}>

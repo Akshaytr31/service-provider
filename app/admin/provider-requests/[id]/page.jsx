@@ -546,13 +546,6 @@ export default function ProviderRequestDetails() {
                 )}
 
                 <Divider />
-
-                <Box>
-                  <LabelValue
-                    label="Overall Experience"
-                    value={`${providerRequest.yearsExperience || "0"} Years`}
-                  />
-                </Box>
               </Stack>
             </InfoCard>
 

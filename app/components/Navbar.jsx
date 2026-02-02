@@ -46,6 +46,12 @@ export default function Navbar() {
 
   const user = session?.user;
 
+  // Hide Navbar on public profile page (e.g. /profile/123)
+  // But NOT on /profile (private profile)
+  if (pathname?.startsWith("/profile/") && pathname.split("/").length > 2) {
+    return null;
+  }
+
   const handleLogout = () => {
     signOut({ callbackUrl: "/login" });
   };
