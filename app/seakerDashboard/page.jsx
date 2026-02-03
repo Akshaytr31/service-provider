@@ -4,35 +4,19 @@ import {
   Box,
   Heading,
   Text,
-  Stack,
-  Card,
-  CardBody,
   Flex,
-  Button,
   Grid,
   Container,
   Icon,
-  Badge,
   Skeleton,
-  Divider,
-  Input,
-  Select,
   VStack,
-  RangeSlider,
-  RangeSliderTrack,
-  RangeSliderFilledTrack,
-  RangeSliderThumb,
-  FormControl,
-  FormLabel,
-  HStack,
-  IconButton,
-  Collapse,
-  useDisclosure,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import ServiceCard from "../components/seeker/ServiceCard";
+import FilterBar from "../components/seeker/FilterBar";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiFilter, FiX } from "react-icons/fi";
+import { FiFilter } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
@@ -41,6 +25,7 @@ export default function SeekerDashboard() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   // Filter States
   const [filters, setFilters] = useState({
@@ -52,7 +37,14 @@ export default function SeekerDashboard() {
   });
 
   const [priceRange, setPriceRange] = useState([0, 1000]); // Visual state for slider
-  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true }); // Filter sidebar visibility on mobile/desktop
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,7 +61,6 @@ export default function SeekerDashboard() {
         const servicesData = await servicesRes.json();
         const categoriesData = await categoriesRes.json();
 
-        console.log("Services:", servicesData);
         setServices(servicesData);
         setCategories(categoriesData.categories || categoriesData); // Handle potential structure difference
       } catch (error) {
@@ -98,7 +89,7 @@ export default function SeekerDashboard() {
   // Derived filtered services
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
-      // 1. Category (Check sub_category_id against category's subcategories)
+      // 1. Category
       if (filters.categoryId) {
         // We need to know if the service's sub_category_id belongs to the selected category
         const categorySubCatIds =
@@ -108,13 +99,13 @@ export default function SeekerDashboard() {
         }
       }
 
-      // 2. Sub Category (Direct Match)
+      // 2. Sub Category
       if (filters.subCategoryId) {
         if (String(service.sub_category_id) !== String(filters.subCategoryId))
           return false;
       }
 
-      // 3. Location (Partial Match)
+      // 3. Location
       if (filters.location) {
         if (
           !service.location
@@ -133,254 +124,134 @@ export default function SeekerDashboard() {
   }, [services, filters, selectedCategory]);
 
   return (
-    <Box minH="100vh" bg="gray.50" pt="100px" pb={20} position="relative">
-      <Container maxW="container.xl">
-        {/* Header Section */}
-        <Flex justify="space-between" align="center" mb={8} wrap="wrap" gap={4}>
-          <Heading color="green.800" fontWeight="black" letterSpacing="tight">
-            Find Services
-          </Heading>
-          <Button
-            leftIcon={<Icon as={isOpen ? FiX : FiFilter} />}
-            onClick={onToggle}
-            variant="outline"
-            colorScheme="green"
-            display={{ base: "flex", lg: "none" }}
+    <Box minH="100vh" bg="#FAFAFA" pt="80px" pb={20} position="relative">
+      {/* BACKGROUND DECORATION */}
+      <Box
+        position="absolute"
+        top="0"
+        left="0"
+        right="0"
+        h="400px"
+        bgGradient="linear(to-b, green.50, transparent)"
+        zIndex="0"
+      />
+
+      <Container maxW="container.xl" position="relative" zIndex={1}>
+        {/* HERO SECTION - Compact */}
+        <VStack spacing={4} mb={10} textAlign="center" pt={8}>
+          <Heading
+            as="h1"
+            size="2xl"
+            color="green.900"
+            fontWeight="900"
+            letterSpacing="-0.02em"
           >
-            {isOpen ? "Hide Filters" : "Show Filters"}
-          </Button>
-        </Flex>
+            Find Expert Services
+          </Heading>
+          <Text color="gray.500" fontSize="lg" maxW="2xl">
+            Connect with verified professionals for any job.
+          </Text>
+        </VStack>
 
-        <Flex gap={8} direction={{ base: "column", lg: "row" }}>
-          {/* FILTER SIDEBAR */}
-          <Collapse in={isOpen} animateOpacity style={{ overflow: "visible" }}>
-            <Box
-              w={{ base: "full", lg: "300px" }}
-              bg="white"
-              p={6}
-              borderRadius="2xl"
-              boxShadow="sm"
-              position="sticky"
-              top="120px"
-              h="fit-content"
-            >
-              <VStack spacing={6} align="stretch">
-                <Heading size="sm" color="gray.700">
-                  Filters
-                </Heading>
+        {/* STICKY FILTER BAR */}
+        <Box
+          position="sticky"
+          top="90px" // Adjust based on navbar height
+          zIndex={100}
+          mb={10}
+        >
+          <FilterBar
+            filters={filters}
+            handleFilterChange={handleFilterChange}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            isScrolled={isScrolled}
+            onReset={() => {
+              setFilters({
+                categoryId: "",
+                subCategoryId: "",
+                location: "",
+                minPrice: 0,
+                maxPrice: 1000,
+              });
+              setPriceRange([0, 1000]);
+            }}
+          />
+        </Box>
 
-                <FormControl>
-                  <FormLabel
-                    fontSize="xs"
-                    fontWeight="bold"
-                    color="gray.500"
-                    textTransform="uppercase"
-                  >
-                    Category
-                  </FormLabel>
-                  <Select
-                    placeholder="All Categories"
-                    size="sm"
-                    borderRadius="lg"
-                    value={filters.categoryId}
-                    onChange={(e) =>
-                      handleFilterChange("categoryId", e.target.value)
-                    }
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                {filters.categoryId && (
-                  <FormControl>
-                    <FormLabel
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="gray.500"
-                      textTransform="uppercase"
-                    >
-                      Sub-Category
-                    </FormLabel>
-                    <Select
-                      placeholder="All Sub-Categories"
-                      size="sm"
-                      borderRadius="lg"
-                      value={filters.subCategoryId}
-                      onChange={(e) =>
-                        handleFilterChange("subCategoryId", e.target.value)
-                      }
-                    >
-                      {selectedCategory?.subCategories?.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-
-                <Divider />
-
-                <FormControl>
-                  <FormLabel
-                    fontSize="xs"
-                    fontWeight="bold"
-                    color="gray.500"
-                    textTransform="uppercase"
-                  >
-                    Location
-                  </FormLabel>
-                  <Input
-                    placeholder="Enter City or Area"
-                    size="sm"
-                    borderRadius="lg"
-                    value={filters.location}
-                    onChange={(e) =>
-                      handleFilterChange("location", e.target.value)
-                    }
-                  />
-                </FormControl>
-
-                <Divider />
-
-                <FormControl>
-                  <Flex justify="space-between" mb={2}>
-                    <FormLabel
-                      fontSize="xs"
-                      fontWeight="bold"
-                      color="gray.500"
-                      textTransform="uppercase"
-                      m={0}
-                    >
-                      Price Range
-                    </FormLabel>
-                    <Text fontSize="xs" fontWeight="bold" color="green.600">
-                      ${filters.minPrice} - ${filters.maxPrice}
-                    </Text>
-                  </Flex>
-                  <RangeSlider
-                    // eslint-disable-next-line jsx-a11y/aria-proptypes
-                    aria-label={["min", "max"]}
-                    min={0}
-                    max={2000}
-                    step={10}
-                    defaultValue={[0, 1000]}
-                    onChangeEnd={(val) => {
-                      handleFilterChange("minPrice", val[0]);
-                      handleFilterChange("maxPrice", val[1]);
-                    }}
-                    onChange={(val) => setPriceRange(val)}
-                  >
-                    <RangeSliderTrack bg="gray.100">
-                      <RangeSliderFilledTrack bg="green.500" />
-                    </RangeSliderTrack>
-                    <RangeSliderThumb
-                      index={0}
-                      boxSize={5}
-                      shadow="md"
-                      borderColor="gray.200"
-                    />
-                    <RangeSliderThumb
-                      index={1}
-                      boxSize={5}
-                      shadow="md"
-                      borderColor="gray.200"
-                    />
-                  </RangeSlider>
-                </FormControl>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="gray"
-                  onClick={() => {
-                    setFilters({
-                      search: "",
-                      categoryId: "",
-                      subCategoryId: "",
-                      location: "",
-                      minPrice: 0,
-                      maxPrice: 1000,
-                    });
-                    setPriceRange([0, 1000]);
-                  }}
-                >
-                  Reset Filters
-                </Button>
-              </VStack>
-            </Box>
-          </Collapse>
-
-          {/* RESULTS GRID */}
-          <Box flex="1">
-            <AnimatePresence>
-              {loading ? (
-                <Grid
-                  templateColumns="repeat(auto-fill, minmax(300px, 1fr))"
-                  gap={6}
-                >
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton
-                      key={i}
-                      height="340px"
-                      borderRadius="2xl"
-                      startColor="white"
-                      endColor="gray.100"
-                    />
-                  ))}
-                </Grid>
-              ) : (
-                <>
-                  <Text mb={4} color="gray.500" fontSize="sm">
-                    Showing {filteredServices.length} results
-                  </Text>
-                  <MotionGrid
-                    templateColumns="repeat(auto-fill, minmax(300px, 1fr))"
-                    gap={6}
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: {
-                        opacity: 1,
-                        transition: {
-                          staggerChildren: 0.1,
-                        },
-                      },
-                    }}
-                  >
-                    {filteredServices.map((service) => (
-                      <ServiceCard key={service.id} service={service} />
-                    ))}
-                  </MotionGrid>
-                </>
-              )}
-            </AnimatePresence>
-
-            {!loading && filteredServices.length === 0 && (
-              <Box
-                textAlign="center"
-                py={20}
-                bg="white"
-                borderRadius="2xl"
-                border="1px solid"
-                borderColor="gray.100"
-              >
-                <Icon as={FiFilter} w={10} h={10} color="gray.300" mb={4} />
-                <Heading size="md" color="gray.600" mb={2}>
-                  No matches found
-                </Heading>
-                <Text color="gray.400">
-                  Try adjusting your filters or search terms.
+        {/* RESULTS GRID */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <Skeleton
+                  key={i}
+                  height="340px"
+                  borderRadius="2xl"
+                  startColor="white"
+                  endColor="gray.100"
+                />
+              ))}
+            </SimpleGrid>
+          ) : (
+            <Box minH="400px">
+              <Flex justify="space-between" align="center" mb={6}>
+                <Text color="gray.500" fontSize="sm" fontWeight="medium">
+                  Showing{" "}
+                  <Text as="span" color="green.600" fontWeight="bold">
+                    {filteredServices.length}
+                  </Text>{" "}
+                  results
                 </Text>
-              </Box>
-            )}
-          </Box>
-        </Flex>
+              </Flex>
+
+              <MotionGrid
+                templateColumns="repeat(auto-fill, minmax(280px, 1fr))"
+                gap={6}
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.05,
+                    },
+                  },
+                }}
+              >
+                {filteredServices.map((service) => (
+                  <ServiceCard key={service.id} service={service} />
+                ))}
+              </MotionGrid>
+
+              {!loading && filteredServices.length === 0 && (
+                <Flex
+                  direction="column"
+                  align="center"
+                  justify="center"
+                  py={20}
+                  bg="white"
+                  borderRadius="3xl"
+                  border="1px dashed"
+                  borderColor="gray.200"
+                >
+                  <Box p={4} bg="gray.50" borderRadius="full" mb={4}>
+                    <Icon as={FiFilter} w={8} h={8} color="gray.400" />
+                  </Box>
+                  <Heading size="md" color="gray.700" mb={2}>
+                    No matches found
+                  </Heading>
+                  <Text color="gray.400">
+                    Try adjusting your filters to see more results.
+                  </Text>
+                </Flex>
+              )}
+            </Box>
+          )}
+        </AnimatePresence>
       </Container>
     </Box>
   );
