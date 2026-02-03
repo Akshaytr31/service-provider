@@ -21,7 +21,7 @@ export async function GET(req, context) {
           select: {
             id: true,
             email: true,
-            name: true, // ✅ ONLY existing column
+            name: true,
           },
         },
       },
@@ -29,6 +29,57 @@ export async function GET(req, context) {
 
     if (!request) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    // AUTO-EXPIRE CHECK
+    let hasUpdates = false;
+    const now = new Date();
+    // Normalize "now" to midnight to compare dates properly if expiry is just YYYY-MM-DD string
+    // But assuming simple date comparison works for now.
+    // Ideally we treat expiry date string as T00:00:00 or T23:59:59 depending on logic.
+    // let's stick to simple Date comparison.
+
+    if (Array.isArray(request.licenses)) {
+      for (const license of request.licenses) {
+        if (
+          license.expiry &&
+          new Date(license.expiry) < now &&
+          license.status !== "EXPIRED"
+        ) {
+          license.status = "EXPIRED";
+          hasUpdates = true;
+
+          // Send Email
+          if (request.user?.email) {
+            const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
+            // Using a simple async fire-and-forget or await?
+            // Better to await to ensure it sends, or catch error so it doesn't block response.
+            // We'll await inside the loop for safety.
+            try {
+              await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: request.user.email,
+                subject: `Action Required: License Expired (${license.name || "Document"})`,
+                html: `
+                    <p>Dear ${request.user.name || "User"},</p>
+                    <p>Your license <strong>${license.name} (Version ${license.version || 1})</strong> has expired.</p>
+                    <p>Please log in to your profile and upload the latest version immediately.</p>
+                    <a href="${dashboardLink}">Update License Now</a>
+                `,
+              });
+            } catch (e) {
+              console.error("Failed to send expiry email", e);
+            }
+          }
+        }
+      }
+
+      if (hasUpdates) {
+        await prisma.providerRequest.update({
+          where: { id: Number(id) },
+          data: { licenses: request.licenses },
+        });
+      }
     }
 
     return NextResponse.json(request);
@@ -45,7 +96,7 @@ export async function GET(req, context) {
 export async function PATCH(req, context) {
   try {
     const { id } = await context.params;
-    const { action, reason } = await req.json();
+    const { action, reason, licenseIndex } = await req.json();
 
     if (!id || isNaN(Number(id))) {
       return NextResponse.json(
@@ -54,8 +105,193 @@ export async function PATCH(req, context) {
       );
     }
 
-    if (!["approve", "reject", "clarify"].includes(action)) {
+    if (
+      ![
+        "approve",
+        "reject",
+        "clarify",
+        "expire_license",
+        "approve_license",
+        "reject_license",
+      ].includes(action)
+    ) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
+    // HANDLE LICENSE EXPIRATION
+    if (action === "expire_license") {
+      const request = await prisma.providerRequest.findUnique({
+        where: { id: Number(id) },
+        include: { user: true },
+      });
+
+      if (!request) {
+        return NextResponse.json(
+          { error: "Request not found" },
+          { status: 404 },
+        );
+      }
+
+      // Update License Status in JSON
+      const licenses = Array.isArray(request.licenses) ? request.licenses : [];
+      if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
+        return NextResponse.json(
+          { error: "Invalid license index" },
+          { status: 400 },
+        );
+      }
+
+      const licenseName = licenses[licenseIndex].name || "License";
+      const licenseVersion = licenses[licenseIndex].version || 1;
+
+      licenses[licenseIndex].status = "EXPIRED";
+
+      // Update DB
+      await prisma.providerRequest.update({
+        where: { id: Number(id) },
+        data: { licenses },
+      });
+
+      // Send Email
+      if (request.user?.email) {
+        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: request.user.email,
+          subject: `Action Required: License Expired (${licenseName})`,
+          html: `
+            <p>Dear ${request.user.name || "User"},</p>
+            <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been marked as <strong>EXPIRED</strong> by the admin.</p>
+            <p>Please log in to your profile and upload the latest version of this document immediately to avoid service disruption.</p>
+            <a href="${dashboardLink}">Update License Now</a>
+          `,
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "License marked as expired",
+      });
+    }
+
+    // HANDLE LICENSE APPROVAL
+    if (action === "approve_license") {
+      const request = await prisma.providerRequest.findUnique({
+        where: { id: Number(id) },
+        include: { user: true },
+      });
+
+      if (!request) {
+        return NextResponse.json(
+          { error: "Request not found" },
+          { status: 404 },
+        );
+      }
+
+      // Update License Status in JSON
+      const licenses = Array.isArray(request.licenses) ? request.licenses : [];
+      if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
+        return NextResponse.json(
+          { error: "Invalid license index" },
+          { status: 400 },
+        );
+      }
+
+      const licenseName = licenses[licenseIndex].name || "License";
+      const licenseVersion = licenses[licenseIndex].version || 1;
+
+      licenses[licenseIndex].status = "APPROVED";
+
+      // Update DB
+      await prisma.providerRequest.update({
+        where: { id: Number(id) },
+        data: { licenses },
+      });
+
+      // Send Email
+      if (request.user?.email) {
+        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: request.user.email,
+            subject: `License Approved: ${licenseName}`,
+            html: `
+                <p>Dear ${request.user.name || "User"},</p>
+                <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been <strong>APPROVED</strong> by the admin.</p>
+                <p>Thank you for keeping your documentation up to date.</p>
+                <a href="${dashboardLink}">View Profile</a>
+            `,
+          });
+        } catch (e) {
+          console.error("Failed to send approval email", e);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "License approved",
+      });
+    }
+
+    // HANDLE LICENSE REJECTION
+    if (action === "reject_license") {
+      const request = await prisma.providerRequest.findUnique({
+        where: { id: Number(id) },
+        include: { user: true },
+      });
+
+      if (!request) {
+        return NextResponse.json(
+          { error: "Request not found" },
+          { status: 404 },
+        );
+      }
+
+      // Update License Status in JSON
+      const licenses = Array.isArray(request.licenses) ? request.licenses : [];
+      if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
+        return NextResponse.json(
+          { error: "Invalid license index" },
+          { status: 400 },
+        );
+      }
+
+      const licenseName = licenses[licenseIndex].name || "License";
+      const licenseVersion = licenses[licenseIndex].version || 1;
+
+      licenses[licenseIndex].status = "REJECTED";
+
+      // Update DB
+      await prisma.providerRequest.update({
+        where: { id: Number(id) },
+        data: { licenses },
+      });
+
+      // Send Email
+      if (request.user?.email) {
+        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: request.user.email,
+            subject: `Action Required: License Rejected (${licenseName})`,
+            html: `
+                <p>Dear ${request.user.name || "User"},</p>
+                <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been <strong>REJECTED</strong> by the admin.</p>
+                <p>Please log in to your profile to upload a valid document.</p>
+                <a href="${dashboardLink}">Update License Now</a>
+            `,
+          });
+        } catch (e) {
+          console.error("Failed to send rejection email", e);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "License rejected",
+      });
     }
 
     // HANDLE CLARIFICATION (No status change)
@@ -73,7 +309,6 @@ export async function PATCH(req, context) {
       }
 
       if (request.user?.email) {
-        const dashboardLink = `${process.env.NEXTAUTH_URL}/provider-onboarding`; // Direct them to onboarding/profile to edit? Or dashboard.
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
           to: request.user.email,
@@ -86,7 +321,6 @@ export async function PATCH(req, context) {
               ${reason}
             </blockquote>
             <p>Please check your details and update necessary information.</p>
-            <a href="${dashboardLink}">Go to Dashboard</a>
           `,
         });
       }
@@ -127,8 +361,6 @@ export async function PATCH(req, context) {
 
     // 3️⃣ Send Email
     if (request.user.email) {
-      const dashboardLink = `${process.env.NEXTAUTH_URL}/providerDashboard`;
-
       if (action === "reject") {
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
@@ -151,7 +383,6 @@ export async function PATCH(req, context) {
               <p>Dear ${request.user.name || "User"},</p>
               <p>Congratulations! Your request to become a provider has been <strong>APPROVED</strong>.</p>
               <p>You can now access your provider dashboard to post services.</p>
-              <a href="${dashboardLink}">Go to Dashboard</a>
             `,
         });
       }

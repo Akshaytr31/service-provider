@@ -37,6 +37,12 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Link,
 } from "@chakra-ui/react";
 import {
   EditIcon,
@@ -1018,9 +1024,17 @@ export default function ProfilePage() {
                           >
                             <Flex justify="space-between" align="start">
                               <Stack spacing={1}>
-                                <Text fontWeight="bold" fontSize="lg">
-                                  {license.name}
-                                </Text>
+                                <HStack>
+                                  <Text fontWeight="bold" fontSize="lg">
+                                    {license.name} (v{license.version || 1})
+                                  </Text>
+                                  {license.status === "EXPIRED" && (
+                                    <Badge colorScheme="red">EXPIRED</Badge>
+                                  )}
+                                  {license.status === "PENDING" && (
+                                    <Badge colorScheme="orange">PENDING</Badge>
+                                  )}
+                                </HStack>
                                 <Text fontSize="sm" color="gray.600">
                                   Authority: {license.authority}
                                 </Text>
@@ -1062,6 +1076,91 @@ export default function ProfilePage() {
                                 />
                               </HStack>
                             </Flex>
+
+                            {license.history && license.history.length > 0 && (
+                              <Accordion
+                                allowToggle
+                                mt={4}
+                                borderTop="1px solid"
+                                borderColor="gray.200"
+                                pt={2}
+                              >
+                                <AccordionItem border="none">
+                                  <h2>
+                                    <AccordionButton
+                                      px={0}
+                                      _hover={{ bg: "transparent" }}
+                                    >
+                                      <Box
+                                        flex="1"
+                                        textAlign="left"
+                                        fontSize="sm"
+                                        fontWeight="bold"
+                                        color="gray.600"
+                                      >
+                                        View Previous Versions (
+                                        {license.history.length})
+                                      </Box>
+                                      <AccordionIcon color="gray.500" />
+                                    </AccordionButton>
+                                  </h2>
+                                  <AccordionPanel pb={2} px={0}>
+                                    <Stack spacing={3}>
+                                      {license.history.map((h, hIdx) => (
+                                        <Box
+                                          key={hIdx}
+                                          p={3}
+                                          bg="white"
+                                          borderRadius="md"
+                                          border="1px solid"
+                                          borderColor="gray.200"
+                                          fontSize="sm"
+                                        >
+                                          <Flex justify="space-between" mb={1}>
+                                            <Badge
+                                              colorScheme={
+                                                h.status === "EXPIRED"
+                                                  ? "red"
+                                                  : "gray"
+                                              }
+                                            >
+                                              v{h.version}
+                                            </Badge>
+                                            <Text
+                                              color="gray.500"
+                                              fontSize="xs"
+                                            >
+                                              {h.updatedAt
+                                                ? new Date(
+                                                    h.updatedAt,
+                                                  ).toLocaleDateString()
+                                                : "Unknown Date"}
+                                            </Text>
+                                          </Flex>
+                                          <Text>
+                                            <strong>Expiry:</strong> {h.expiry}
+                                          </Text>
+                                          <Text mb={1}>
+                                            <strong>Status:</strong>{" "}
+                                            {h.status || "N/A"}
+                                          </Text>
+                                          {h.document?.secureUrl && (
+                                            <Link
+                                              href={h.document.secureUrl}
+                                              isExternal
+                                              color="blue.500"
+                                              fontSize="xs"
+                                            >
+                                              View Document
+                                            </Link>
+                                          )}
+                                        </Box>
+                                      ))}
+                                    </Stack>
+                                  </AccordionPanel>
+                                </AccordionItem>
+                              </Accordion>
+                            )}
                           </Box>
                         ))}
                       </Grid>
@@ -1119,10 +1218,25 @@ const LicenseUpdateModal = ({ license, index, onUpdate, allLicenses }) => {
       }
 
       // 2. Prepare updated licenses array
+      const historyEntry = {
+        version: license.version || 1,
+        expiry: license.expiry,
+        document: license.document,
+        status: license.status,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const currentHistory = Array.isArray(license.history)
+        ? license.history
+        : [];
+
       const updatedLicense = {
         ...license,
         expiry: expiry,
         document: documentData,
+        version: (license.version || 1) + 1,
+        status: "PENDING",
+        history: [historyEntry, ...currentHistory],
       };
 
       const newLicensesList = [...allLicenses];

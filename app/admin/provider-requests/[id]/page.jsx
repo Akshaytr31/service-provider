@@ -27,6 +27,13 @@ import {
   Container,
   VStack,
   Grid,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Flex,
+  Link,
 } from "@chakra-ui/react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,10 +72,12 @@ export default function ProviderRequestDetails() {
   const toast = useToast();
 
   const getDocumentUrl = (doc) => {
-    if (!doc || doc.provider !== "cloudinary") return null;
+    if (!doc) return null;
 
     // Use stored secure URL if available (most reliable)
     if (doc.secureUrl) return doc.secureUrl;
+
+    if (doc.provider !== "cloudinary") return null;
 
     const resourceType = doc.resourceType || "image";
     const cloudName =
@@ -149,6 +158,41 @@ export default function ProviderRequestDetails() {
   const confirmReject = () => {
     handleAction("reject", rejectionReason);
     onClose();
+  };
+  const handleApproveLicense = async (index) => {
+    try {
+      const res = await fetch(`/api/admin/provider-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "approve_license",
+          licenseIndex: index,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to approve license");
+      toast({ title: "License Approved", status: "success", duration: 3000 });
+      window.location.reload();
+    } catch (err) {
+      toast({ title: "Error", description: err.message, status: "error" });
+    }
+  };
+
+  const handleRejectLicense = async (index) => {
+    try {
+      const res = await fetch(`/api/admin/provider-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reject_license",
+          licenseIndex: index,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to reject license");
+      toast({ title: "License Rejected", status: "success", duration: 3000 });
+      window.location.reload();
+    } catch (err) {
+      toast({ title: "Error", description: err.message, status: "error" });
+    }
   };
 
   const sendClarification = async () => {
@@ -656,40 +700,187 @@ export default function ProviderRequestDetails() {
                   {providerRequest.licenses?.map((l, i) => {
                     const docUrl = getDocumentUrl(l.document);
                     return (
-                      <Box key={i} borderRadius="lg" position="relative">
+                      <Box
+                        key={i}
+                        borderRadius="lg"
+                        position="relative"
+                        p={3}
+                        bg={l.status === "EXPIRED" ? "red.50" : "transparent"}
+                        border="1px solid"
+                        borderColor={
+                          l.status === "EXPIRED" ? "red.200" : "transparent"
+                        }
+                      >
                         <Grid
                           templateColumns="repeat(2, 1fr)"
                           gap={3}
                           color="gray.600"
                         >
-                          <Text color="#34d399" fontWeight="bold">
-                            {l.name}
-                          </Text>
-                          <Box>
-                            <b>Authority:</b>
-                            {l.authority} <br />
+                          <Box gridColumn="span 2">
+                            <HStack spacing={2} mb={1}>
+                              <Text color="#34d399" fontWeight="bold">
+                                {l.name}
+                              </Text>
+                              <Badge
+                                colorScheme={
+                                  l.status === "EXPIRED" ? "red" : "blue"
+                                }
+                                fontSize="0.6em"
+                              >
+                                v{l.version || 1}
+                              </Badge>
+                              {l.status === "EXPIRED" && (
+                                <Badge colorScheme="red" fontSize="0.6em">
+                                  EXPIRED
+                                </Badge>
+                              )}
+                              {l.status === "PENDING" && (
+                                <Badge colorScheme="orange" fontSize="0.6em">
+                                  UPDATED
+                                </Badge>
+                              )}
+                              {l.status === "APPROVED" && (
+                                <Badge colorScheme="green" fontSize="0.6em">
+                                  APPROVED
+                                </Badge>
+                              )}
+                              {l.status === "REJECTED" && (
+                                <Badge colorScheme="red" fontSize="0.6em">
+                                  REJECTED
+                                </Badge>
+                              )}
+                            </HStack>
                           </Box>
                           <Box>
-                            <b>Number:</b>
-                            {l.number} <br />
+                            <b>Authority:</b> {l.authority} <br />
                           </Box>
                           <Box>
-                            <b>Expiry:</b>
-                            {l.expiry}
+                            <b>Number:</b> {l.number} <br />
+                          </Box>
+                          <Box>
+                            <b>Expiry:</b>{" "}
+                            <Text
+                              as="span"
+                              color={
+                                l.status === "EXPIRED" ? "red.500" : "inherit"
+                              }
+                            >
+                              {l.expiry}
+                            </Text>
                           </Box>
                         </Grid>
-                        {docUrl && (
-                          <Button
-                            size="xs"
-                            mt={2}
-                            rightIcon={<ExternalLinkIcon />}
-                            colorScheme="green"
-                            variant="outline"
-                            p={1}
-                            onClick={() => window.open(docUrl, "_blank")}
+                        <HStack mt={2}>
+                          {docUrl && (
+                            <Button
+                              size="xs"
+                              rightIcon={<ExternalLinkIcon />}
+                              colorScheme="green"
+                              variant="outline"
+                              p={1}
+                              onClick={() => window.open(docUrl, "_blank")}
+                            >
+                              View Document
+                            </Button>
+                          )}
+                          {l.status === "PENDING" && (
+                            <>
+                              <Button
+                                size="xs"
+                                colorScheme="green"
+                                variant="solid"
+                                onClick={() => handleApproveLicense(i)}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="xs"
+                                colorScheme="red"
+                                variant="solid"
+                                onClick={() => handleRejectLicense(i)}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </HStack>
+
+                        {l.history && l.history.length > 0 && (
+                          <Accordion
+                            allowToggle
+                            mt={3}
+                            borderTop="1px solid"
+                            borderColor="gray.100"
+                            pt={2}
                           >
-                            View Document
-                          </Button>
+                            <AccordionItem border="none">
+                              <h2>
+                                <AccordionButton
+                                  px={0}
+                                  _hover={{ bg: "transparent" }}
+                                >
+                                  <Box
+                                    flex="1"
+                                    textAlign="left"
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    VIEW HISTORY ({l.history.length})
+                                  </Box>
+                                  <AccordionIcon color="gray.500" />
+                                </AccordionButton>
+                              </h2>
+                              <AccordionPanel pb={2} px={0}>
+                                <VStack align="stretch" spacing={2}>
+                                  {l.history.map((h, hIdx) => (
+                                    <Box
+                                      key={hIdx}
+                                      p={2}
+                                      bg="gray.50"
+                                      borderRadius="md"
+                                      fontSize="xs"
+                                      border="1px solid"
+                                      borderColor="gray.200"
+                                    >
+                                      <Flex justify="space-between" mb={1}>
+                                        <Badge
+                                          colorScheme={
+                                            h.status === "EXPIRED"
+                                              ? "red"
+                                              : "gray"
+                                          }
+                                        >
+                                          v{h.version}
+                                        </Badge>
+                                        <Text color="gray.500">
+                                          {h.updatedAt
+                                            ? new Date(
+                                                h.updatedAt,
+                                              ).toLocaleDateString()
+                                            : "Unknown Date"}
+                                        </Text>
+                                      </Flex>
+                                      <Text>Expiry: {h.expiry}</Text>
+                                      <Text mb={1}>
+                                        Status: {h.status || "N/A"}
+                                      </Text>
+                                      {h.document?.secureUrl && (
+                                        <Link
+                                          href={h.document.secureUrl}
+                                          isExternal
+                                          color="blue.500"
+                                          mt={1}
+                                          display="block"
+                                        >
+                                          View Document
+                                        </Link>
+                                      )}
+                                    </Box>
+                                  ))}
+                                </VStack>
+                              </AccordionPanel>
+                            </AccordionItem>
+                          </Accordion>
                         )}
                       </Box>
                     );
