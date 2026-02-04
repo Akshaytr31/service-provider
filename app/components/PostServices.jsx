@@ -68,65 +68,68 @@ export default function PostService() {
         if (providerRes.ok) {
           const providerRequest = await providerRes.json();
 
-          // Extract all services from servicesOffered array
+          let allServices = [];
+
+          // 1. Add services from servicesOffered array
           if (
             providerRequest.servicesOffered &&
-            Array.isArray(providerRequest.servicesOffered) &&
-            providerRequest.servicesOffered.length > 0
+            Array.isArray(providerRequest.servicesOffered)
           ) {
-            // Map each service to include category and subcategory names
-            const servicesWithNames = providerRequest.servicesOffered.map(
-              (service) => {
-                const category = categories.find(
-                  (c) => c.id === parseInt(service.categoryId),
-                );
-                const subCategory = category?.subCategories.find(
-                  (sub) => sub.id === parseInt(service.subCategoryId),
-                );
-
-                return {
-                  categoryId: service.categoryId,
-                  subCategoryId: service.subCategoryId,
-                  categoryName: category?.name || "Unknown Category",
-                  subCategoryName: subCategory?.name || "Unknown Subcategory",
-                };
-              },
-            );
-
-            setApprovedServices(servicesWithNames);
-
-            // Set the first service as default
-            if (servicesWithNames.length > 0) {
-              setSelectedServiceIndex(0);
-              setForm((prev) => ({
-                ...prev,
-                subCategoryId: servicesWithNames[0].subCategoryId.toString(),
-              }));
-            }
-          } else {
-            // Fallback: Use categoryId and subCategoryId from providerRequest (legacy format)
-            if (providerRequest.categoryId && providerRequest.subCategoryId) {
+            allServices = providerRequest.servicesOffered.map((service) => {
               const category = categories.find(
-                (c) => c.id === providerRequest.categoryId,
+                (c) => c.id === parseInt(service.categoryId),
               );
               const subCategory = category?.subCategories.find(
-                (sub) => sub.id === providerRequest.subCategoryId,
+                (sub) => sub.id === parseInt(service.subCategoryId),
+              );
+              return {
+                categoryId: service.categoryId,
+                subCategoryId: service.subCategoryId,
+                categoryName: category?.name || "Unknown Category",
+                subCategoryName: subCategory?.name || "Unknown Subcategory",
+              };
+            });
+          }
+
+          // 2. Add Primary Service (if valid and not duplicate)
+          if (providerRequest.categoryId && providerRequest.subCategoryId) {
+            const primaryExists = allServices.some(
+              (s) =>
+                parseInt(s.categoryId) ===
+                  parseInt(providerRequest.categoryId) &&
+                parseInt(s.subCategoryId) ===
+                  parseInt(providerRequest.subCategoryId),
+            );
+
+            if (!primaryExists) {
+              const category = categories.find(
+                (c) => c.id === parseInt(providerRequest.categoryId),
+              );
+              const subCategory = category?.subCategories.find(
+                (sub) => sub.id === parseInt(providerRequest.subCategoryId),
               );
 
-              setApprovedServices([
-                {
+              if (category && subCategory) {
+                allServices.unshift({
                   categoryId: providerRequest.categoryId,
                   subCategoryId: providerRequest.subCategoryId,
-                  categoryName: category?.name || "Unknown Category",
-                  subCategoryName: subCategory?.name || "Unknown Subcategory",
-                },
-              ]);
-
-              setForm((prev) => ({
-                ...prev,
-                subCategoryId: providerRequest.subCategoryId.toString(),
-              }));
+                  categoryName: category.name,
+                  subCategoryName: subCategory.name,
+                  isPrimary: true,
+                });
+              }
             }
+          }
+
+          setApprovedServices(allServices);
+
+          // Set default service
+          if (allServices.length > 0) {
+            setSelectedServiceIndex(0);
+            setForm((prev) => ({
+              ...prev,
+              subCategoryId: allServices[0].subCategoryId?.toString() || "",
+            }));
           }
 
           if (providerRequest.serviceRadius) {
@@ -148,7 +151,7 @@ export default function PostService() {
       const selectedService = approvedServices[selectedServiceIndex];
       setForm((prev) => ({
         ...prev,
-        subCategoryId: selectedService.subCategoryId.toString(),
+        subCategoryId: selectedService.subCategoryId?.toString() || "",
       }));
     }
   }, [selectedServiceIndex, approvedServices]);
@@ -186,8 +189,15 @@ export default function PostService() {
   };
 
   const handleSubmit = async () => {
-    if (!form.subCategoryId) {
-      alert("Please select a subcategory");
+    if (
+      !form.title ||
+      !form.description ||
+      !form.price ||
+      !form.subCategoryId
+    ) {
+      alert(
+        "Please fill in all required fields (Title, Description, Price, Service Type)",
+      );
       return;
     }
 
@@ -196,6 +206,8 @@ export default function PostService() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+
+    const data = await res.json();
 
     if (res.ok) {
       alert("Service published successfully");
@@ -209,7 +221,7 @@ export default function PostService() {
       });
       // Don't reset selectedCategory as it's fixed
     } else {
-      alert("Failed to publish service");
+      alert(data.error || "Failed to publish service");
     }
   };
 

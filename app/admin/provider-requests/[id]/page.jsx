@@ -27,6 +27,7 @@ import {
   Container,
   VStack,
   Grid,
+  GridItem,
   Accordion,
   AccordionItem,
   AccordionButton,
@@ -530,6 +531,11 @@ export default function ProviderRequestDetails() {
                   }
                 />
                 <LabelValue label="Email" value={providerRequest.user?.email} />
+                <LabelValue label="ID Type" value={providerRequest.idType} />
+                <LabelValue
+                  label="ID Number"
+                  value={providerRequest.idNumber}
+                />
                 {/* <LabelValue label="Mobile" value={providerRequest.phone} /> */}
               </SimpleGrid>
             </InfoCard>
@@ -614,9 +620,106 @@ export default function ProviderRequestDetails() {
               </Box>
             </InfoCard>
 
-            {/* Services */}
+            {/* Services Offered */}
             <InfoCard title="Services Offered" icon={AtSignIcon} delay={0.3}>
               <Stack spacing={6} w="full">
+                {/* Primary Service (Edited in Profile) */}
+                <Box
+                  p={5}
+                  bg="gray.50"
+                  borderRadius="2xl"
+                  border="1px solid"
+                  borderColor="gray.100"
+                >
+                  <HStack justify="space-between" mb={4}>
+                    <Text fontWeight="bold" color="green.600" fontSize="sm">
+                      Primary Service (Current Profile)
+                    </Text>
+                    <Badge
+                      colorScheme="green"
+                      variant="subtle"
+                      borderRadius="full"
+                      px={3}
+                    >
+                      {categories.find(
+                        (c) => c.id === Number(providerRequest.categoryId),
+                      )?.name || "Unknown Category"}
+                    </Badge>
+                  </HStack>
+
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                    <Box>
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        color="gray.400"
+                        textTransform="uppercase"
+                      >
+                        Category
+                      </Text>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {categories.find(
+                          (c) => c.id === Number(providerRequest.categoryId),
+                        )?.name ||
+                          providerRequest.categoryId ||
+                          "-"}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        color="gray.400"
+                        textTransform="uppercase"
+                      >
+                        Sub-Category
+                      </Text>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {categories
+                          .find(
+                            (c) => c.id === Number(providerRequest.categoryId),
+                          )
+                          ?.subCategories?.find(
+                            (s) =>
+                              s.id === Number(providerRequest.subCategoryId),
+                          )?.name ||
+                          providerRequest.subCategoryId ||
+                          "-"}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        color="gray.400"
+                        textTransform="uppercase"
+                      >
+                        Years of Experience
+                      </Text>
+                      <Text fontSize="sm" fontWeight="bold">
+                        {providerRequest.yearsExperience
+                          ? `${providerRequest.yearsExperience} Years`
+                          : "-"}
+                      </Text>
+                    </Box>
+                    <GridItem colSpan={{ base: 1, md: 2 }}>
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        color="gray.400"
+                        textTransform="uppercase"
+                        mb={1}
+                      >
+                        Description
+                      </Text>
+                      <Text fontSize="sm" color="gray.700">
+                        {providerRequest.description || "-"}
+                      </Text>
+                    </GridItem>
+                  </SimpleGrid>
+                </Box>
+
+                <Divider />
                 {Array.isArray(providerRequest.servicesOffered) &&
                 providerRequest.servicesOffered.length > 0 ? (
                   providerRequest.servicesOffered.map((serviceEntry, i) => {
@@ -775,8 +878,6 @@ export default function ProviderRequestDetails() {
                 <Divider />
               </Stack>
             </InfoCard>
-
-
 
             {/* Qualifications & Licenses */}
             <SimpleGrid columns={{ base: 1, md: 1 }} spacing={8}>

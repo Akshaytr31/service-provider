@@ -43,6 +43,7 @@ import {
   AccordionPanel,
   AccordionIcon,
   Link,
+  Textarea,
 } from "@chakra-ui/react";
 import {
   EditIcon,
@@ -50,7 +51,6 @@ import {
   CloseIcon,
   InfoIcon,
   PhoneIcon,
-  EmailIcon,
   AtSignIcon,
   TimeIcon,
   LinkIcon,
@@ -58,7 +58,20 @@ import {
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiBriefcase, FiMapPin, FiUser } from "react-icons/fi";
+import {
+  FiBriefcase,
+  FiMapPin,
+  FiDollarSign,
+  FiGlobe,
+  FiSmartphone,
+  FiMail,
+  FiUser,
+} from "react-icons/fi";
+import dynamic from "next/dynamic";
+
+const GoogleMap = dynamic(() => import("../components/googleMap/page"), {
+  ssr: false,
+});
 
 const MotionBox = motion(Box);
 
@@ -66,6 +79,18 @@ export default function ProfilePage() {
   const { data: session, update } = useSession();
   const user = session?.user;
   const toast = useToast();
+
+  const [categories, setCategories] = useState([]); // Added categories state
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      const json = await res.json();
+      setCategories(json.categories || json);
+    } catch (err) {
+      console.error("Fetch categories failed", err);
+    }
+  };
 
   // Share functionality
   const handleShare = () => {
@@ -147,6 +172,37 @@ export default function ProfilePage() {
         businessName: profileData.businessName || "",
         businessType: profileData.businessType || "",
       });
+
+      // Initialize provider form if request exists
+      if (requestData) {
+        setProviderForm({
+          firstName: requestData.firstName || "",
+          lastName: requestData.lastName || "",
+          businessName: requestData.businessName || "",
+          businessType: requestData.businessType || "",
+          registrationNumber: requestData.registrationNumber || "",
+          trnNumber: requestData.trnNumber || "",
+          establishmentYear: requestData.establishmentYear || "",
+          businessExpiryDate: requestData.businessExpiryDate || "",
+          description: requestData.description || "",
+          serviceRadius: requestData.serviceRadius || "",
+          yearsExperience: requestData.yearsExperience || "",
+          categoryId: requestData.categoryId || "",
+          subCategoryId: requestData.subCategoryId || "",
+          pricingType: requestData.pricingType || "",
+          baseRate: requestData.baseRate || "",
+          onSiteCharges: requestData.onSiteCharges || "",
+          address: requestData.address || "",
+          city: requestData.city || "",
+          state: requestData.state || "",
+          country: requestData.country || "",
+          zipCode: requestData.zipCode || "",
+          latitude: requestData.latitude || "",
+          longitude: requestData.longitude || "",
+          idType: requestData.idType || "",
+          idNumber: requestData.idNumber || "",
+        });
+      }
     } catch (err) {
       console.error("Failed to fetch profile", err);
     } finally {
@@ -157,8 +213,41 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       fetchProfile();
+      fetchCategories();
     }
   }, [user]);
+
+  // Provider Form State
+  const [providerForm, setProviderForm] = useState({});
+
+  const handleProviderSave = async () => {
+    try {
+      const res = await fetch("/api/provider/request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(providerForm),
+      });
+
+      if (res.ok) {
+        toast({
+          title: "Provider Profile Updated",
+          status: "success",
+          duration: 3000,
+        });
+        setIsEditing(false);
+        fetchProfile();
+      } else {
+        throw new Error("Failed to update provider profile");
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        status: "error",
+        duration: 3000,
+      });
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -360,12 +449,33 @@ export default function ProfilePage() {
                   >
                     Cancel
                   </Button>
+                  {/* Save button logic depends on active tab - simplifying to show correct save action */}
                   <Button
                     leftIcon={<CheckIcon />}
                     colorScheme="green"
-                    onClick={handleSave}
+                    onClick={() => {
+                      // Simple check which tab is active would be better, but assuming user edits what they see
+                      // For now, let's just trigger both saves or handle based on context?
+                      // Ideally split this button or determine context.
+                      // Let's rely on the TabPanel rendering the save button for specific context or make this global.
+                      // BUT, the existing structure has this button in the header.
+                      // Let's make it contextual?
+                      // Actually, let's keep it simple: if Provider Tab is open, save provider. If Seeker, save seeker.
+                      // However, tabs state isn't tracked in a variable we can access here easily without Ref or State.
+                      // Let's add tab state.
+
+                      // For now, removing this top-level save button when editing Provider,
+                      // OR simply adding a save button INSIDE the provider tab content (like the seeker one has at bottom).
+                      handleSave(); // This saves SEEKER profile.
+                      // We need a way to save Provider profile if that's what is being edited.
+                      // Since we are refactoring, let's hide this global save button if on Provider tab?
+                      // Or better, let's rely on the buttons INSIDE the tabs.
+                      // The existing code has a global save button.
+                      // I will HIDE this global save group if we are on Provider tab, or make it dynamic.
+                    }}
                     borderRadius="xl"
                     boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
+                    display="none" // Hiding global save to use dedicated save buttons in tabs
                   >
                     Save Changes
                   </Button>
@@ -713,25 +823,37 @@ export default function ProfilePage() {
                           Provider Application Details
                         </Heading>
                       </HStack>
-                      <Badge
-                        colorScheme={
-                          providerRequest.status === "APPROVED"
-                            ? "green"
-                            : providerRequest.status === "REJECTED"
-                              ? "red"
-                              : "orange"
-                        }
-                        px={3}
-                        py={1}
-                        borderRadius="full"
-                        fontSize="sm"
-                      >
-                        {providerRequest.status}
-                      </Badge>
+                      <HStack>
+                        {isEditing && (
+                          <Button
+                            colorScheme="green"
+                            onClick={handleProviderSave}
+                            size="sm"
+                            borderRadius="lg"
+                          >
+                            Save Provider Changes
+                          </Button>
+                        )}
+                        <Badge
+                          colorScheme={
+                            providerRequest.status === "APPROVED"
+                              ? "green"
+                              : providerRequest.status === "REJECTED"
+                                ? "red"
+                                : "orange"
+                          }
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          fontSize="sm"
+                        >
+                          {providerRequest.status}
+                        </Badge>
+                      </HStack>
                     </Flex>
 
                     <Stack spacing={8}>
-                      {/* Identity Section - Conditional based on Type */}
+                      {/* Identity Section */}
                       <Box>
                         <SectionHeader
                           title={
@@ -759,37 +881,254 @@ export default function ProfilePage() {
 
                           {providerRequest.userType === "business" ? (
                             <>
-                              <DisplayField
-                                label="Business Name"
-                                value={providerRequest.businessName}
-                              />
-                              <DisplayField
-                                label="Business Type"
-                                value={providerRequest.businessType}
-                              />
-                              <DisplayField
-                                label="Registration Number"
-                                value={providerRequest.registrationNumber}
-                              />
-                              <DisplayField
-                                label="TRN Number"
-                                value={providerRequest.trnNumber}
-                              />
-                              <DisplayField
-                                label="Establishment Year"
-                                value={providerRequest.establishmentYear}
-                              />
-                              <DisplayField
-                                label="Expiry Date"
-                                value={providerRequest.businessExpiryDate}
-                              />
+                              {isEditing ? (
+                                <>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Business Name
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.businessName}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          businessName: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Business Type
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.businessType}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          businessType: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Registration Number
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.registrationNumber}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          registrationNumber: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      TRN Number
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.trnNumber}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          trnNumber: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Establishment Year
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.establishmentYear}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          establishmentYear: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Expiry Date
+                                    </FormLabel>
+                                    <Input
+                                      type="date"
+                                      value={providerForm.businessExpiryDate}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          businessExpiryDate: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                </>
+                              ) : (
+                                <>
+                                  <DisplayField
+                                    label="Business Name"
+                                    value={providerRequest.businessName}
+                                  />
+                                  <DisplayField
+                                    label="Business Type"
+                                    value={providerRequest.businessType}
+                                  />
+                                  <DisplayField
+                                    label="Registration Number"
+                                    value={providerRequest.registrationNumber}
+                                  />
+                                  <DisplayField
+                                    label="TRN Number"
+                                    value={providerRequest.trnNumber}
+                                  />
+                                  <DisplayField
+                                    label="Establishment Year"
+                                    value={providerRequest.establishmentYear}
+                                  />
+                                  <DisplayField
+                                    label="Expiry Date"
+                                    value={providerRequest.businessExpiryDate}
+                                  />
+                                </>
+                              )}
                             </>
                           ) : (
                             <>
-                              <DisplayField
-                                label="Full Name"
-                                value={`${providerRequest.firstName || ""} ${providerRequest.lastName || ""}`}
-                              />
+                              {isEditing ? (
+                                <>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      First Name
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.firstName}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          firstName: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <FormControl>
+                                    <FormLabel
+                                      fontSize="xs"
+                                      fontWeight="bold"
+                                      color="gray.500"
+                                    >
+                                      Last Name
+                                    </FormLabel>
+                                    <Input
+                                      value={providerForm.lastName}
+                                      onChange={(e) =>
+                                        setProviderForm({
+                                          ...providerForm,
+                                          lastName: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                    />
+                                  </FormControl>
+                                  <GridItem colSpan={{ base: 1, md: 2 }}>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        ID Type
+                                      </FormLabel>
+                                      <Select
+                                        value={providerForm.idType}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            idType: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      >
+                                        <option value="Passport">
+                                          Passport
+                                        </option>
+                                        <option value="Driving License">
+                                          Driving License
+                                        </option>
+                                        <option value="National ID">
+                                          National ID
+                                        </option>
+                                      </Select>
+                                    </FormControl>
+                                  </GridItem>
+                                  <GridItem colSpan={{ base: 1, md: 2 }}>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        ID Number
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.idNumber}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            idNumber: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                  </GridItem>
+                                </>
+                              ) : (
+                                <DisplayField
+                                  label="Full Name"
+                                  value={`${providerRequest.firstName || ""} ${providerRequest.lastName || ""}`}
+                                />
+                              )}
                               <DisplayField
                                 label="Date of Birth"
                                 value={providerRequest.dateOfBirth}
@@ -798,14 +1137,18 @@ export default function ProfilePage() {
                                 label="Gender"
                                 value={providerRequest.gender}
                               />
-                              <DisplayField
-                                label="ID Type"
-                                value={providerRequest.idType}
-                              />
-                              <DisplayField
-                                label="ID Number"
-                                value={providerRequest.idNumber}
-                              />
+                              {!isEditing && (
+                                <>
+                                  <DisplayField
+                                    label="ID Type"
+                                    value={providerRequest.idType}
+                                  />
+                                  <DisplayField
+                                    label="ID Number"
+                                    value={providerRequest.idNumber}
+                                  />
+                                </>
+                              )}
                             </>
                           )}
                         </Grid>
@@ -826,35 +1169,177 @@ export default function ProfilePage() {
                           }}
                           gap={6}
                         >
-                          <DisplayField
-                            label="Category ID"
-                            value={providerRequest.categoryId}
-                          />
-                          <DisplayField
-                            label="Sub Category ID"
-                            value={providerRequest.subCategoryId}
-                          />
-                          <DisplayField
-                            label="Service Radius"
-                            value={
-                              providerRequest.serviceRadius
-                                ? `${providerRequest.serviceRadius} km`
-                                : "N/A"
-                            }
-                          />
-                          <DisplayField
-                            label="Years of Experience"
-                            value={providerRequest.yearsExperience}
-                          />
-                          <GridItem colSpan={{ base: 1, md: 2 }}>
-                            <DisplayField
-                              label="Description"
-                              value={
-                                providerRequest.description ||
-                                "No description provided."
-                              }
-                            />
-                          </GridItem>
+                          {isEditing ? (
+                            <>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Category
+                                </FormLabel>
+                                <Select
+                                  placeholder="Select Category"
+                                  value={providerForm.categoryId}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      categoryId: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                >
+                                  {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </option>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Sub-Category
+                                </FormLabel>
+                                <Select
+                                  placeholder="Select Sub-Category"
+                                  value={providerForm.subCategoryId}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      subCategoryId: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                >
+                                  {/* Filter subcategories based on selected category */}
+                                  {categories
+                                    .find(
+                                      (c) => c.id == providerForm.categoryId,
+                                    )
+                                    ?.subCategories?.map((sub) => (
+                                      <option key={sub.id} value={sub.id}>
+                                        {sub.name}
+                                      </option>
+                                    ))}
+                                </Select>
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Service Radius (KM)
+                                </FormLabel>
+                                <Input
+                                  type="number"
+                                  value={providerForm.serviceRadius}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      serviceRadius: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Years of Experience
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.yearsExperience}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      yearsExperience: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    Description
+                                  </FormLabel>
+                                  <Textarea
+                                    value={providerForm.description}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        description: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                              </GridItem>
+                            </>
+                          ) : (
+                            <>
+                              <DisplayField
+                                label="Category"
+                                value={
+                                  categories.find(
+                                    (c) =>
+                                      c.id ===
+                                      Number(providerRequest.categoryId),
+                                  )?.name || providerRequest.categoryId
+                                }
+                              />
+                              <DisplayField
+                                label="Sub Category"
+                                value={
+                                  categories
+                                    .find(
+                                      (c) =>
+                                        c.id ===
+                                        Number(providerRequest.categoryId),
+                                    )
+                                    ?.subCategories?.find(
+                                      (s) =>
+                                        s.id ===
+                                        Number(providerRequest.subCategoryId),
+                                    )?.name || providerRequest.subCategoryId
+                                }
+                              />
+                              <DisplayField
+                                label="Service Radius"
+                                value={
+                                  providerRequest.serviceRadius
+                                    ? `${providerRequest.serviceRadius} km`
+                                    : "N/A"
+                                }
+                              />
+                              <DisplayField
+                                label="Years of Experience"
+                                value={providerRequest.yearsExperience}
+                              />
+                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                                <DisplayField
+                                  label="Description"
+                                  value={
+                                    providerRequest.description ||
+                                    "No description provided."
+                                  }
+                                />
+                              </GridItem>
+                            </>
+                          )}
                         </Grid>
                       </Box>
 
@@ -870,18 +1355,86 @@ export default function ProfilePage() {
                           }}
                           gap={6}
                         >
-                          <DisplayField
-                            label="Pricing Model"
-                            value={providerRequest.pricingType}
-                          />
-                          <DisplayField
-                            label="Base Rate"
-                            value={providerRequest.baseRate}
-                          />
-                          <DisplayField
-                            label="On-Site Charges"
-                            value={providerRequest.onSiteCharges}
-                          />
+                          {isEditing ? (
+                            <>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Pricing Model
+                                </FormLabel>
+                                <Select
+                                  value={providerForm.pricingType}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      pricingType: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                >
+                                  <option value="Hourly">Hourly</option>
+                                  <option value="Fixed">Fixed</option>
+                                  <option value="Quote">Quote</option>
+                                </Select>
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Base Rate
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.baseRate}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      baseRate: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  On-Site Charges
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.onSiteCharges}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      onSiteCharges: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                            </>
+                          ) : (
+                            <>
+                              <DisplayField
+                                label="Pricing Model"
+                                value={providerRequest.pricingType}
+                              />
+                              <DisplayField
+                                label="Base Rate"
+                                value={providerRequest.baseRate}
+                              />
+                              <DisplayField
+                                label="On-Site Charges"
+                                value={providerRequest.onSiteCharges}
+                              />
+                            </>
+                          )}
                         </Grid>
                       </Box>
 
@@ -900,28 +1453,120 @@ export default function ProfilePage() {
                           }}
                           gap={6}
                         >
-                          <GridItem colSpan={{ base: 1, md: 2 }}>
-                            <DisplayField
-                              label="Address"
-                              value={providerRequest.address}
-                            />
-                          </GridItem>
-                          <DisplayField
-                            label="City"
-                            value={providerRequest.city}
-                          />
-                          <DisplayField
-                            label="State"
-                            value={providerRequest.state}
-                          />
-                          <DisplayField
-                            label="Country"
-                            value={providerRequest.country}
-                          />
-                          <DisplayField
-                            label="Zip Code"
-                            value={providerRequest.zipCode}
-                          />
+                          {isEditing ? (
+                            <>
+                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                                <FormControl>
+                                  <GoogleMap
+                                    formData={providerForm}
+                                    setFormData={setProviderForm}
+                                    viewOnly={false}
+                                  />
+                                </FormControl>
+                              </GridItem>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  City
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.city}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      city: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  State
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.state}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      state: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Country
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.country}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      country: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Zip Code
+                                </FormLabel>
+                                <Input
+                                  value={providerForm.zipCode}
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      zipCode: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                />
+                              </FormControl>
+                            </>
+                          ) : (
+                            <>
+                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                                <DisplayField
+                                  label="Address"
+                                  value={providerRequest.address}
+                                />
+                              </GridItem>
+                              <DisplayField
+                                label="City"
+                                value={providerRequest.city}
+                              />
+                              <DisplayField
+                                label="State"
+                                value={providerRequest.state}
+                              />
+                              <DisplayField
+                                label="Country"
+                                value={providerRequest.country}
+                              />
+                              <DisplayField
+                                label="Zip Code"
+                                value={providerRequest.zipCode}
+                              />
+                            </>
+                          )}
                         </Grid>
                       </Box>
 

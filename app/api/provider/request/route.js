@@ -115,7 +115,44 @@ export async function PATCH(req) {
     const updatedRequest = await prisma.providerRequest.update({
       where: { id: providerRequestId },
       data: {
-        licenses: updatedLicenses,
+        // Allow updating all fields
+        firstName: body.firstName,
+        lastName: body.lastName,
+        businessName: body.businessName,
+        businessType: body.businessType,
+        registrationNumber: body.registrationNumber,
+        trnNumber: body.trnNumber,
+        establishmentYear: body.establishmentYear,
+        businessExpiryDate: body.businessExpiryDate,
+
+        description: body.description,
+        serviceRadius: body.serviceRadius
+          ? parseInt(body.serviceRadius)
+          : undefined,
+        yearsExperience: body.yearsExperience,
+
+        categoryId: body.categoryId ? parseInt(body.categoryId) : undefined,
+        subCategoryId: body.subCategoryId
+          ? parseInt(body.subCategoryId)
+          : undefined,
+
+        pricingType: body.pricingType,
+        baseRate: body.baseRate,
+        onSiteCharges: body.onSiteCharges,
+
+        address: body.address,
+        city: body.city,
+        state: body.state,
+        country: body.country,
+        zipCode: body.zipCode,
+        latitude: body.latitude,
+        longitude: body.longitude,
+
+        idType: body.idType,
+        idNumber: body.idNumber,
+
+        // Preserve existing behavior for licenses if passed
+        ...(body.licenses && { licenses: body.licenses }),
       },
     });
 
