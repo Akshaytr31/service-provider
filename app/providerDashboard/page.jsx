@@ -798,14 +798,26 @@ function ServicesView({ onBack }) {
                   {service.description}
                 </Text>
                 <Flex justify="space-between" align="center">
-                  <Badge colorScheme="green" variant="subtle">
-                    Active
+                  <Badge
+                    colorScheme={service.status === "BLOCKED" ? "red" : "green"}
+                  >
+                    {service.status === "BLOCKED"
+                      ? "BLOCKED (License Expired)"
+                      : "ACTIVE"}
                   </Badge>
                   <Text fontWeight="bold" color="green.600">
                     {service.price}
                   </Text>
                 </Flex>
               </CardBody>
+              {service.status === "BLOCKED" && (
+                <CardFooter bg="red.50" p={3}>
+                  <Text fontSize="xs" color="red.600">
+                    Linked license has expired. Please renew it in your profile
+                    to re-activate this service.
+                  </Text>
+                </CardFooter>
+              )}
             </Card>
           ))}
         </SimpleGrid>

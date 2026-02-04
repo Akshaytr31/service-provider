@@ -1,92 +1,91 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendEmail } from "@/lib/mail";
+import { NextResponse } from "next/server";
 
-// Force dynamic since we check dates
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const today = new Date();
-    // Add 7 days to today
-    const sevenDaysFromNow = new Date(today);
-    sevenDaysFromNow.setDate(today.getDate() + 7);
-
-    // Format to match the "yyyy-mm-dd" format likely stored in JSON
-    // The input type="date" typically saves as YYYY-MM-DD string.
-    // e.g., 2026-02-11
-    const targetDateStr = sevenDaysFromNow.toISOString().split("T")[0];
-
-    console.log(`Checking for licenses expiring on: ${targetDateStr}`);
-
-    // Fetch all approved providers
-    const providers = await prisma.providerRequest.findMany({
-      where: {
-        status: "APPROVED",
-        licenses: {
-          not: null, // Ensure licenses field is not null
-        },
-      },
-      include: {
-        user: true, // Need user email and name
-      },
-      // Note: We can't easily filter JSON array contents in SQL/Prisma level seamlessly across all DBs for specific structure match without raw query.
-      // So detailed filtering will happen in application logic.
+    const requests = await prisma.providerRequest.findMany({
+      where: { status: "APPROVED" },
+      include: { user: true },
     });
 
-    let emailsSent = 0;
-    const sentList = [];
+    let blockedCount = 0;
+    let unblockedCount = 0;
 
-    for (const provider of providers) {
-      const { licenses } = provider;
+    for (const req of requests) {
+      if (!req.user?.email) continue;
+
+      const licenses = req.licenses;
       if (!Array.isArray(licenses)) continue;
 
-      const expiringLicenses = licenses.filter((license) => {
-        // license.expiry is expected to be "YYYY-MM-DD"
-        return license.expiry === targetDateStr;
+      const today = new Date();
+
+      // Track which subcategories have at least one VALID license
+      const validSubCategoryIds = new Set();
+      // Track which subcategories are LINKED to any license (valid or expired)
+      const linkedSubCategoryIds = new Set();
+
+      for (const lic of licenses) {
+        if (!lic.subCategoryId) continue;
+
+        const subId = String(lic.subCategoryId);
+        linkedSubCategoryIds.add(subId);
+
+        const expiryDate = new Date(lic.expiry);
+        // Check if fresh
+        if (expiryDate > today) {
+          validSubCategoryIds.add(subId);
+        }
+      }
+
+      // Fetch provider's services
+      const services = await prisma.services.findMany({
+        where: { providerEmail: req.user.email },
       });
 
-      if (expiringLicenses.length > 0) {
-        const licenseNames = expiringLicenses
-          .map((l) => l.name || "Unknown License")
-          .join(", ");
+      for (const service of services) {
+        const subId = String(service.subCategoryId);
 
-        const emailSubject = "Action Required: License Expiration Warning";
-        const emailBody = `
-Dear ${provider.firstName || "Provider"},
+        // Logic:
+        // 1. If service is linked to a license category (linkedSubCategoryIds.has(subId))
+        // 2. AND there is NO valid license for it (!validSubCategoryIds.has(subId))
+        // -> BLOCK IT
 
-This is a reminder that the following license(s) associated with your profile are set to expire in 7 days (on ${targetDateStr}):
+        // 3. If there IS a valid license -> UNBLOCK IT (if it was blocked)
 
-${licenseNames}
-
-Please update your license information in your dashboard to ensure continued service on our platform.
-
-Best regards,
-The Team
-        `;
-
-        if (provider.user?.email) {
-          await sendEmail(provider.user.email, emailSubject, emailBody);
-          emailsSent++;
-          sentList.push({
-            providerId: provider.id,
-            email: provider.user.email,
-            licenses: licenseNames,
-          });
+        if (linkedSubCategoryIds.has(subId)) {
+          if (!validSubCategoryIds.has(subId)) {
+            // Expired / Missing Valid License
+            if (service.status !== "BLOCKED") {
+              await prisma.services.update({
+                where: { id: service.id },
+                data: { status: "BLOCKED" },
+              });
+              blockedCount++;
+            }
+          } else {
+            // Has Valid License
+            if (service.status === "BLOCKED") {
+              await prisma.services.update({
+                where: { id: service.id },
+                data: { status: "ACTIVE" },
+              });
+              unblockedCount++;
+            }
+          }
         }
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Check complete. Sent ${emailsSent} reminder emails.`,
-      targetDate: targetDateStr,
-      details: sentList,
+      message: `License check complete. Blocked: ${blockedCount}, Unblocked: ${unblockedCount}`,
     });
   } catch (error) {
-    console.error("Cron check failed:", error);
+    console.error("Cron Error:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { error: `Failed to run license check: ${error.message}` },
       { status: 500 },
     );
   }

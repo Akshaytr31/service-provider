@@ -20,6 +20,7 @@ import {
   InputLeftElement,
   useColorModeValue,
   Container,
+  useToast, // Import useToast
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import {
@@ -48,6 +49,7 @@ export default function PostService() {
   const [serviceRadius, setServiceRadius] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const toast = useToast(); // Initialize toast
 
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("green.100", "green.900");
@@ -177,12 +179,31 @@ export default function PostService() {
       const data = await res.json();
       if (res.ok) {
         setForm((prev) => ({ ...prev, coverPhoto: data.secureUrl }));
+        toast({
+          title: "Image Uploaded",
+          description: "Cover photo uploaded successfully.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
       } else {
-        alert("Image upload failed");
+        toast({
+          title: "Upload Failed",
+          description: "Image upload failed.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       }
     } catch (error) {
       console.error("Upload error", error);
-      alert("Error uploading image");
+      toast({
+        title: "Error",
+        description: "An error occurred while uploading the image.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setUploading(false);
     }
@@ -195,9 +216,14 @@ export default function PostService() {
       !form.price ||
       !form.subCategoryId
     ) {
-      alert(
-        "Please fill in all required fields (Title, Description, Price, Service Type)",
-      );
+      toast({
+        title: "Missing Fields",
+        description:
+          "Please fill in all required fields (Title, Description, Price, Service Type).",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
       return;
     }
 
@@ -210,7 +236,13 @@ export default function PostService() {
     const data = await res.json();
 
     if (res.ok) {
-      alert("Service published successfully");
+      toast({
+        title: "Success!",
+        description: "Service published successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
       setForm({
         title: "",
         description: "",
@@ -221,7 +253,13 @@ export default function PostService() {
       });
       // Don't reset selectedCategory as it's fixed
     } else {
-      alert(data.error || "Failed to publish service");
+      toast({
+        title: "Failed",
+        description: data.error || "Failed to publish service.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
 

@@ -51,6 +51,7 @@ model services {
   coverPhoto    String?     @db.Text
   serviceRadius Int?        @map("service_radius")
   servicesOffered Json?     @map("services_offered")
+  status        String      @default("ACTIVE") @db.VarChar(20)
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
    
   @@index([subCategoryId], map: "services_sub_category_id_fkey")
@@ -125,6 +126,7 @@ model ProviderRequest {
   rejectionReason    String?                  @map("rejection_reason") @db.Text
   trnNumber          String?                  @map("trn_number") @db.VarChar(100)
   categoryId         Int?                     @map("category_id")
+  clarifications     Clarification[]
   user               users                    @relation(fields: [userId], references: [id])
 
   @@index([userId], map: "provider_requests_user_id_fkey")
@@ -173,4 +175,16 @@ enum provider_requests_status {
   PENDING
   APPROVED
   REJECTED
+}
+
+model Clarification {
+  id                Int             @id @default(autoincrement())
+  providerRequestId Int             @map("provider_request_id")
+  message           String          @db.Text
+  sender            String          @db.VarChar(50)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  providerRequest   ProviderRequest @relation(fields: [providerRequestId], references: [id])
+
+  @@index([providerRequestId], map: "clarifications_provider_request_id_fkey")
+  @@map("clarifications")
 }

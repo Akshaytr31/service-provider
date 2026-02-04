@@ -15,7 +15,14 @@ import {
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 
-export default function LicenseStep({ formData, handleChange, setFormData }) {
+import { Select } from "@chakra-ui/react";
+
+export default function LicenseStep({
+  formData,
+  handleChange,
+  setFormData,
+  categories = [],
+}) {
   const [uploadingIndex, setUploadingIndex] = useState(null);
   const toast = useToast();
 
@@ -31,6 +38,8 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
             number: "",
             expiry: "",
             document: null,
+            categoryId: "",
+            subCategoryId: "",
           },
         ],
       }));
@@ -48,6 +57,8 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
           number: "",
           expiry: "",
           document: null,
+          categoryId: "",
+          subCategoryId: "",
         },
       ],
     }));
@@ -63,7 +74,17 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
   const handleLicenseChange = (index, field, value) => {
     setFormData((prev) => {
       const newLicenses = [...(prev.licenses || [])];
-      newLicenses[index] = { ...newLicenses[index], [field]: value };
+
+      // If category changes, reset subcategory
+      if (field === "categoryId") {
+        newLicenses[index] = {
+          ...newLicenses[index],
+          [field]: value,
+          subCategoryId: "",
+        };
+      } else {
+        newLicenses[index] = { ...newLicenses[index], [field]: value };
+      }
       return { ...prev, licenses: newLicenses };
     });
   };
@@ -162,6 +183,53 @@ export default function LicenseStep({ formData, handleChange, setFormData }) {
             </Box>
 
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={6}>
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  Category
+                </FormLabel>
+                <Select
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.categoryId || ""}
+                  onChange={(e) =>
+                    handleLicenseChange(index, "categoryId", e.target.value)
+                  }
+                  placeholder="Select Category"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+                  Sub-Category
+                </FormLabel>
+                <Select
+                  size="sm"
+                  borderRadius="lg"
+                  focusBorderColor="green.400"
+                  value={license.subCategoryId || ""}
+                  onChange={(e) =>
+                    handleLicenseChange(index, "subCategoryId", e.target.value)
+                  }
+                  placeholder="Select Sub-Category"
+                  isDisabled={!license.categoryId}
+                >
+                  {license.categoryId &&
+                    categories
+                      .find((c) => c.id === Number(license.categoryId))
+                      ?.subCategories?.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                </Select>
+              </FormControl>
               <FormControl isRequired>
                 <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
                   License Name

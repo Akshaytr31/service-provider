@@ -204,6 +204,7 @@ export default function BasicInfoStep({
               formData={formData}
               handleChange={handleChange}
               setFormData={setFormData}
+              categories={categories}
             />
           </Box>
 
@@ -401,6 +402,7 @@ export default function BasicInfoStep({
               formData={formData}
               handleChange={handleChange}
               setFormData={setFormData}
+              categories={categories}
             />
           </Box>
           <Box

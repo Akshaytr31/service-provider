@@ -171,6 +171,9 @@ export async function PATCH(req, context) {
         });
       }
 
+      // Trigger async check
+      await updateServiceStatusForProvider(request.user?.email);
+
       return NextResponse.json({
         success: true,
         message: "License marked as expired",
@@ -230,6 +233,8 @@ export async function PATCH(req, context) {
           console.error("Failed to send approval email", e);
         }
       }
+
+      await updateServiceStatusForProvider(request.user?.email);
 
       return NextResponse.json({
         success: true,
@@ -407,5 +412,66 @@ export async function PATCH(req, context) {
       { error: error.message || "Failed to update request" },
       { status: 500 },
     );
+  }
+}
+
+// HELPER TO UPDATE STATUS INSTANTLY
+async function updateServiceStatusForProvider(email) {
+  if (!email) return;
+
+  // 1. Get Provider Request
+  const provider = await prisma.providerRequest.findFirst({
+    where: { user: { email } },
+  });
+
+  if (!provider || !provider.licenses) return;
+
+  const licenses = provider.licenses;
+  const today = new Date();
+
+  // Track VALID subcategories
+  const validSubCategoryIds = new Set();
+  const linkedSubCategoryIds = new Set();
+
+  for (const lic of licenses) {
+    if (!lic.subCategoryId) continue;
+    const subId = String(lic.subCategoryId);
+    linkedSubCategoryIds.add(subId);
+
+    // Check Expiry AND Status (Must be APPROVED)
+    // If Admin just approved it, status is APPROVED.
+    const expiryDate = new Date(lic.expiry);
+    if (expiryDate > today && lic.status === "APPROVED") {
+      validSubCategoryIds.add(subId);
+    }
+  }
+
+  // 2. Get Services
+  const services = await prisma.services.findMany({
+    where: { providerEmail: email },
+  });
+
+  for (const service of services) {
+    const subId = String(service.subCategoryId);
+
+    // If linked but NO valid license -> BLOCK
+    if (linkedSubCategoryIds.has(subId)) {
+      if (!validSubCategoryIds.has(subId)) {
+        if (service.status !== "BLOCKED") {
+          await prisma.services.update({
+            where: { id: service.id },
+            data: { status: "BLOCKED" },
+          });
+        }
+      } else {
+        // HAS valid license -> UNBLOCK
+        if (service.status === "BLOCKED") {
+          await prisma.services.update({
+            where: { id: service.id },
+            data: { status: "ACTIVE" },
+          });
+        }
+      }
+    }
   }
 }

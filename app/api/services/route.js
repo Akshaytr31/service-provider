@@ -11,7 +11,8 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const mine = searchParams.get("mine");
 
-  let query = "SELECT * FROM services ORDER BY createdAt DESC";
+  let query =
+    "SELECT * FROM services WHERE status = 'ACTIVE' ORDER BY createdAt DESC";
   let params = [];
 
   if (mine === "true") {
@@ -49,7 +50,7 @@ export async function POST(req) {
   }
 
   const [providerRows] = await db.query(
-    `SELECT service_radius, services_offered
+    `SELECT service_radius, services_offered, licenses
      FROM provider_requests
      WHERE user_id = ? AND status = 'APPROVED'`,
     [session.user.id],
@@ -58,6 +59,38 @@ export async function POST(req) {
   if (!providerRows.length) {
     return NextResponse.json(
       { error: "Provider not approved" },
+      { status: 403 },
+    );
+  }
+
+  // Check for valid license for this subcategory
+  const licenses = providerRows[0].licenses; // JSON column
+  let validLicense = false;
+
+  if (licenses && Array.isArray(licenses)) {
+    const today = new Date();
+    validLicense = licenses.some((lic) => {
+      // Check if linked to this subcategory
+      const isLinked = String(lic.subCategoryId) === String(subCategoryId);
+      // Check expiry
+      const expiryDate = new Date(lic.expiry);
+      const isActive = expiryDate > today;
+
+      return isLinked && isActive;
+    });
+  }
+
+  // Also check if the service relies on a license.
+  // If the user hasn't linked ANY license to this subcategory, we might block it.
+  // Requirement: "connection between each licence and corresponding services... any licence is expire that corresponding sevice posted... should be blocked"
+  // This implies strict requirement: Must have a valid license for the service.
+
+  if (!validLicense) {
+    return NextResponse.json(
+      {
+        error:
+          "You do not have a valid (non-expired) license linked to this service category.",
+      },
       { status: 403 },
     );
   }
