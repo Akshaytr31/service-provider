@@ -24,6 +24,9 @@ export async function GET(req, context) {
             name: true,
           },
         },
+        clarifications: {
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
@@ -324,6 +327,15 @@ export async function PATCH(req, context) {
           `,
         });
       }
+
+      // SAVE CLARIFICATION TO DB
+      await prisma.clarification.create({
+        data: {
+          providerRequestId: request.id,
+          message: reason,
+          sender: "ADMIN",
+        },
+      });
 
       return NextResponse.json({
         success: true,

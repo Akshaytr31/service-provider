@@ -26,11 +26,13 @@ import {
   StatArrow,
   Avatar,
   Divider,
+  useToast,
+  Textarea,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PostService from "../components/PostServices";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FiGrid,
   FiList,
@@ -44,7 +46,127 @@ import {
   FiStar,
   FiBriefcase,
   FiMoreHorizontal,
+  FiSend,
 } from "react-icons/fi";
+
+function ClarificationChat() {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch("/api/provider/clarifications");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setMessages(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+    try {
+      const res = await fetch("/api/provider/clarifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: newMessage }),
+      });
+      if (res.ok) {
+        setNewMessage("");
+        fetchMessages();
+      } else {
+        toast({ title: "Failed to send", status: "error" });
+      }
+    } catch (error) {
+      toast({ title: "Failed to send", status: "error" });
+    }
+  };
+
+  if (loading && messages.length === 0) return <Spinner size="sm" />;
+  if (messages.length === 0) return null; // Don't show if no conversation
+
+  return (
+    <Box mt={6} w="full" maxW="600px" mx="auto" textAlign="left">
+      <Heading size="md" mb={4} color="gray.700">
+        Admin Messages / Clarifications
+      </Heading>
+      <Box
+        bg="white"
+        borderRadius="xl"
+        border="1px solid"
+        borderColor="gray.200"
+        h="400px"
+        display="flex"
+        flexDirection="column"
+      >
+        <Box flex="1" overflowY="auto" p={4}>
+          <VStack spacing={4} align="stretch">
+            {messages.map((msg) => (
+              <Flex
+                key={msg.id}
+                justify={msg.sender === "PROVIDER" ? "flex-end" : "flex-start"}
+              >
+                <Box
+                  maxW="80%"
+                  bg={msg.sender === "PROVIDER" ? "green.100" : "gray.100"}
+                  color="gray.800"
+                  p={3}
+                  borderRadius="lg"
+                  borderTopRightRadius={msg.sender === "PROVIDER" ? "0" : "lg"}
+                  borderTopLeftRadius={msg.sender === "ADMIN" ? "0" : "lg"}
+                >
+                  <Text fontSize="sm">{msg.message}</Text>
+                  <Text fontSize="xs" color="gray.500" mt={1} textAlign="right">
+                    {new Date(msg.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </Box>
+              </Flex>
+            ))}
+            <div ref={bottomRef} />
+          </VStack>
+        </Box>
+        <Divider />
+        <Flex p={3} gap={2}>
+          <Textarea
+            placeholder="Type your reply..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            rows={2}
+            resize="none"
+            borderRadius="md"
+          />
+          <IconButton
+            icon={<FiSend />}
+            colorScheme="green"
+            aria-label="Send"
+            onClick={sendMessage}
+            h="auto"
+          />
+        </Flex>
+      </Box>
+    </Box>
+  );
+}
 
 export default function ProviderDashboard() {
   const { data: session, status } = useSession();
@@ -87,6 +209,7 @@ export default function ProviderDashboard() {
           border="1px solid"
           borderColor="orange.100"
           display="inline-block"
+          mb={6}
         >
           <Icon as={FiClock} boxSize={12} color="orange.400" mb={4} />
           <Heading size="lg" color="orange.600" mb={2}>
@@ -97,6 +220,7 @@ export default function ProviderDashboard() {
             back later.
           </Text>
         </Box>
+        <ClarificationChat />
       </Box>
     );
   }

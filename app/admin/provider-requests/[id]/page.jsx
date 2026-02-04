@@ -402,6 +402,121 @@ export default function ProviderRequestDetails() {
         <SimpleGrid columns={{ base: 1, lg: 1 }} spacing={8}>
           {/* Main Column */}
           <VStack spacing={8} align="stretch" gridColumn={{ lg: "span 2" }}>
+            {/* Communication History (Collapsible) */}
+            <Accordion
+              allowToggle
+              defaultIndex={[]}
+              bg="white"
+              borderRadius="2xl"
+              border="1px solid"
+              borderColor="gray.100"
+              boxShadow="sm"
+              overflow="hidden"
+            >
+              <AccordionItem border="none">
+                <h2>
+                  <AccordionButton
+                    p={6}
+                    _expanded={{ bg: "blue.50", color: "blue.600" }}
+                  >
+                    <Box flex="1" textAlign="left">
+                      <HStack spacing={3}>
+                        <Icon
+                          as={AtSignIcon}
+                          color={
+                            providerRequest.clarifications?.length
+                              ? "blue.500"
+                              : "gray.400"
+                          }
+                          w={5}
+                          h={5}
+                        />
+                        <Heading
+                          size="xs"
+                          textTransform="uppercase"
+                          letterSpacing="widest"
+                          color="gray.500"
+                        >
+                          Communication History{" "}
+                          {providerRequest.clarifications?.length > 0 &&
+                            `(${providerRequest.clarifications.length})`}
+                        </Heading>
+                      </HStack>
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel pb={6} px={6} bg="gray.50">
+                  <VStack
+                    spacing={4}
+                    align="stretch"
+                    w="full"
+                    maxH="300px"
+                    overflowY="auto"
+                    pr={2}
+                  >
+                    {providerRequest.clarifications &&
+                    providerRequest.clarifications.length > 0 ? (
+                      providerRequest.clarifications.map((chat) => (
+                        <Flex
+                          key={chat.id}
+                          justify={
+                            chat.sender === "ADMIN" ? "flex-end" : "flex-start"
+                          }
+                        >
+                          <Box
+                            maxW="80%"
+                            bg={chat.sender === "ADMIN" ? "blue.100" : "white"}
+                            p={3}
+                            borderRadius="lg"
+                            borderTopRightRadius={
+                              chat.sender === "ADMIN" ? "0" : "lg"
+                            }
+                            borderTopLeftRadius={
+                              chat.sender === "PROVIDER" ? "0" : "lg"
+                            }
+                            boxShadow="sm"
+                          >
+                            <Text
+                              fontSize="xs"
+                              fontWeight="bold"
+                              color="gray.500"
+                              mb={1}
+                            >
+                              {chat.sender === "ADMIN"
+                                ? "You (Admin)"
+                                : "Provider"}
+                            </Text>
+                            <Text fontSize="sm" color="gray.800">
+                              {chat.message}
+                            </Text>
+                            <Text
+                              fontSize="xs"
+                              color="gray.400"
+                              mt={1}
+                              textAlign="right"
+                            >
+                              {new Date(chat.createdAt).toLocaleString()}
+                            </Text>
+                          </Box>
+                        </Flex>
+                      ))
+                    ) : (
+                      <Text
+                        color="gray.500"
+                        fontSize="sm"
+                        textAlign="center"
+                        py={4}
+                      >
+                        No communication history yet. Click "Ask Clarification"
+                        to start.
+                      </Text>
+                    )}
+                  </VStack>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+
             {/* User Information */}
             <InfoCard title="User Information" icon={InfoIcon} delay={0.1}>
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="full">
@@ -660,6 +775,8 @@ export default function ProviderRequestDetails() {
                 <Divider />
               </Stack>
             </InfoCard>
+
+
 
             {/* Qualifications & Licenses */}
             <SimpleGrid columns={{ base: 1, md: 1 }} spacing={8}>
