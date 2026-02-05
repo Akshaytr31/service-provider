@@ -85,6 +85,57 @@ const GoogleMap = dynamic(() => import("../components/googleMap/GoogleMap"), {
 
 const MotionBox = motion(Box);
 
+const SectionHeader = ({ title, icon }) => (
+  <HStack spacing={3} mb={4} mt={6}>
+    <Icon as={icon} color="green.500" />
+    <Heading
+      size="sm"
+      color="gray.700"
+      textTransform="uppercase"
+      letterSpacing="widest"
+    >
+      {title}
+    </Heading>
+  </HStack>
+);
+
+const CollapsibleSection = ({ title, icon, children, defaultOpen = false }) => {
+  const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
+
+  return (
+    <Box borderBottom="1px solid" borderColor="gray.100" pb={4}>
+      <Flex
+        as="button"
+        onClick={onToggle}
+        justify="space-between"
+        align="center"
+        w="full"
+        cursor="pointer"
+        _hover={{ bg: "gray.50" }}
+        p={2}
+        borderRadius="md"
+        mb={isOpen ? 4 : 0}
+      >
+        <HStack spacing={3}>
+          <Icon as={icon} color="green.500" />
+          <Heading
+            size="sm"
+            color="gray.700"
+            textTransform="uppercase"
+            letterSpacing="widest"
+          >
+            {title}
+          </Heading>
+        </HStack>
+        <Icon as={isOpen ? FiChevronUp : FiChevronDown} color="gray.500" />
+      </Flex>
+      <Collapse in={isOpen} animateOpacity>
+        <Box pt={2}>{children}</Box>
+      </Collapse>
+    </Box>
+  );
+};
+
 export default function ProfilePage() {
   const { data: session, update } = useSession();
   const user = session?.user;
@@ -423,62 +474,6 @@ export default function ProfilePage() {
   };
 
   if (!user) return null;
-
-  const SectionHeader = ({ title, icon }) => (
-    <HStack spacing={3} mb={4} mt={6}>
-      <Icon as={icon} color="green.500" />
-      <Heading
-        size="sm"
-        color="gray.700"
-        textTransform="uppercase"
-        letterSpacing="widest"
-      >
-        {title}
-      </Heading>
-    </HStack>
-  );
-
-  const CollapsibleSection = ({
-    title,
-    icon,
-    children,
-    defaultOpen = false,
-  }) => {
-    const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
-
-    return (
-      <Box borderBottom="1px solid" borderColor="gray.100" pb={4}>
-        <Flex
-          as="button"
-          onClick={onToggle}
-          justify="space-between"
-          align="center"
-          w="full"
-          cursor="pointer"
-          _hover={{ bg: "gray.50" }}
-          p={2}
-          borderRadius="md"
-          mb={isOpen ? 4 : 0}
-        >
-          <HStack spacing={3}>
-            <Icon as={icon} color="green.500" />
-            <Heading
-              size="sm"
-              color="gray.700"
-              textTransform="uppercase"
-              letterSpacing="widest"
-            >
-              {title}
-            </Heading>
-          </HStack>
-          <Icon as={isOpen ? FiChevronUp : FiChevronDown} color="gray.500" />
-        </Flex>
-        <Collapse in={isOpen} animateOpacity>
-          <Box pt={2}>{children}</Box>
-        </Collapse>
-      </Box>
-    );
-  };
 
   const DisplayField = ({ label, value }) => (
     <Box>
@@ -1093,7 +1088,7 @@ export default function ProfilePage() {
                       </HStack>
                     </Flex>
 
-                    <Stack >
+                    <Stack>
                       {/* Identity Section */}
                       <CollapsibleSection
                         title={
