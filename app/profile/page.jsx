@@ -201,6 +201,7 @@ export default function ProfilePage() {
           longitude: requestData.longitude || "",
           idType: requestData.idType || "",
           idNumber: requestData.idNumber || "",
+          servicesOffered: requestData.servicesOffered || [],
         });
       }
     } catch (err) {
@@ -1162,188 +1163,482 @@ export default function ProfilePage() {
                           title="Service Details"
                           icon={FiBriefcase}
                         />
-                        <Grid
-                          templateColumns={{
-                            base: "1fr",
-                            md: "repeat(2, 1fr)",
-                          }}
-                          gap={6}
-                        >
-                          {isEditing ? (
-                            <>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
+                        <Stack spacing={6}>
+                          {(function () {
+                            // Construct the unified list of services based on mode
+                            const rootService = isEditing
+                              ? {
+                                  categoryId: providerForm.categoryId,
+                                  subCategoryId: providerForm.subCategoryId,
+                                  yearsExperience: providerForm.yearsExperience,
+                                  description: providerForm.description,
+                                  serviceRadius: providerForm.serviceRadius,
+                                  extraSkills: providerForm.skills || [],
+                                  isRoot: true,
+                                }
+                              : {
+                                  categoryId: providerRequest.categoryId,
+                                  subCategoryId: providerRequest.subCategoryId,
+                                  yearsExperience:
+                                    providerRequest.yearsExperience,
+                                  description: providerRequest.description,
+                                  serviceRadius: providerRequest.serviceRadius,
+                                  extraSkills: providerRequest.skills || [],
+                                  isRoot: true,
+                                };
+
+                            const otherServicesRaw = isEditing
+                              ? providerForm.servicesOffered || []
+                              : providerRequest.servicesOffered || [];
+
+                            const globalRadius = isEditing
+                              ? providerForm.serviceRadius
+                              : providerRequest.serviceRadius;
+
+                            // Filter out the "root" service and inject global serviceRadius
+                            const otherServices = otherServicesRaw
+                              .filter((s) => {
+                                const isSameCategory =
+                                  Number(s.categoryId) ===
+                                  Number(rootService.categoryId);
+                                const isSameSubCategory =
+                                  Number(s.subCategoryId) ===
+                                  Number(rootService.subCategoryId);
+                                return !(isSameCategory && isSameSubCategory);
+                              })
+                              .map((s) => ({
+                                ...s,
+                                serviceRadius: globalRadius,
+                              }));
+
+                            const allServices = [rootService, ...otherServices];
+
+                            return allServices.map((service, index) => {
+                              // Helper to find category/subcategory usage
+                              const catId = service.categoryId;
+                              const subCatId = service.subCategoryId;
+
+                              const category = categories.find(
+                                (c) => c.id === Number(catId),
+                              );
+                              const subCategory = category?.subCategories?.find(
+                                (s) => s.id === Number(subCatId),
+                              );
+                              const isRoot = index === 0;
+
+                              return (
+                                <Box
+                                  key={index}
+                                  p={5}
+                                  bg="gray.50"
+                                  borderRadius="2xl"
+                                  border="1px solid"
+                                  borderColor="gray.100"
                                 >
-                                  Category
-                                </FormLabel>
-                                <Select
-                                  placeholder="Select Category"
-                                  value={providerForm.categoryId}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      categoryId: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                >
-                                  {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>
-                                      {cat.name}
-                                    </option>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Sub-Category
-                                </FormLabel>
-                                <Select
-                                  placeholder="Select Sub-Category"
-                                  value={providerForm.subCategoryId}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      subCategoryId: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                >
-                                  {/* Filter subcategories based on selected category */}
-                                  {categories
-                                    .find(
-                                      (c) => c.id == providerForm.categoryId,
-                                    )
-                                    ?.subCategories?.map((sub) => (
-                                      <option key={sub.id} value={sub.id}>
-                                        {sub.name}
-                                      </option>
-                                    ))}
-                                </Select>
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Service Radius (KM)
-                                </FormLabel>
-                                <Input
-                                  type="number"
-                                  value={providerForm.serviceRadius}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      serviceRadius: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Years of Experience
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.yearsExperience}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      yearsExperience: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
-                                <FormControl>
-                                  <FormLabel
-                                    fontSize="xs"
-                                    fontWeight="bold"
-                                    color="gray.500"
+                                  <HStack justify="space-between" mb={4}>
+                                    <Text
+                                      fontWeight="bold"
+                                      color="green.600"
+                                      fontSize="sm"
+                                    >
+                                      Service #{index + 1}
+                                    </Text>
+                                    <Badge
+                                      colorScheme="green"
+                                      variant="subtle"
+                                      borderRadius="full"
+                                      px={3}
+                                    >
+                                      {category?.name || "Unknown Category"}
+                                    </Badge>
+                                  </HStack>
+
+                                  <Grid
+                                    templateColumns={{
+                                      base: "1fr",
+                                      md: "repeat(2, 1fr)",
+                                    }}
+                                    gap={5}
                                   >
-                                    Description
-                                  </FormLabel>
-                                  <Textarea
-                                    value={providerForm.description}
-                                    onChange={(e) =>
-                                      setProviderForm({
-                                        ...providerForm,
-                                        description: e.target.value,
-                                      })
-                                    }
-                                    borderRadius="xl"
-                                  />
-                                </FormControl>
-                              </GridItem>
-                            </>
-                          ) : (
-                            <>
-                              <DisplayField
-                                label="Category"
-                                value={
-                                  categories.find(
-                                    (c) =>
-                                      c.id ===
-                                      Number(providerRequest.categoryId),
-                                  )?.name || providerRequest.categoryId
-                                }
-                              />
-                              <DisplayField
-                                label="Sub Category"
-                                value={
-                                  categories
-                                    .find(
-                                      (c) =>
-                                        c.id ===
-                                        Number(providerRequest.categoryId),
-                                    )
-                                    ?.subCategories?.find(
-                                      (s) =>
-                                        s.id ===
-                                        Number(providerRequest.subCategoryId),
-                                    )?.name || providerRequest.subCategoryId
-                                }
-                              />
-                              <DisplayField
-                                label="Service Radius"
-                                value={
-                                  providerRequest.serviceRadius
-                                    ? `${providerRequest.serviceRadius} km`
-                                    : "N/A"
-                                }
-                              />
-                              <DisplayField
-                                label="Years of Experience"
-                                value={providerRequest.yearsExperience}
-                              />
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
-                                <DisplayField
-                                  label="Description"
-                                  value={
-                                    providerRequest.description ||
-                                    "No description provided."
-                                  }
-                                />
-                              </GridItem>
-                            </>
-                          )}
-                        </Grid>
+                                    {/* Category - Always Read Only */}
+                                    <Box>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.400"
+                                        textTransform="uppercase"
+                                        mb={1}
+                                      >
+                                        Category
+                                      </Text>
+                                      <Text fontSize="sm" fontWeight="bold">
+                                        {category?.name ||
+                                          service.categoryId ||
+                                          "-"}
+                                      </Text>
+                                    </Box>
+
+                                    {/* Sub-Category - Always Read Only */}
+                                    <Box>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.400"
+                                        textTransform="uppercase"
+                                        mb={1}
+                                      >
+                                        Sub-Category
+                                      </Text>
+                                      <Text fontSize="sm" fontWeight="bold">
+                                        {subCategory?.name ||
+                                          service.subCategoryId ||
+                                          "-"}
+                                      </Text>
+                                    </Box>
+
+                                    {/* Service Radius - For All Services */}
+                                    <Box>
+                                      {isEditing ? (
+                                        <FormControl>
+                                          <FormLabel
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.500"
+                                          >
+                                            Service Radius (KM)
+                                          </FormLabel>
+                                          <Input
+                                            type="number"
+                                            value={
+                                              service.serviceRadius ||
+                                              providerForm.serviceRadius
+                                            } // Use service prop or fallback to global form
+                                            onChange={(e) =>
+                                              setProviderForm({
+                                                ...providerForm,
+                                                serviceRadius: e.target.value,
+                                              })
+                                            }
+                                            borderRadius="xl"
+                                            bg="white"
+                                          />
+                                        </FormControl>
+                                      ) : (
+                                        <>
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.400"
+                                            textTransform="uppercase"
+                                            mb={1}
+                                          >
+                                            Service Radius
+                                          </Text>
+                                          <Text fontSize="sm" fontWeight="bold">
+                                            {service.serviceRadius
+                                              ? `${service.serviceRadius} km`
+                                              : "N/A"}
+                                          </Text>
+                                        </>
+                                      )}
+                                    </Box>
+
+                                    {/* Years of Experience */}
+                                    <Box>
+                                      {isEditing ? (
+                                        <FormControl>
+                                          <FormLabel
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.500"
+                                          >
+                                            Years of Experience
+                                          </FormLabel>
+                                          <Input
+                                            value={service.yearsExperience}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              if (isRoot) {
+                                                setProviderForm({
+                                                  ...providerForm,
+                                                  yearsExperience: val,
+                                                });
+                                              } else {
+                                                const newServices = [
+                                                  ...(providerForm.servicesOffered ||
+                                                    []),
+                                                ];
+                                                // Ensure object exists
+                                                newServices[index - 1] = {
+                                                  ...(newServices[index - 1] ||
+                                                    {}),
+                                                  yearsExperience: val,
+                                                };
+                                                setProviderForm({
+                                                  ...providerForm,
+                                                  servicesOffered: newServices,
+                                                });
+                                              }
+                                            }}
+                                            borderRadius="xl"
+                                            bg="white"
+                                          />
+                                        </FormControl>
+                                      ) : (
+                                        <>
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.400"
+                                            textTransform="uppercase"
+                                            mb={1}
+                                          >
+                                            Years of Experience
+                                          </Text>
+                                          <Text fontSize="sm" fontWeight="bold">
+                                            {service.yearsExperience
+                                              ? `${service.yearsExperience} Years`
+                                              : "-"}
+                                          </Text>
+                                        </>
+                                      )}
+                                    </Box>
+
+                                    {/* Description */}
+                                    <Box gridColumn={{ md: "span 2" }}>
+                                      {isEditing ? (
+                                        <FormControl>
+                                          <FormLabel
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.500"
+                                          >
+                                            Description
+                                          </FormLabel>
+                                          <Textarea
+                                            value={service.description}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              if (isRoot) {
+                                                setProviderForm({
+                                                  ...providerForm,
+                                                  description: val,
+                                                });
+                                              } else {
+                                                const newServices = [
+                                                  ...(providerForm.servicesOffered ||
+                                                    []),
+                                                ];
+                                                newServices[index - 1] = {
+                                                  ...(newServices[index - 1] ||
+                                                    {}),
+                                                  description: val,
+                                                };
+                                                setProviderForm({
+                                                  ...providerForm,
+                                                  servicesOffered: newServices,
+                                                });
+                                              }
+                                            }}
+                                            borderRadius="xl"
+                                            bg="white"
+                                          />
+                                        </FormControl>
+                                      ) : (
+                                        <>
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.400"
+                                            textTransform="uppercase"
+                                            mb={1}
+                                          >
+                                            Description
+                                          </Text>
+                                          <Text fontSize="sm" color="gray.700">
+                                            {service.description ||
+                                              "No description provided."}
+                                          </Text>
+                                        </>
+                                      )}
+                                    </Box>
+
+                                    {/* Extra Skills */}
+                                    {service.extraSkills &&
+                                      service.extraSkills.length > 0 && (
+                                        <Box gridColumn="1 / -1">
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color="gray.400"
+                                            textTransform="uppercase"
+                                            mb={2}
+                                          >
+                                            Additional Skills
+                                          </Text>
+                                          <HStack wrap="wrap" spacing={2}>
+                                            {service.extraSkills.map(
+                                              (skill, si) => (
+                                                <Tag
+                                                  key={si}
+                                                  size="sm"
+                                                  variant="outline"
+                                                  colorScheme="green"
+                                                  borderRadius="full"
+                                                >
+                                                  {skill}
+                                                </Tag>
+                                              ),
+                                            )}
+                                          </HStack>
+                                        </Box>
+                                      )}
+                                  </Grid>
+                                </Box>
+                              );
+                            });
+                          })()}
+                        </Stack>
                       </Box>
 
                       <Divider borderColor="gray.100" />
+
+                      {/* Qualifications (New Section) */}
+                      {providerRequest.userType === "individual" &&
+                        !isEditing && (
+                          <>
+                            <Box>
+                              <SectionHeader
+                                title="Qualifications"
+                                icon={FiBriefcase}
+                              />
+                              <VStack align="stretch" w="full" spacing={4}>
+                                {providerRequest.qualifications?.length > 0 ? (
+                                  providerRequest.qualifications.map((q, i) => (
+                                    <Box
+                                      display="grid"
+                                      gridTemplateColumns={{
+                                        base: "1fr",
+                                        md: "repeat(2, 1fr)",
+                                      }}
+                                      key={i}
+                                      borderRadius="lg"
+                                      gap="10px"
+                                      p={4}
+                                      bg="gray.50"
+                                    >
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Degree/Certification
+                                        </Text>
+                                        <Text
+                                          color="green.600"
+                                          fontWeight="bold"
+                                        >
+                                          {q.degree}
+                                        </Text>
+                                      </Box>
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Institution
+                                        </Text>
+                                        <Text color="gray.700">
+                                          {q.institution}
+                                        </Text>
+                                      </Box>
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Year of Completion
+                                        </Text>
+                                        <Text color="gray.700">{q.year}</Text>
+                                      </Box>
+                                    </Box>
+                                  ))
+                                ) : (
+                                  <Text color="gray.500" fontSize="sm">
+                                    No qualifications listed.
+                                  </Text>
+                                )}
+                              </VStack>
+                            </Box>
+                            <Divider borderColor="gray.100" />
+                          </>
+                        )}
+
+                      {/* Availability (New Section) */}
+                      {!isEditing && (
+                        <>
+                          <Box>
+                            <SectionHeader
+                              title="Availability"
+                              icon={TimeIcon}
+                            />
+                            <Grid
+                              templateColumns={{
+                                base: "1fr",
+                                md: "repeat(2, 1fr)",
+                              }}
+                              gap={6}
+                            >
+                              <DisplayField
+                                label="Days"
+                                value={providerRequest.availability?.days?.join(
+                                  ", ",
+                                )}
+                              />
+                              <DisplayField
+                                label="Hours"
+                                value={
+                                  providerRequest.availability?.hours?.start &&
+                                  providerRequest.availability?.hours?.end
+                                    ? `${providerRequest.availability?.hours?.start} - ${providerRequest.availability?.hours?.end}`
+                                    : "Not provided"
+                                }
+                              />
+                              <Box>
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.400"
+                                  fontWeight="bold"
+                                  textTransform="uppercase"
+                                  mb={1}
+                                >
+                                  Emergency Services
+                                </Text>
+                                <Tag
+                                  colorScheme={
+                                    providerRequest.availability?.emergency
+                                      ? "green"
+                                      : "gray"
+                                  }
+                                  size="md"
+                                  borderRadius="full"
+                                >
+                                  {providerRequest.availability?.emergency
+                                    ? "Available for Emergency"
+                                    : "Not Available for Emergency"}
+                                </Tag>
+                              </Box>
+                            </Grid>
+                          </Box>
+                          <Divider borderColor="gray.100" />
+                        </>
+                      )}
 
                       {/* Pricing */}
                       <Box>
@@ -1433,6 +1728,46 @@ export default function ProfilePage() {
                                 label="On-Site Charges"
                                 value={providerRequest.onSiteCharges}
                               />
+                              {/* Payment Methods */}
+                              <Box
+                                gridColumn={{ base: "span 1", md: "span 3" }}
+                              >
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.400"
+                                  fontWeight="bold"
+                                  textTransform="uppercase"
+                                  mb={2}
+                                >
+                                  Payment Methods
+                                </Text>
+                                <HStack wrap="wrap" spacing={2}>
+                                  {providerRequest.paymentMethods &&
+                                  providerRequest.paymentMethods.length > 0 ? (
+                                    providerRequest.paymentMethods.map(
+                                      (p, i) => (
+                                        <Tag
+                                          key={i}
+                                          size="sm"
+                                          colorScheme="green"
+                                          variant="outline"
+                                          borderRadius="full"
+                                        >
+                                          {p}
+                                        </Tag>
+                                      ),
+                                    )
+                                  ) : (
+                                    <Text
+                                      fontSize="md"
+                                      color="gray.700"
+                                      fontWeight="medium"
+                                    >
+                                      Not provided
+                                    </Text>
+                                  )}
+                                </HStack>
+                              </Box>
                             </>
                           )}
                         </Grid>

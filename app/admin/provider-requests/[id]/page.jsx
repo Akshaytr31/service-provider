@@ -623,106 +623,43 @@ export default function ProviderRequestDetails() {
             {/* Services Offered */}
             <InfoCard title="Services Offered" icon={AtSignIcon} delay={0.3}>
               <Stack spacing={6} w="full">
-                {/* Primary Service (Edited in Profile) */}
-                <Box
-                  p={5}
-                  bg="gray.50"
-                  borderRadius="2xl"
-                  border="1px solid"
-                  borderColor="gray.100"
-                >
-                  <HStack justify="space-between" mb={4}>
-                    <Text fontWeight="bold" color="green.600" fontSize="sm">
-                      Primary Service (Current Profile)
-                    </Text>
-                    <Badge
-                      colorScheme="green"
-                      variant="subtle"
-                      borderRadius="full"
-                      px={3}
-                    >
-                      {categories.find(
-                        (c) => c.id === Number(providerRequest.categoryId),
-                      )?.name || "Unknown Category"}
-                    </Badge>
-                  </HStack>
+                {/* Unified Service List */}
+                {(function () {
+                  const rootService = {
+                    categoryId: providerRequest.categoryId,
+                    subCategoryId: providerRequest.subCategoryId,
+                    yearsExperience: providerRequest.yearsExperience,
+                    description: providerRequest.description,
+                    extraSkills: providerRequest.skills,
+                    isRoot: true,
+                  };
+                  const otherServicesRaw =
+                    providerRequest.servicesOffered || [];
+                  const otherServices = otherServicesRaw
+                    .filter((s) => {
+                      const isSameCategory =
+                        Number(s.categoryId) === Number(rootService.categoryId);
+                      const isSameSubCategory =
+                        Number(s.subCategoryId) ===
+                        Number(rootService.subCategoryId);
+                      return !(isSameCategory && isSameSubCategory);
+                    })
+                    .map((s) => ({
+                      ...s,
+                      serviceRadius: providerRequest.serviceRadius,
+                    }));
 
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                    <Box>
-                      <Text
-                        fontSize="2xs"
-                        fontWeight="bold"
-                        color="gray.400"
-                        textTransform="uppercase"
-                      >
-                        Category
-                      </Text>
-                      <Text fontSize="sm" fontWeight="bold">
-                        {categories.find(
-                          (c) => c.id === Number(providerRequest.categoryId),
-                        )?.name ||
-                          providerRequest.categoryId ||
-                          "-"}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text
-                        fontSize="2xs"
-                        fontWeight="bold"
-                        color="gray.400"
-                        textTransform="uppercase"
-                      >
-                        Sub-Category
-                      </Text>
-                      <Text fontSize="sm" fontWeight="bold">
-                        {categories
-                          .find(
-                            (c) => c.id === Number(providerRequest.categoryId),
-                          )
-                          ?.subCategories?.find(
-                            (s) =>
-                              s.id === Number(providerRequest.subCategoryId),
-                          )?.name ||
-                          providerRequest.subCategoryId ||
-                          "-"}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text
-                        fontSize="2xs"
-                        fontWeight="bold"
-                        color="gray.400"
-                        textTransform="uppercase"
-                      >
-                        Years of Experience
-                      </Text>
-                      <Text fontSize="sm" fontWeight="bold">
-                        {providerRequest.yearsExperience
-                          ? `${providerRequest.yearsExperience} Years`
-                          : "-"}
-                      </Text>
-                    </Box>
-                    <GridItem colSpan={{ base: 1, md: 2 }}>
-                      <Text
-                        fontSize="2xs"
-                        fontWeight="bold"
-                        color="gray.400"
-                        textTransform="uppercase"
-                        mb={1}
-                      >
-                        Description
-                      </Text>
-                      <Text fontSize="sm" color="gray.700">
-                        {providerRequest.description || "-"}
-                      </Text>
-                    </GridItem>
-                  </SimpleGrid>
-                </Box>
+                  const allServices = [rootService, ...otherServices];
 
-                <Divider />
-                {Array.isArray(providerRequest.servicesOffered) &&
-                providerRequest.servicesOffered.length > 0 ? (
-                  providerRequest.servicesOffered.map((serviceEntry, i) => {
+                  if (allServices.length === 0) {
+                    return (
+                      <Text color="gray.400" fontSize="sm">
+                        No services listed.
+                      </Text>
+                    );
+                  }
+
+                  return allServices.map((serviceEntry, i) => {
                     const isObject =
                       typeof serviceEntry === "object" && serviceEntry !== null;
 
@@ -749,7 +686,7 @@ export default function ProviderRequestDetails() {
                               color="green.600"
                               fontSize="sm"
                             >
-                              Service Entry #{i + 1}
+                              Service #{i + 1}
                             </Text>
                             <Badge
                               colorScheme="green"
@@ -805,7 +742,7 @@ export default function ProviderRequestDetails() {
                                   : "-"}
                               </Text>
                             </Box>
-                            <Box gridColumn="1 / -1">
+                            <GridItem colSpan={{ base: 1, md: 2 }}>
                               <Text
                                 fontSize="2xs"
                                 fontWeight="bold"
@@ -818,9 +755,9 @@ export default function ProviderRequestDetails() {
                               <Text fontSize="sm" color="gray.700">
                                 {serviceEntry.description || "-"}
                               </Text>
-                            </Box>
+                            </GridItem>
 
-                            {/* Nested Extra Skills for this entry */}
+                            {/* Nested Extra Skills */}
                             {Array.isArray(serviceEntry.extraSkills) &&
                               serviceEntry.extraSkills.length > 0 && (
                                 <Box gridColumn="1 / -1">
@@ -854,6 +791,7 @@ export default function ProviderRequestDetails() {
                         </Box>
                       );
                     } else {
+                      // String entry rendering
                       return (
                         <Tag
                           key={i}
@@ -863,19 +801,14 @@ export default function ProviderRequestDetails() {
                           borderRadius="full"
                           mr={2}
                           mb={2}
+                          display="inline-flex"
                         >
                           {serviceEntry}
                         </Tag>
                       );
                     }
-                  })
-                ) : (
-                  <Text color="gray.400" fontSize="sm">
-                    No services listed.
-                  </Text>
-                )}
-
-                <Divider />
+                  });
+                })()}
               </Stack>
             </InfoCard>
 

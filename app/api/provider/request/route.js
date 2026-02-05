@@ -153,6 +153,8 @@ export async function PATCH(req) {
 
         // Preserve existing behavior for licenses if passed
         ...(body.licenses && { licenses: body.licenses }),
+
+        servicesOffered: body.servicesOffered,
       },
     });
 
