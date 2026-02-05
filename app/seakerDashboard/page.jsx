@@ -156,7 +156,7 @@ export default function SeekerDashboard() {
         {/* STICKY FILTER BAR */}
         <Box
           position="sticky"
-          top="90px" // Adjust based on navbar height
+          top="70px" 
           zIndex={100}
           mb={10}
         >

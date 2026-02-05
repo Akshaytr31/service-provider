@@ -44,7 +44,7 @@ export default function FilterBar({
       boxShadow={isScrolled ? "xl" : "lg"}
       border="1px solid"
       borderColor="gray.100"
-      bg="white"
+      bg="whiteAlpha.800"
       overflow="visible"
       transition="all 0.3s"
     >
