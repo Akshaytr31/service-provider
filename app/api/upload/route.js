@@ -34,11 +34,12 @@ export async function POST(req) {
           {
             folder: folder,
             resource_type: "image",
+            timeout: 60000,
           },
           (err, result) => {
             if (err) {
               console.error("Cloudinary Upload Error:", err);
-              reject(err);
+              return reject(err);
             }
             resolve(result);
           },

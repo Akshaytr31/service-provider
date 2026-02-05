@@ -46,6 +46,7 @@ import {
   Textarea,
   Spinner,
   Image,
+  Collapse,
 } from "@chakra-ui/react";
 import {
   EditIcon,
@@ -73,6 +74,8 @@ import {
   FiImage,
   FiPlus,
   FiTrash2,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
 import dynamic from "next/dynamic";
 
@@ -435,6 +438,48 @@ export default function ProfilePage() {
     </HStack>
   );
 
+  const CollapsibleSection = ({
+    title,
+    icon,
+    children,
+    defaultOpen = false,
+  }) => {
+    const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: defaultOpen });
+
+    return (
+      <Box borderBottom="1px solid" borderColor="gray.100" pb={4}>
+        <Flex
+          as="button"
+          onClick={onToggle}
+          justify="space-between"
+          align="center"
+          w="full"
+          cursor="pointer"
+          _hover={{ bg: "gray.50" }}
+          p={2}
+          borderRadius="md"
+          mb={isOpen ? 4 : 0}
+        >
+          <HStack spacing={3}>
+            <Icon as={icon} color="green.500" />
+            <Heading
+              size="sm"
+              color="gray.700"
+              textTransform="uppercase"
+              letterSpacing="widest"
+            >
+              {title}
+            </Heading>
+          </HStack>
+          <Icon as={isOpen ? FiChevronUp : FiChevronDown} color="gray.500" />
+        </Flex>
+        <Collapse in={isOpen} animateOpacity>
+          <Box pt={2}>{children}</Box>
+        </Collapse>
+      </Box>
+    );
+  };
+
   const DisplayField = ({ label, value }) => (
     <Box>
       <Text
@@ -495,11 +540,10 @@ export default function ProfilePage() {
                       {!isEditing ? (
                         <Stack spacing={8}>
                           {/* Basic Information */}
-                          <Box>
-                            <SectionHeader
-                              title="Basic Information"
-                              icon={InfoIcon}
-                            />
+                          <CollapsibleSection
+                            title="Basic Information"
+                            icon={InfoIcon}
+                          >
                             <Grid
                               templateColumns={{
                                 base: "1fr",
@@ -528,17 +572,16 @@ export default function ProfilePage() {
                                 value={form.mobile}
                               />
                             </Grid>
-                          </Box>
+                          </CollapsibleSection>
 
                           <Divider borderColor="gray.100" />
 
                           {/* Business Details (If applicable) */}
                           {form.userType === "business" && (
-                            <Box>
-                              <SectionHeader
-                                title="Business Details"
-                                icon={AtSignIcon}
-                              />
+                            <CollapsibleSection
+                              title="Business Details"
+                              icon={AtSignIcon}
+                            >
                               <Grid
                                 templateColumns={{
                                   base: "1fr",
@@ -555,16 +598,14 @@ export default function ProfilePage() {
                                   value={form.businessType}
                                 />
                               </Grid>
-                              <Divider borderColor="gray.100" mt={8} />
-                            </Box>
+                            </CollapsibleSection>
                           )}
 
                           {/* Contact & Location */}
-                          <Box>
-                            <SectionHeader
-                              title="Location Details"
-                              icon={PhoneIcon}
-                            />
+                          <CollapsibleSection
+                            title="Location Details"
+                            icon={PhoneIcon}
+                          >
                             <Grid
                               templateColumns={{
                                 base: "1fr",
@@ -589,7 +630,7 @@ export default function ProfilePage() {
                                 value={form.zipCode}
                               />
                             </Grid>
-                          </Box>
+                          </CollapsibleSection>
                         </Stack>
                       ) : (
                         <Stack spacing={6}>
@@ -1052,17 +1093,16 @@ export default function ProfilePage() {
                       </HStack>
                     </Flex>
 
-                    <Stack spacing={8}>
+                    <Stack >
                       {/* Identity Section */}
-                      <Box>
-                        <SectionHeader
-                          title={
-                            providerRequest.userType === "business"
-                              ? "Business Details"
-                              : "Personal Details"
-                          }
-                          icon={FiUser}
-                        />
+                      <CollapsibleSection
+                        title={
+                          providerRequest.userType === "business"
+                            ? "Business Details"
+                            : "Personal Details"
+                        }
+                        icon={FiUser}
+                      >
                         <Grid
                           templateColumns={{
                             base: "1fr",
@@ -1352,16 +1392,12 @@ export default function ProfilePage() {
                             </>
                           )}
                         </Grid>
-                      </Box>
-
-                      <Divider borderColor="gray.100" />
-
+                      </CollapsibleSection>
                       {/* Service Details */}
-                      <Box>
-                        <SectionHeader
-                          title="Service Details"
-                          icon={FiBriefcase}
-                        />
+                      <CollapsibleSection
+                        title="Service Details"
+                        icon={FiBriefcase}
+                      >
                         <Stack spacing={6}>
                           {(function () {
                             // Construct the unified list of services based on mode
@@ -1698,95 +1734,83 @@ export default function ProfilePage() {
                             });
                           })()}
                         </Stack>
-                      </Box>
-
-                      <Divider borderColor="gray.100" />
-
+                      </CollapsibleSection>
                       {/* Qualifications (New Section) */}
                       {providerRequest.userType === "individual" &&
                         !isEditing && (
-                          <>
-                            <Box>
-                              <SectionHeader
-                                title="Qualifications"
-                                icon={FiBriefcase}
-                              />
-                              <VStack align="stretch" w="full" spacing={4}>
-                                {providerRequest.qualifications?.length > 0 ? (
-                                  providerRequest.qualifications.map((q, i) => (
-                                    <Box
-                                      display="grid"
-                                      gridTemplateColumns={{
-                                        base: "1fr",
-                                        md: "repeat(2, 1fr)",
-                                      }}
-                                      key={i}
-                                      borderRadius="lg"
-                                      gap="10px"
-                                      p={4}
-                                      bg="gray.50"
-                                    >
-                                      <Box>
-                                        <Text
-                                          fontSize="xs"
-                                          fontWeight="bold"
-                                          color="gray.400"
-                                          textTransform="uppercase"
-                                        >
-                                          Degree/Certification
-                                        </Text>
-                                        <Text
-                                          color="green.600"
-                                          fontWeight="bold"
-                                        >
-                                          {q.degree}
-                                        </Text>
-                                      </Box>
-                                      <Box>
-                                        <Text
-                                          fontSize="xs"
-                                          fontWeight="bold"
-                                          color="gray.400"
-                                          textTransform="uppercase"
-                                        >
-                                          Institution
-                                        </Text>
-                                        <Text color="gray.700">
-                                          {q.institution}
-                                        </Text>
-                                      </Box>
-                                      <Box>
-                                        <Text
-                                          fontSize="xs"
-                                          fontWeight="bold"
-                                          color="gray.400"
-                                          textTransform="uppercase"
-                                        >
-                                          Year of Completion
-                                        </Text>
-                                        <Text color="gray.700">{q.year}</Text>
-                                      </Box>
+                          <CollapsibleSection
+                            title="Qualifications"
+                            icon={FiBriefcase}
+                          >
+                            <VStack align="stretch" w="full" spacing={4}>
+                              {providerRequest.qualifications?.length > 0 ? (
+                                providerRequest.qualifications.map((q, i) => (
+                                  <Box
+                                    display="grid"
+                                    gridTemplateColumns={{
+                                      base: "1fr",
+                                      md: "repeat(2, 1fr)",
+                                    }}
+                                    key={i}
+                                    borderRadius="lg"
+                                    gap="10px"
+                                    p={4}
+                                    bg="gray.50"
+                                  >
+                                    <Box>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.400"
+                                        textTransform="uppercase"
+                                      >
+                                        Degree/Certification
+                                      </Text>
+                                      <Text color="green.600" fontWeight="bold">
+                                        {q.degree}
+                                      </Text>
                                     </Box>
-                                  ))
-                                ) : (
-                                  <Text color="gray.500" fontSize="sm">
-                                    No qualifications listed.
-                                  </Text>
-                                )}
-                              </VStack>
-                            </Box>
-                            <Divider borderColor="gray.100" />
-                          </>
+                                    <Box>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.400"
+                                        textTransform="uppercase"
+                                      >
+                                        Institution
+                                      </Text>
+                                      <Text color="gray.700">
+                                        {q.institution}
+                                      </Text>
+                                    </Box>
+                                    <Box>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.400"
+                                        textTransform="uppercase"
+                                      >
+                                        Year of Completion
+                                      </Text>
+                                      <Text color="gray.700">{q.year}</Text>
+                                    </Box>
+                                  </Box>
+                                ))
+                              ) : (
+                                <Text color="gray.500" fontSize="sm">
+                                  No qualifications listed.
+                                </Text>
+                              )}
+                            </VStack>
+                          </CollapsibleSection>
                         )}
-
                       {/* Availability (New Section) */}
                       {!isEditing && (
                         <>
-                          <Box>
-                            <SectionHeader
-                              title="Availability"
-                              icon={TimeIcon}
-                            />
+                          <CollapsibleSection
+                            title="Availability"
+                            icon={TimeIcon}
+                          >
                             <Grid
                               templateColumns={{
                                 base: "1fr",
@@ -1834,14 +1858,11 @@ export default function ProfilePage() {
                                 </Tag>
                               </Box>
                             </Grid>
-                          </Box>
-                          <Divider borderColor="gray.100" />
+                          </CollapsibleSection>
                         </>
                       )}
-
                       {/* Pricing */}
-                      <Box>
-                        <SectionHeader title="Pricing" icon={AtSignIcon} />
+                      <CollapsibleSection title="Pricing" icon={AtSignIcon}>
                         <Grid
                           templateColumns={{
                             base: "1fr",
@@ -1970,16 +1991,12 @@ export default function ProfilePage() {
                             </>
                           )}
                         </Grid>
-                      </Box>
-
-                      <Divider borderColor="gray.100" />
-
+                      </CollapsibleSection>
                       {/* Location */}
-                      <Box>
-                        <SectionHeader
-                          title="Location & Contact"
-                          icon={FiMapPin}
-                        />
+                      <CollapsibleSection
+                        title="Location & Contact"
+                        icon={FiMapPin}
+                      >
                         <Grid
                           templateColumns={{
                             base: "1fr",
@@ -2102,14 +2119,12 @@ export default function ProfilePage() {
                             </>
                           )}
                         </Grid>
-                      </Box>
-
+                      </CollapsibleSection>
                       {/* Documents / Verification Status */}
-                      <Box>
-                        <SectionHeader
-                          title="Verification Documents"
-                          icon={CheckIcon}
-                        />
+                      <CollapsibleSection
+                        title="Verification Documents"
+                        icon={CheckIcon}
+                      >
                         <HStack spacing={4} wrap="wrap">
                           {providerRequest.idProofUrl && (
                             <Tag
@@ -2148,10 +2163,7 @@ export default function ProfilePage() {
                             </Tag>
                           )}
                         </HStack>
-                      </Box>
-
-                      <Divider borderColor="gray.100" />
-
+                      </CollapsibleSection>
                       {/* Rejection Notification (if any) */}
                       {providerRequest.status === "REJECTED" && (
                         <Box
@@ -2173,273 +2185,274 @@ export default function ProfilePage() {
                           </Text>
                         </Box>
                       )}
-                    </Stack>
-                  </Box>
-                  <Divider borderColor="gray.100" />
-
-                  {/* Licenses Section */}
-                  <Box>
-                    <Flex justify="space-between" align="center" mb={6}>
-                      <SectionHeader
+                      {/* Licenses Section */}
+                      <CollapsibleSection
                         title="Professional Licenses"
                         icon={CheckIcon}
-                      />
-                    </Flex>
-
-                    {providerRequest.licenses &&
-                    Array.isArray(providerRequest.licenses) &&
-                    providerRequest.licenses.length > 0 ? (
-                      <Grid
-                        templateColumns={{ base: "1fr", md: "repeat(1, 1fr)" }}
-                        gap={4}
                       >
-                        {providerRequest.licenses.map((license, index) => (
-                          <Box
-                            key={index}
-                            p={4}
-                            borderWidth="1px"
-                            borderRadius="xl"
-                            bg="gray.50"
+                        {providerRequest.licenses &&
+                        Array.isArray(providerRequest.licenses) &&
+                        providerRequest.licenses.length > 0 ? (
+                          <Grid
+                            templateColumns={{
+                              base: "1fr",
+                              md: "repeat(1, 1fr)",
+                            }}
+                            gap={4}
                           >
-                            <Flex justify="space-between" align="start">
-                              <Stack spacing={1}>
-                                <HStack>
-                                  <Text fontWeight="bold" fontSize="lg">
-                                    {license.name} (v{license.version || 1})
-                                  </Text>
-                                  {license.status === "EXPIRED" && (
-                                    <Badge colorScheme="red">EXPIRED</Badge>
+                            {providerRequest.licenses.map((license, index) => (
+                              <Box
+                                key={index}
+                                p={4}
+                                borderWidth="1px"
+                                borderRadius="xl"
+                                bg="gray.50"
+                              >
+                                <Flex justify="space-between" align="start">
+                                  <Stack spacing={1}>
+                                    <HStack>
+                                      <Text fontWeight="bold" fontSize="lg">
+                                        {license.name} (v{license.version || 1})
+                                      </Text>
+                                      {license.status === "EXPIRED" && (
+                                        <Badge colorScheme="red">EXPIRED</Badge>
+                                      )}
+                                      {license.status === "PENDING" && (
+                                        <Badge colorScheme="orange">
+                                          PENDING
+                                        </Badge>
+                                      )}
+                                    </HStack>
+                                    <Text fontSize="sm" color="gray.600">
+                                      Authority: {license.authority}
+                                    </Text>
+                                    <Text fontSize="sm" color="gray.600">
+                                      License #: {license.number}
+                                    </Text>
+                                    <Text
+                                      fontSize="sm"
+                                      color={
+                                        new Date(license.expiry) < new Date()
+                                          ? "red.500"
+                                          : "green.500"
+                                      }
+                                    >
+                                      Expires: {license.expiry}{" "}
+                                      {new Date(license.expiry) < new Date() &&
+                                        "(Expired)"}
+                                    </Text>
+                                  </Stack>
+                                  <HStack>
+                                    {license.document?.secureUrl && (
+                                      <Button
+                                        size="sm"
+                                        as="a"
+                                        href={license.document.secureUrl}
+                                        target="_blank"
+                                        variant="ghost"
+                                        colorScheme="blue"
+                                        leftIcon={<Icon as={FiBriefcase} />}
+                                      >
+                                        View
+                                      </Button>
+                                    )}
+                                    <LicenseUpdateModal
+                                      license={license}
+                                      index={index}
+                                      onUpdate={() => fetchProfile()}
+                                      allLicenses={providerRequest.licenses}
+                                    />
+                                  </HStack>
+                                </Flex>
+
+                                {license.history &&
+                                  license.history.length > 0 && (
+                                    <Accordion
+                                      allowToggle
+                                      mt={4}
+                                      borderTop="1px solid"
+                                      borderColor="gray.200"
+                                      pt={2}
+                                    >
+                                      <AccordionItem border="none">
+                                        <h2>
+                                          <AccordionButton
+                                            px={0}
+                                            _hover={{ bg: "transparent" }}
+                                          >
+                                            <Box
+                                              flex="1"
+                                              textAlign="left"
+                                              fontSize="sm"
+                                              fontWeight="bold"
+                                              color="gray.600"
+                                            >
+                                              View Previous Versions (
+                                              {license.history.length})
+                                            </Box>
+                                            <AccordionIcon color="gray.500" />
+                                          </AccordionButton>
+                                        </h2>
+                                        <AccordionPanel pb={2} px={0}>
+                                          <Stack spacing={3}>
+                                            {license.history.map((h, hIdx) => (
+                                              <Box
+                                                key={hIdx}
+                                                p={3}
+                                                bg="white"
+                                                borderRadius="md"
+                                                border="1px solid"
+                                                borderColor="gray.200"
+                                                fontSize="sm"
+                                              >
+                                                <Flex
+                                                  justify="space-between"
+                                                  mb={1}
+                                                >
+                                                  <Badge
+                                                    colorScheme={
+                                                      h.status === "EXPIRED"
+                                                        ? "red"
+                                                        : "gray"
+                                                    }
+                                                  >
+                                                    v{h.version}
+                                                  </Badge>
+                                                  <Text
+                                                    color="gray.500"
+                                                    fontSize="xs"
+                                                  >
+                                                    {h.updatedAt
+                                                      ? new Date(
+                                                          h.updatedAt,
+                                                        ).toLocaleDateString()
+                                                      : "Unknown Date"}
+                                                  </Text>
+                                                </Flex>
+                                                <Text>
+                                                  <strong>Expiry:</strong>{" "}
+                                                  {h.expiry}
+                                                </Text>
+                                                <Text mb={1}>
+                                                  <strong>Status:</strong>{" "}
+                                                  {h.status || "N/A"}
+                                                </Text>
+                                                {h.document?.secureUrl && (
+                                                  <Link
+                                                    href={h.document.secureUrl}
+                                                    isExternal
+                                                    color="blue.500"
+                                                    fontSize="xs"
+                                                  >
+                                                    View Document
+                                                  </Link>
+                                                )}
+                                              </Box>
+                                            ))}
+                                          </Stack>
+                                        </AccordionPanel>
+                                      </AccordionItem>
+                                    </Accordion>
                                   )}
-                                  {license.status === "PENDING" && (
-                                    <Badge colorScheme="orange">PENDING</Badge>
-                                  )}
-                                </HStack>
-                                <Text fontSize="sm" color="gray.600">
-                                  Authority: {license.authority}
-                                </Text>
-                                <Text fontSize="sm" color="gray.600">
-                                  License #: {license.number}
-                                </Text>
+                              </Box>
+                            ))}
+                          </Grid>
+                        ) : (
+                          <Text color="gray.500" fontSize="sm">
+                            No licenses provided.
+                          </Text>
+                        )}
+                      </CollapsibleSection>{" "}
+                      {/* Project Gallery */}
+                      <CollapsibleSection
+                        title="Project Gallery"
+                        icon={FiImage}
+                      >
+                        <Grid
+                          templateColumns="repeat(auto-fill, minmax(150px, 1fr))"
+                          gap={4}
+                          mt={6}
+                        >
+                          {(providerForm.gallery || []).map((img, i) => (
+                            <Box
+                              key={i}
+                              position="relative"
+                              borderRadius="xl"
+                              overflow="hidden"
+                              h="150px"
+                              boxShadow="sm"
+                              group
+                            >
+                              <Image
+                                src={img}
+                                alt={`Gallery ${i}`}
+                                w="full"
+                                h="full"
+                                objectFit="cover"
+                              />
+                              <IconButton
+                                icon={<FiTrash2 />}
+                                size="sm"
+                                colorScheme="red"
+                                position="absolute"
+                                top={2}
+                                right={2}
+                                onClick={() => handleRemoveGalleryImage(i)}
+                                aria-label="Remove image"
+                                opacity={0.8}
+                                _hover={{ opacity: 1 }}
+                              />
+                            </Box>
+                          ))}
+
+                          <Box
+                            as="label"
+                            htmlFor="galleryInput"
+                            cursor="pointer"
+                            h="150px"
+                            borderRadius="xl"
+                            border="2px dashed"
+                            borderColor="gray.300"
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            _hover={{
+                              borderColor: "green.400",
+                              bg: "green.50",
+                            }}
+                            transition="all 0.2s"
+                          >
+                            {uploading ? (
+                              <Spinner color="green.500" />
+                            ) : (
+                              <>
+                                <Icon
+                                  as={FiPlus}
+                                  boxSize={8}
+                                  color="gray.400"
+                                  mb={2}
+                                />
                                 <Text
                                   fontSize="sm"
-                                  color={
-                                    new Date(license.expiry) < new Date()
-                                      ? "red.500"
-                                      : "green.500"
-                                  }
+                                  color="gray.500"
+                                  fontWeight="bold"
                                 >
-                                  Expires: {license.expiry}{" "}
-                                  {new Date(license.expiry) < new Date() &&
-                                    "(Expired)"}
+                                  Add Photo
                                 </Text>
-                              </Stack>
-                              <HStack>
-                                {license.document?.secureUrl && (
-                                  <Button
-                                    size="sm"
-                                    as="a"
-                                    href={license.document.secureUrl}
-                                    target="_blank"
-                                    variant="ghost"
-                                    colorScheme="blue"
-                                    leftIcon={<Icon as={FiBriefcase} />}
-                                  >
-                                    View
-                                  </Button>
-                                )}
-                                <LicenseUpdateModal
-                                  license={license}
-                                  index={index}
-                                  onUpdate={() => fetchProfile()}
-                                  allLicenses={providerRequest.licenses}
-                                />
-                              </HStack>
-                            </Flex>
-
-                            {license.history && license.history.length > 0 && (
-                              <Accordion
-                                allowToggle
-                                mt={4}
-                                borderTop="1px solid"
-                                borderColor="gray.200"
-                                pt={2}
-                              >
-                                <AccordionItem border="none">
-                                  <h2>
-                                    <AccordionButton
-                                      px={0}
-                                      _hover={{ bg: "transparent" }}
-                                    >
-                                      <Box
-                                        flex="1"
-                                        textAlign="left"
-                                        fontSize="sm"
-                                        fontWeight="bold"
-                                        color="gray.600"
-                                      >
-                                        View Previous Versions (
-                                        {license.history.length})
-                                      </Box>
-                                      <AccordionIcon color="gray.500" />
-                                    </AccordionButton>
-                                  </h2>
-                                  <AccordionPanel pb={2} px={0}>
-                                    <Stack spacing={3}>
-                                      {license.history.map((h, hIdx) => (
-                                        <Box
-                                          key={hIdx}
-                                          p={3}
-                                          bg="white"
-                                          borderRadius="md"
-                                          border="1px solid"
-                                          borderColor="gray.200"
-                                          fontSize="sm"
-                                        >
-                                          <Flex justify="space-between" mb={1}>
-                                            <Badge
-                                              colorScheme={
-                                                h.status === "EXPIRED"
-                                                  ? "red"
-                                                  : "gray"
-                                              }
-                                            >
-                                              v{h.version}
-                                            </Badge>
-                                            <Text
-                                              color="gray.500"
-                                              fontSize="xs"
-                                            >
-                                              {h.updatedAt
-                                                ? new Date(
-                                                    h.updatedAt,
-                                                  ).toLocaleDateString()
-                                                : "Unknown Date"}
-                                            </Text>
-                                          </Flex>
-                                          <Text>
-                                            <strong>Expiry:</strong> {h.expiry}
-                                          </Text>
-                                          <Text mb={1}>
-                                            <strong>Status:</strong>{" "}
-                                            {h.status || "N/A"}
-                                          </Text>
-                                          {h.document?.secureUrl && (
-                                            <Link
-                                              href={h.document.secureUrl}
-                                              isExternal
-                                              color="blue.500"
-                                              fontSize="xs"
-                                            >
-                                              View Document
-                                            </Link>
-                                          )}
-                                        </Box>
-                                      ))}
-                                    </Stack>
-                                  </AccordionPanel>
-                                </AccordionItem>
-                              </Accordion>
+                              </>
                             )}
-                          </Box>
-                        ))}
-                      </Grid>
-                    ) : (
-                      <Text color="gray.500" fontSize="sm">
-                        No licenses provided.
-                      </Text>
-                    )}
-                    {/* Project Gallery */}
-                    <Box
-                      mt={10}
-                      pt={6}
-                      borderTop="1px solid"
-                      borderColor="gray.100"
-                    >
-                      <SectionHeader title="Project Gallery" icon={FiImage} />
-                      <Grid
-                        templateColumns="repeat(auto-fill, minmax(150px, 1fr))"
-                        gap={4}
-                        mt={6}
-                      >
-                        {(providerForm.gallery || []).map((img, i) => (
-                          <Box
-                            key={i}
-                            position="relative"
-                            borderRadius="xl"
-                            overflow="hidden"
-                            h="150px"
-                            boxShadow="sm"
-                            group
-                          >
-                            <Image
-                              src={img}
-                              alt={`Gallery ${i}`}
-                              w="full"
-                              h="full"
-                              objectFit="cover"
-                            />
-                            <IconButton
-                              icon={<FiTrash2 />}
-                              size="sm"
-                              colorScheme="red"
-                              position="absolute"
-                              top={2}
-                              right={2}
-                              onClick={() => handleRemoveGalleryImage(i)}
-                              aria-label="Remove image"
-                              opacity={0.8}
-                              _hover={{ opacity: 1 }}
+                            <Input
+                              id="galleryInput"
+                              type="file"
+                              accept="image/*"
+                              display="none"
+                              onChange={(e) => handleImageUpload(e, "gallery")}
                             />
                           </Box>
-                        ))}
-
-                        <Box
-                          as="label"
-                          htmlFor="galleryInput"
-                          cursor="pointer"
-                          h="150px"
-                          borderRadius="xl"
-                          border="2px dashed"
-                          borderColor="gray.300"
-                          display="flex"
-                          flexDirection="column"
-                          alignItems="center"
-                          justifyContent="center"
-                          _hover={{
-                            borderColor: "green.400",
-                            bg: "green.50",
-                          }}
-                          transition="all 0.2s"
-                        >
-                          {uploading ? (
-                            <Spinner color="green.500" />
-                          ) : (
-                            <>
-                              <Icon
-                                as={FiPlus}
-                                boxSize={8}
-                                color="gray.400"
-                                mb={2}
-                              />
-                              <Text
-                                fontSize="sm"
-                                color="gray.500"
-                                fontWeight="bold"
-                              >
-                                Add Photo
-                              </Text>
-                            </>
-                          )}
-                          <Input
-                            id="galleryInput"
-                            type="file"
-                            accept="image/*"
-                            display="none"
-                            onChange={(e) => handleImageUpload(e, "gallery")}
-                          />
-                        </Box>
-                      </Grid>
-                    </Box>
+                        </Grid>
+                      </CollapsibleSection>
+                    </Stack>
                   </Box>
                 </TabPanel>
               )}
