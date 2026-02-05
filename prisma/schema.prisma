@@ -82,6 +82,7 @@ model ProviderRequest {
   id                 Int                      @id @default(autoincrement())
   userId             Int                      @map("user_id")
   profilePhoto       String?                  @map("profile_photo") @db.Text
+  bannerPhoto        String?                  @map("banner_photo") @db.Text
   status             provider_requests_status @default(PENDING)
   createdAt          DateTime                 @default(now()) @map("created_at")
   subCategoryId      Int?                     @map("sub_category_id")
@@ -113,6 +114,7 @@ model ProviderRequest {
   serviceAreas       Json?                    @map("service_areas")
   serviceRadius      Int?                     @map("service_radius")
   servicesOffered    Json?                    @map("services_offered")
+  gallery            Json?
   state              String?                  @db.VarChar(100)
   termsAccepted      Boolean                  @default(false) @map("terms_accepted")
   yearsExperience    String?                  @map("years_experience") @db.VarChar(50)

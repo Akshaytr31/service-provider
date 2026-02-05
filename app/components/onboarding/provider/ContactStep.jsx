@@ -14,11 +14,15 @@ import {
   Box,
   Heading,
 } from "@chakra-ui/react";
-import GoogleMap from "../../googleMap/page";
+import dynamic from "next/dynamic";
+
+const GoogleMap = dynamic(() => import("../../googleMap/GoogleMap"), {
+  ssr: false,
+});
 
 export default function ContactStep({ formData, handleChange, setFormData }) {
   return (
-    <Stack 
+    <Stack
       spacing={6}
       p={8}
       bg="white"
@@ -80,35 +84,35 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
         </FormControl>
       </HStack>
       <HStack spacing={4}>
-      <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          State/Emirates/Governorate
-        </FormLabel>
-        <Input
-          name="state"
-          placeholder="State"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={formData.state}
-          onChange={handleChange}
-        />
-      </FormControl>
+        <FormControl isRequired>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            State/Emirates/Governorate
+          </FormLabel>
+          <Input
+            name="state"
+            placeholder="State"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
+            value={formData.state}
+            onChange={handleChange}
+          />
+        </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          Country
-        </FormLabel>
-        <Input
-          name="country"
-          placeholder="Country"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={formData.country}
-          onChange={handleChange}
-        />
-      </FormControl>
+        <FormControl isRequired>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Country
+          </FormLabel>
+          <Input
+            name="country"
+            placeholder="Country"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
+            value={formData.country}
+            onChange={handleChange}
+          />
+        </FormControl>
       </HStack>
 
       {/* <FormControl isRequired>
@@ -126,8 +130,8 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           rows={3}
         />
       </FormControl> */}
-      
-      <GoogleMap formData={formData} setFormData={setFormData}/>
+
+      <GoogleMap formData={formData} setFormData={setFormData} />
 
       <FormControl isRequired>
         <Card

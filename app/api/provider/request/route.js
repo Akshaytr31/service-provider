@@ -116,6 +116,9 @@ export async function PATCH(req) {
       where: { id: providerRequestId },
       data: {
         // Allow updating all fields
+        profilePhoto: body.profilePhoto,
+        bannerPhoto: body.bannerPhoto,
+
         firstName: body.firstName,
         lastName: body.lastName,
         businessName: body.businessName,
@@ -155,6 +158,7 @@ export async function PATCH(req) {
         ...(body.licenses && { licenses: body.licenses }),
 
         servicesOffered: body.servicesOffered,
+        gallery: body.gallery,
       },
     });
 

@@ -52,9 +52,12 @@ import {
 } from "@chakra-ui/icons";
 import dynamic from "next/dynamic";
 
-const GoogleMap = dynamic(() => import("../../../components/googleMap/page"), {
-  ssr: false,
-});
+const GoogleMap = dynamic(
+  () => import("../../../components/googleMap/GoogleMap"),
+  {
+    ssr: false,
+  },
+);
 
 const MotionBox = motion(Box);
 const MotionHStack = motion(HStack);

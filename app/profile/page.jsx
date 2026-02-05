@@ -44,6 +44,8 @@ import {
   AccordionIcon,
   Link,
   Textarea,
+  Spinner,
+  Image,
 } from "@chakra-ui/react";
 import {
   EditIcon,
@@ -54,6 +56,7 @@ import {
   AtSignIcon,
   TimeIcon,
   LinkIcon,
+  AddIcon,
 } from "@chakra-ui/icons";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -66,10 +69,14 @@ import {
   FiSmartphone,
   FiMail,
   FiUser,
+  FiCamera,
+  FiImage,
+  FiPlus,
+  FiTrash2,
 } from "react-icons/fi";
 import dynamic from "next/dynamic";
 
-const GoogleMap = dynamic(() => import("../components/googleMap/page"), {
+const GoogleMap = dynamic(() => import("../components/googleMap/GoogleMap"), {
   ssr: false,
 });
 
@@ -176,6 +183,11 @@ export default function ProfilePage() {
       // Initialize provider form if request exists
       if (requestData) {
         setProviderForm({
+          profilePhoto: requestData.profilePhoto || "",
+          bannerPhoto: requestData.bannerPhoto || "",
+          gallery: Array.isArray(requestData.gallery)
+            ? requestData.gallery
+            : [],
           firstName: requestData.firstName || "",
           lastName: requestData.lastName || "",
           businessName: requestData.businessName || "",
@@ -246,6 +258,112 @@ export default function ProfilePage() {
         description: err.message,
         status: "error",
         duration: 3000,
+      });
+    }
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "provider-assets");
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const imageUrl = data.secureUrl;
+
+      // Update local state immediately
+      let updatedForm = { ...providerForm };
+
+      if (field === "gallery") {
+        const newGallery = [...(providerForm.gallery || []), imageUrl];
+        updatedForm = { ...providerForm, gallery: newGallery };
+      } else {
+        updatedForm = { ...providerForm, [field]: imageUrl };
+      }
+
+      setProviderForm(updatedForm);
+
+      // Persist immediately
+      const payload = {};
+      if (field === "gallery") {
+        payload.gallery = updatedForm.gallery;
+      } else {
+        payload[field] = imageUrl;
+      }
+
+      const saveRes = await fetch("/api/provider/request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!saveRes.ok) throw new Error("Failed to save changes");
+
+      // Update the requestData/profileData context effectively by refetching or just rely on local state?
+      // For now, local state + toast is good.
+
+      toast({
+        title: "Success",
+        description: "Image uploaded and saved.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveGalleryImage = async (index) => {
+    const newGallery = providerForm.gallery.filter((_, i) => i !== index);
+    setProviderForm({ ...providerForm, gallery: newGallery });
+
+    try {
+      const saveRes = await fetch("/api/provider/request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gallery: newGallery }),
+      });
+
+      if (!saveRes.ok) throw new Error("Failed to save gallery update");
+
+      toast({
+        title: "Success",
+        description: "Image removed.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to remove image.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
       });
     }
   };
@@ -361,156 +479,10 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Header Card */}
-          <Box
-            bg="white"
-            p={8}
-            borderRadius="3xl"
-            boxShadow="0 10px 30px rgba(0,0,0,0.05)"
-            border="1px solid"
-            borderColor="gray.100"
-            mb={8}
-          >
-            <Flex justify="space-between" align="start" wrap="wrap" gap={4}>
-              <Flex gap={6} align="center">
-                <Avatar
-                  size="2xl"
-                  bg="green.500"
-                  color="white"
-                  name={user.name || user.email}
-                  src={user.image}
-                  border="4px solid"
-                  borderColor="green.50"
-                  boxShadow="lg"
-                />
-                <Stack spacing={2}>
-                  <Heading size="xl" color="gray.800" letterSpacing="tight">
-                    {form.firstName || form.lastName
-                      ? `${form.firstName} ${form.lastName}`
-                      : user.name || "User"}
-                  </Heading>
-                  <HStack>
-                    <Tag
-                      colorScheme="green"
-                      variant="subtle"
-                      borderRadius="full"
-                      px={3}
-                    >
-                      {user.role?.toUpperCase()}
-                    </Tag>
-                    {profile?.userType && (
-                      <Tag
-                        colorScheme="blue"
-                        variant="subtle"
-                        borderRadius="full"
-                        px={3}
-                      >
-                        {profile.userType.toUpperCase()}
-                      </Tag>
-                    )}
-                  </HStack>
-                </Stack>
-              </Flex>
-
-              <HStack spacing={3}>
-                {!isEditing && (
-                  <Button
-                    leftIcon={<LinkIcon />}
-                    colorScheme="blue"
-                    variant="outline"
-                    onClick={handleShare}
-                    borderRadius="xl"
-                    _hover={{ bg: "blue.50" }}
-                  >
-                    Share Profile
-                  </Button>
-                )}
-
-                {!isEditing && (
-                  <Button
-                    leftIcon={<EditIcon />}
-                    colorScheme="green"
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                    borderRadius="xl"
-                    _hover={{ bg: "green.50" }}
-                  >
-                    Edit Profile
-                  </Button>
-                )}
-              </HStack>
-
-              {isEditing && (
-                <HStack spacing={3}>
-                  <Button
-                    leftIcon={<CloseIcon />}
-                    variant="ghost"
-                    onClick={handleCancel}
-                    borderRadius="xl"
-                  >
-                    Cancel
-                  </Button>
-                  {/* Save button logic depends on active tab - simplifying to show correct save action */}
-                  <Button
-                    leftIcon={<CheckIcon />}
-                    colorScheme="green"
-                    onClick={() => {
-                      // Simple check which tab is active would be better, but assuming user edits what they see
-                      // For now, let's just trigger both saves or handle based on context?
-                      // Ideally split this button or determine context.
-                      // Let's rely on the TabPanel rendering the save button for specific context or make this global.
-                      // BUT, the existing structure has this button in the header.
-                      // Let's make it contextual?
-                      // Actually, let's keep it simple: if Provider Tab is open, save provider. If Seeker, save seeker.
-                      // However, tabs state isn't tracked in a variable we can access here easily without Ref or State.
-                      // Let's add tab state.
-
-                      // For now, removing this top-level save button when editing Provider,
-                      // OR simply adding a save button INSIDE the provider tab content (like the seeker one has at bottom).
-                      handleSave(); // This saves SEEKER profile.
-                      // We need a way to save Provider profile if that's what is being edited.
-                      // Since we are refactoring, let's hide this global save button if on Provider tab?
-                      // Or better, let's rely on the buttons INSIDE the tabs.
-                      // The existing code has a global save button.
-                      // I will HIDE this global save group if we are on Provider tab, or make it dynamic.
-                    }}
-                    borderRadius="xl"
-                    boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
-                    display="none" // Hiding global save to use dedicated save buttons in tabs
-                  >
-                    Save Changes
-                  </Button>
-                </HStack>
-              )}
-            </Flex>
-          </Box>
-
           <Tabs variant="soft-rounded" colorScheme="green" isLazy>
-            <TabList mb={6}>
-              {!isProviderAtFirst && (
-                <Tab
-                  fontWeight="bold"
-                  borderRadius="xl"
-                  _selected={{ color: "white", bg: "green.500" }}
-                >
-                  Seeker Profile
-                </Tab>
-              )}
-              {providerRequest && (
-                <Tab
-                  fontWeight="bold"
-                  borderRadius="xl"
-                  _selected={{ color: "white", bg: "green.500" }}
-                >
-                  Provider Profile
-                </Tab>
-              )}
-            </TabList>
-
             <TabPanels>
               {!isProviderAtFirst && (
                 <TabPanel p={0}>
-                  {/* Details Card (Seeker) */}
                   <Box
                     bg="white"
                     p={8}
@@ -808,7 +780,234 @@ export default function ProfilePage() {
               )}
 
               {providerRequest && (
-                <TabPanel p={0} pt={4}>
+                <TabPanel p={0}>
+                  <Box position="relative" mb={16}>
+                    <Box
+                      h="300px"
+                      w="full"
+                      bgGradient="linear(to-r, green.400, teal.500)"
+                      overflow="hidden"
+                      position="relative"
+                      borderRadius="xl"
+                    >
+                      {providerForm.bannerPhoto ? (
+                        <Image
+                          src={providerForm.bannerPhoto}
+                          alt="Banner"
+                          w="full"
+                          h="full"
+                          objectFit="cover"
+                        />
+                      ) : null}
+                      <Box position="absolute" top={4} right={4}>
+                        <Box
+                          as="label"
+                          htmlFor="bannerInput"
+                          cursor="pointer"
+                          bg="whiteAlpha.800"
+                          p={2}
+                          borderRadius="full"
+                          _hover={{ bg: "white" }}
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          {uploading ? (
+                            <Spinner size="sm" />
+                          ) : (
+                            <Icon as={FiCamera} boxSize={5} color="gray.700" />
+                          )}
+                        </Box>
+                        <Input
+                          id="bannerInput"
+                          type="file"
+                          accept="image/*"
+                          display="none"
+                          onChange={(e) => handleImageUpload(e, "bannerPhoto")}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Box position="absolute" bottom="-40px" left={8}>
+                      <Box position="relative">
+                        <Avatar
+                          size="2xl"
+                          src={providerForm.profilePhoto}
+                          border="4px solid white"
+                          bg="white"
+                          name={providerForm.firstName}
+                        />
+                        <Box
+                          position="absolute"
+                          bottom={0}
+                          right={0}
+                          zIndex={2}
+                        >
+                          <Box
+                            as="label"
+                            htmlFor="profileInput"
+                            cursor="pointer"
+                            bg="white"
+                            color="gray.700"
+                            p={2}
+                            borderRadius="full"
+                            boxShadow="md"
+                            border="1px solid"
+                            borderColor="gray.200"
+                            _hover={{ bg: "gray.50" }}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            {uploading ? (
+                              <Spinner size="xs" />
+                            ) : (
+                              <Icon as={FiCamera} boxSize={4} />
+                            )}
+                          </Box>
+                          <Input
+                            id="profileInput"
+                            type="file"
+                            accept="image/*"
+                            display="none"
+                            onChange={(e) =>
+                              handleImageUpload(e, "profilePhoto")
+                            }
+                          />
+                        </Box>
+                      </Box>
+                    </Box>
+                    {/* Header Card */}
+                    <Box mt={3} pl={{ base: 4, md: "170px" }} pr={4}>
+                      <Flex
+                        direction={{ base: "column", md: "row" }}
+                        justify="space-between"
+                        align={{ base: "start", md: "center" }}
+                        gap={4}
+                        marginTop={"-0.5rem"}
+                      >
+                        <Stack spacing={1}>
+                          <Heading size="2xl" fontWeight="800" color="gray.800">
+                            {providerForm.firstName || providerForm.lastName
+                              ? `${providerForm.firstName} ${providerForm.lastName}`
+                              : user.name || "User"}
+                          </Heading>
+                          <HStack spacing={2} wrap="wrap">
+                            <Tag
+                              size="md"
+                              colorScheme="green"
+                              variant="subtle"
+                              borderRadius="full"
+                              px={3}
+                              fontWeight="bold"
+                            >
+                              {user.role?.toUpperCase()}
+                            </Tag>
+                            {profile?.userType && (
+                              <Tag
+                                size="md"
+                                colorScheme="blue"
+                                variant="subtle"
+                                borderRadius="full"
+                                px={3}
+                                fontWeight="bold"
+                              >
+                                {profile.userType.toUpperCase()}
+                              </Tag>
+                            )}
+                          </HStack>
+                        </Stack>
+
+                        <HStack
+                          spacing={3}
+                          mt={{ base: 4, md: 0 }}
+                          width={{ base: "full", md: "auto" }}
+                        >
+                          {!isEditing && (
+                            <Button
+                              leftIcon={<LinkIcon />}
+                              variant="ghost"
+                              colorScheme="blue"
+                              onClick={handleShare}
+                              size="md"
+                              borderRadius="xl"
+                              _hover={{ bg: "blue.50" }}
+                            >
+                              Share
+                            </Button>
+                          )}
+
+                          {!isEditing && (
+                            <Button
+                              leftIcon={<EditIcon />}
+                              colorScheme="green"
+                              onClick={() => setIsEditing(true)}
+                              size="md"
+                              borderRadius="xl"
+                              boxShadow="md"
+                              _hover={{
+                                transform: "translateY(-1px)",
+                                boxShadow: "lg",
+                              }}
+                              transition="all 0.2s"
+                            >
+                              Edit Profile
+                            </Button>
+                          )}
+
+                          {isEditing && (
+                            <HStack
+                              spacing={2}
+                              width="full"
+                              justify={{ base: "flex-end", md: "flex-start" }}
+                            >
+                              <Button
+                                leftIcon={<CloseIcon />}
+                                variant="ghost"
+                                onClick={handleCancel}
+                                borderRadius="xl"
+                                colorScheme="gray"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                leftIcon={<CheckIcon />}
+                                colorScheme="green"
+                                onClick={handleProviderSave}
+                                borderRadius="xl"
+                                boxShadow="lg"
+                              >
+                                Save Changes
+                              </Button>
+                            </HStack>
+                          )}
+                        </HStack>
+                      </Flex>
+                    </Box>
+                  </Box>
+                  {!isProviderAtFirst && providerRequest && (
+                    <TabList mb={6}>
+                      {!isProviderAtFirst && (
+                        <Tab
+                          fontWeight="bold"
+                          borderRadius="xl"
+                          _selected={{ color: "white", bg: "green.500" }}
+                        >
+                          Seeker Profile
+                        </Tab>
+                      )}
+                      {providerRequest && (
+                        <Tab
+                          fontWeight="bold"
+                          borderRadius="xl"
+                          _selected={{ color: "white", bg: "green.500" }}
+                        >
+                          Provider Profile
+                        </Tab>
+                      )}
+                    </TabList>
+                  )}
+
                   <Box
                     bg="white"
                     p={8}
@@ -2149,6 +2348,98 @@ export default function ProfilePage() {
                         No licenses provided.
                       </Text>
                     )}
+                    {/* Project Gallery */}
+                    <Box
+                      mt={10}
+                      pt={6}
+                      borderTop="1px solid"
+                      borderColor="gray.100"
+                    >
+                      <SectionHeader title="Project Gallery" icon={FiImage} />
+                      <Grid
+                        templateColumns="repeat(auto-fill, minmax(150px, 1fr))"
+                        gap={4}
+                        mt={6}
+                      >
+                        {(providerForm.gallery || []).map((img, i) => (
+                          <Box
+                            key={i}
+                            position="relative"
+                            borderRadius="xl"
+                            overflow="hidden"
+                            h="150px"
+                            boxShadow="sm"
+                            group
+                          >
+                            <Image
+                              src={img}
+                              alt={`Gallery ${i}`}
+                              w="full"
+                              h="full"
+                              objectFit="cover"
+                            />
+                            <IconButton
+                              icon={<FiTrash2 />}
+                              size="sm"
+                              colorScheme="red"
+                              position="absolute"
+                              top={2}
+                              right={2}
+                              onClick={() => handleRemoveGalleryImage(i)}
+                              aria-label="Remove image"
+                              opacity={0.8}
+                              _hover={{ opacity: 1 }}
+                            />
+                          </Box>
+                        ))}
+
+                        <Box
+                          as="label"
+                          htmlFor="galleryInput"
+                          cursor="pointer"
+                          h="150px"
+                          borderRadius="xl"
+                          border="2px dashed"
+                          borderColor="gray.300"
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="center"
+                          justifyContent="center"
+                          _hover={{
+                            borderColor: "green.400",
+                            bg: "green.50",
+                          }}
+                          transition="all 0.2s"
+                        >
+                          {uploading ? (
+                            <Spinner color="green.500" />
+                          ) : (
+                            <>
+                              <Icon
+                                as={FiPlus}
+                                boxSize={8}
+                                color="gray.400"
+                                mb={2}
+                              />
+                              <Text
+                                fontSize="sm"
+                                color="gray.500"
+                                fontWeight="bold"
+                              >
+                                Add Photo
+                              </Text>
+                            </>
+                          )}
+                          <Input
+                            id="galleryInput"
+                            type="file"
+                            accept="image/*"
+                            display="none"
+                            onChange={(e) => handleImageUpload(e, "gallery")}
+                          />
+                        </Box>
+                      </Grid>
+                    </Box>
                   </Box>
                 </TabPanel>
               )}
