@@ -20,6 +20,11 @@ import {
   useColorModeValue,
   VStack,
   Divider,
+  Image,
+  Spinner,
+  IconButton,
+  Link,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   InfoIcon,
@@ -28,25 +33,32 @@ import {
   CheckIcon,
   TimeIcon,
   StarIcon,
+  EmailIcon as MailIcon,
 } from "@chakra-ui/icons";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiBriefcase,
   FiMapPin,
   FiUser,
   FiAward,
   FiDollarSign,
+  FiPhone,
+  FiMail,
+  FiImage,
+  FiClock,
+  FiCheckCircle,
+  FiExternalLink,
 } from "react-icons/fi";
 import { useParams } from "next/navigation";
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
+const MotionStack = motion(Stack);
 
 export default function PublicProfilePage() {
   const params = useParams();
   const { id } = params;
-  const bg = useColorModeValue("white", "gray.800");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,6 +74,7 @@ export default function PublicProfilePage() {
           throw new Error("Profile not found");
         }
         const data = await res.json();
+        console.log("data", data);
 
         setProfile(data.profile || {});
         setUser(data.user || {});
@@ -82,308 +95,473 @@ export default function PublicProfilePage() {
   if (loading)
     return (
       <Flex h="100vh" align="center" justify="center" bg="gray.50">
-        <Text fontSize="xl" color="green.600" fontWeight="bold">
-          Loading Profile...
-        </Text>
-      </Flex>
-    );
-
-  if (error || !user)
-    return (
-      <Flex h="100vh" align="center" justify="center" bg="gray.50">
         <VStack spacing={4}>
-          <Heading size="lg" color="gray.400">
-            Profile Not Found
-          </Heading>
-          <Text color="gray.500">
-            The user you are looking for does not exist or is private.
+          <Spinner size="xl" color="green.500" thickness="4px" />
+          <Text fontSize="lg" color="gray.600" fontWeight="medium">
+            Loading Profile...
           </Text>
         </VStack>
       </Flex>
     );
 
-  // Helper for name display
+  if (error || !user)
+    return (
+      <Flex h="100vh" align="center" justify="center" bg="gray.50" px={4}>
+        <MotionBox
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          textAlign="center"
+          p={10}
+          bg="white"
+          borderRadius="xl"
+          boxShadow="xl"
+        >
+          <VStack spacing={6}>
+            <Box bg="red.50" p={5} borderRadius="full">
+              <Icon as={FiUser} boxSize={10} color="red.400" />
+            </Box>
+            <VStack spacing={2}>
+              <Heading size="lg" color="gray.800">
+                Profile Not Found
+              </Heading>
+              <Text color="gray.500" maxW="300px">
+                The user you are looking for does not exist, has been removed,
+                or is currently private.
+              </Text>
+            </VStack>
+          </VStack>
+        </MotionBox>
+      </Flex>
+    );
+
   const displayName =
     profile?.firstName || profile?.lastName
       ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
       : user.name || "User";
 
   const isProvider = !!providerRequest;
+  const avatarSrc = providerRequest?.profilePhoto || user.image;
 
   return (
-    <Box minH="100vh" bg="gray.50" overflowX="hidden">
-      {/* --- HERO SECTION --- */}
-      <Box
-        bgGradient="linear(to-br, green.600, teal.700)"
-        color="white"
-        pt={{ base: "80px", md: "120px" }}
-        pb={{ base: "100px", md: "140px" }}
-        position="relative"
-        borderBottomRadius={{ base: "30px", md: "50px" }}
-        overflow="hidden"
-      >
-        {/* Abstract Shapes */}
+    <Box minH="100vh" bg="#f8fafc" pb={20}>
+      {/* 1. HERO SECTION WITH BANNER */}
+      <Box position="relative" h={{ base: "350px", md: "450px" }}>
+        {/* Banner with fallback gradient */}
         <Box
-          position="absolute"
-          top="-20%"
-          right="-10%"
-          boxSize="400px"
-          bg="whiteAlpha.100"
-          borderRadius="full"
-          filter="blur(60px)"
-        />
-        <Box
-          position="absolute"
-          bottom="-10%"
-          left="-5%"
-          boxSize="300px"
-          bg="green.400"
-          borderRadius="full"
-          filter="blur(80px)"
-          opacity={0.3}
-        />
+          h="full"
+          w="full"
+          bgGradient="linear(to-br, green.600, hwb(167 0% 41%))"
+          position="relative"
+          overflow="hidden"
+        >
+          {providerRequest?.bannerPhoto ? (
+            <Image
+              src={providerRequest.bannerPhoto}
+              alt="Profile Banner"
+              w="full"
+              h="full"
+              objectFit="cover"
+            />
+          ) : (
+            <Box
+              position="absolute"
+              top="-20%"
+              right="-10%"
+              boxSize="400px"
+              bg="whiteAlpha.200"
+              borderRadius="full"
+              filter="blur(60px)"
+            />
+          )}
+        </Box>
 
-        <Container maxW="container.xl" position="relative" zIndex={1}>
-          <MotionFlex
+        {/* Identity Information Overlapping */}
+        <Container maxW="container.xl" h="full" position="absolute" top={"-10px"}>
+          <Flex
+            position="absolute"
+            alignItems={"flex-start"}
+            bottom={"-80px"}
+            left={{ base: "50%", md: "40px" }}
+            transform={{ base: "translateX(-50%)", md: "none" }}
             direction={{ base: "column", md: "row" }}
-            align="center"
-            justify="space-between"
-            gap={8}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            align={{ base: "center", md: "flex-end" }}
+            gap={{ base: 4, md: 8 }}
+            zIndex={2}
+            w={{ base: "full", md: "auto" }}
           >
-            <HStack spacing={6} align="center" flexWrap="wrap" justify="center">
+            <MotionBox
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
               <Avatar
                 size="2xl"
                 name={displayName}
-                src={user.image}
-                border="4px solid white"
+                src={avatarSrc}
+                w={{ base: "150px", md: "180px" }}
+                h={{ base: "150px", md: "180px" }}
+                border="6px solid white"
                 boxShadow="2xl"
-                w={{ base: "120px", md: "150px" }}
-                h={{ base: "120px", md: "150px" }}
+                bg="white"
               />
-              <Stack spacing={2} textAlign={{ base: "center", md: "left" }}>
-                <Heading size="2xl" fontWeight="900" letterSpacing="tight">
-                  {displayName}
-                </Heading>
-                <HStack
-                  justify={{ base: "center", md: "flex-start" }}
-                  spacing={3}
-                >
-                  {isProvider && (
-                    <Badge
-                      colorScheme="green"
-                      fontSize="0.9em"
-                      px={3}
-                      py={1}
-                      borderRadius="full"
-                    >
-                      Verified Provider
-                    </Badge>
-                  )}
-                  <Tag
-                    size="lg"
-                    colorScheme="whiteAlpha"
-                    borderRadius="full"
-                    variant="outline"
-                    color="white"
-                  >
-                    <TagLabel>
-                      {user.role === "seeker" && !isProvider
-                        ? "Member"
-                        : "Professional"}
-                    </TagLabel>
-                  </Tag>
-                </HStack>
-                {/* Location Pill */}
-                {(profile?.city || providerRequest?.city) && (
-                  <HStack
-                    justify={{ base: "center", md: "flex-start" }}
-                    color="green.100"
-                    fontSize="lg"
-                  >
-                    <Icon as={FiMapPin} />
-                    <Text>
-                      {profile?.city || providerRequest?.city},{" "}
-                      {profile?.country || providerRequest?.country}
-                    </Text>
-                  </HStack>
-                )}
-              </Stack>
-            </HStack>
+            </MotionBox>
 
-            {/* Quick Stats or CTA */}
-            {isProvider && (
-              <HStack spacing={8} display={{ base: "none", md: "flex" }}>
-                <StatBox
-                  label="Experience"
-                  value={`${providerRequest.yearsExperience || "1+"} Years`}
-                />
-                <StatBox
-                  label="Radius"
-                  value={`${providerRequest.serviceRadius || "N/A"} km`}
-                />
-                <StatBox
-                  label="Rate"
-                  value={`${providerRequest.baseRate || "N/A"}`}
-                />
-              </HStack>
-            )}
-          </MotionFlex>
+            <VStack
+              align={{ base: "center", md: "flex-start" }}
+              spacing={1}
+              mb={{ base: 0, md: 4 }}
+              textAlign={{ base: "center", md: "left" }}
+              marginTop={"18px"}
+            >
+              <MotionBox
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <HStack spacing={3}>
+                  <Heading
+                    size="2xl"
+                    color="white"
+                    fontWeight="900"
+                    textShadow="0 2px 10px rgba(0,0,0,0.2)"
+                  >
+                    {displayName}
+                  </Heading>
+                  {isProvider && (
+                    <Tooltip label="Verified Professional">
+                      <Icon
+                        as={FiCheckCircle}
+                        color="green.400"
+                        boxSize={8}
+                        bg="white"
+                        borderRadius="full"
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+              </MotionBox>
+
+              <MotionBox
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <HStack spacing={3} mt={1}>
+                  <Badge
+                    colorScheme="whiteAlpha"
+                    bg="whiteAlpha.300"
+                    color="white"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                    backdropFilter="blur(5px)"
+                    fontSize="sm"
+                    letterSpacing="wider"
+                  >
+                    {isProvider ? "PROVIDER" : "MEMBER"}
+                  </Badge>
+                  {providerRequest?.city && (
+                    <HStack
+                      color="whiteAlpha.900"
+                      fontSize="md"
+                      fontWeight="medium"
+                    >
+                      <Icon as={FiMapPin} />
+                      <Text>
+                        {providerRequest.city}, {providerRequest.country}
+                      </Text>
+                    </HStack>
+                  )}
+                </HStack>
+              </MotionBox>
+            </VStack>
+          </Flex>
         </Container>
       </Box>
 
-      {/* --- MAIN CONTENT AREA --- */}
-      <Container
-        maxW="container.lg"
-        mt="-80px"
-        position="relative"
-        zIndex={2}
-        pb={20}
-      >
-        <Stack spacing={8}>
-          {/* 1. ABOUT CARD */}
-          <SectionCard title="About" icon={FiUser} delay={0.2}>
-            <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              {isProvider && providerRequest.description
-                ? providerRequest.description
-                : "No description provided."}
-            </Text>
+      {/* 2. MAIN CONTENT */}
+      <Container maxW="container.xl" mt="100px">
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 350px" }} gap={10}>
+          {/* LEFT COLUMN: Main Info */}
+          <GridItem>
+            <Stack spacing={10}>
+              {/* About Section */}
+              <SectionWrapper title="About Professional" icon={FiUser}>
+                <Text fontSize="lg" color="gray.600" lineHeight="tall">
+                  {isProvider && providerRequest.description
+                    ? providerRequest.description
+                    : "This professional hasn't shared their story yet."}
+                </Text>
+              </SectionWrapper>
 
-            {isProvider && providerRequest.userType === "business" && (
-              <SimpleGrid
-                columns={{ base: 1, md: 2 }}
-                spacing={6}
-                mt={6}
-                bg="gray.50"
-                p={6}
-                borderRadius="xl"
-              >
-                <DetailRow
-                  label="Business Name"
-                  value={providerRequest.businessName}
-                />
-                <DetailRow
-                  label="Establishment Year"
-                  value={providerRequest.establishmentYear}
-                />
-                <DetailRow
-                  label="Business Type"
-                  value={providerRequest.businessType}
-                />
-              </SimpleGrid>
-            )}
-          </SectionCard>
-
-          {/* 2. SERVICES & PRICING (Provider Only) */}
-          {isProvider && (
-            <SectionCard
-              title="Services & Pricing"
-              icon={FiDollarSign}
-              delay={0.3}
-            >
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                <FeatureCard
-                  icon={FiBriefcase}
-                  title="Pricing Model"
-                  value={providerRequest.pricingType || "Standard"}
-                />
-                <FeatureCard
-                  icon={FiDollarSign}
-                  title="Base Rate"
-                  value={providerRequest.baseRate || "Contact for Quote"}
-                />
-                <FeatureCard
-                  icon={FiMapPin}
-                  title="On-Site Charges"
-                  value={providerRequest.onSiteCharges || "Included"}
-                />
-              </SimpleGrid>
-            </SectionCard>
-          )}
-
-          {/* 3. LICENSES (Provider Only) */}
-          {/* {isProvider &&
-            providerRequest.licenses &&
-            providerRequest.licenses.length > 0 && (
-              <SectionCard
-                title="Credentials & Licenses"
-                icon={FiAward}
-                delay={0.4}
-              >
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  {providerRequest.licenses.map((license, idx) => (
-                    <Box
-                      key={idx}
-                      p={5}
-                      border="1px solid"
-                      borderColor="gray.100"
-                      borderRadius="xl"
-                      bg="green.50"
-                      transition="all 0.2s"
-                      _hover={{ shadow: "md" }}
-                    >
-                      <Flex justify="space-between" align="start">
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="bold" color="green.800">
-                            {license.name}
-                          </Text>
-                          <Text fontSize="sm" color="green.600">
-                            {license.authority}
-                          </Text>
-                          <Text fontSize="xs" color="green.500">
-                            Expires: {license.expiry || "N/A"}
-                          </Text>
-                        </VStack>
-                        {license.document?.secureUrl && (
-                          <Button
-                            as="a"
-                            href={license.document.secureUrl}
-                            target="_blank"
-                            size="sm"
-                            colorScheme="green"
-                            variant="solid"
-                            leftIcon={<Icon as={FiBriefcase} />}
-                            borderRadius="full"
+              {/* Gallery Section */}
+              {isProvider &&
+                providerRequest.gallery &&
+                providerRequest.gallery.length > 0 && (
+                  <SectionWrapper title="Project Gallery" icon={FiImage}>
+                    <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4}>
+                      {providerRequest.gallery.map((img, idx) => (
+                        <MotionBox
+                          key={idx}
+                          role="group"
+                          position="relative"
+                          borderRadius="2xl"
+                          overflow="hidden"
+                          h="200px"
+                          whileHover={{ y: -5 }}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: idx * 0.1 }}
+                          boxShadow="md"
+                        >
+                          <Image
+                            src={img}
+                            alt={`Gallery Project ${idx}`}
+                            w="full"
+                            h="full"
+                            objectFit="cover"
+                            transition="transform 0.5s ease"
+                            _groupHover={{ transform: "scale(1.1)" }}
+                          />
+                          <Box
+                            position="absolute"
+                            inset={0}
+                            bgGradient="linear(to-t, blackAlpha.600, transparent)"
+                            opacity={0}
+                            _groupHover={{ opacity: 1 }}
+                            transition="opacity 0.3s"
+                            display="flex"
+                            alignItems="flex-end"
+                            p={4}
                           >
-                            View
-                          </Button>
-                        )}
-                      </Flex>
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              </SectionCard>
-            )} */}
+                            <Text color="white" fontWeight="bold" fontSize="sm">
+                              Project View
+                            </Text>
+                          </Box>
+                        </MotionBox>
+                      ))}
+                    </SimpleGrid>
+                  </SectionWrapper>
+                )}
 
-          {/* 4. CONTACT / FOOTER */}
-          <Box pt={10} textAlign="center">
-            <Text color="gray.400" fontSize="sm" mb={4}>
-              Interested in working with {displayName}?
-            </Text>
-            <Button
-              size="lg"
-              colorScheme="green"
-              height="60px"
-              px={8}
-              fontSize="xl"
-              borderRadius="full"
-              boxShadow="0 10px 20px rgba(72, 187, 120, 0.3)"
-              _hover={{
-                transform: "translateY(-2px)",
-                boxShadow: "0 15px 30px rgba(72, 187, 120, 0.4)",
-              }}
-              onClick={() => (window.location.href = `mailto:${user.email}`)}
-            >
-              Contact via Email
-            </Button>
+              {/* Services Offered */}
+              {isProvider && (
+                <SectionWrapper title="Our Expertise" icon={FiBriefcase}>
+                  <Stack spacing={8}>
+                    {/* All Services List */}
+                    <Stack spacing={4}>
 
-            <Text mt={8} fontSize="xs" color="gray.300">
-              Profile hosted on NextApp
-            </Text>
-          </Box>
-        </Stack>
+                      {/* Additional Services */}
+                      {providerRequest.servicesOffered &&
+                        Array.isArray(providerRequest.servicesOffered) &&
+                        providerRequest.servicesOffered.map((service, idx) => (
+                          <Box
+                            key={idx}
+                            bg="white"
+                            p={6}
+                            borderRadius="2xl"
+                            border="1px solid"
+                            borderColor="gray.100"
+                            boxShadow="sm"
+                            transition="all 0.3s"
+                            _hover={{
+                              transform: "translateY(-2px)",
+                              boxShadow: "md",
+                            }}
+                          >
+                            <HStack justify="space-between" mb={2}>
+                              <VStack align="start" spacing={0}>
+                                <Text
+                                  fontSize="xs"
+                                  color="blue.500"
+                                  fontWeight="bold"
+                                  textTransform="uppercase"
+                                  letterSpacing="wider"
+                                >
+                                  Additional Service
+                                </Text>
+                                <Heading size="md" color="gray.800">
+                                  {service.subCategoryName ||
+                                    "Professional Service"}
+                                </Heading>
+                              </VStack>
+                              <Badge
+                                colorScheme="blue"
+                                variant="subtle"
+                                px={3}
+                                py={1}
+                                borderRadius="lg"
+                              >
+                                {service.categoryName || "Expert"}
+                              </Badge>
+                            </HStack>
+                            {service.description && (
+                              <Text color="gray.600" fontSize="sm">
+                                {service.description}
+                              </Text>
+                            )}
+                            <HStack mt={3} spacing={4}>
+                              <HStack spacing={1} color="gray.400">
+                                <Icon as={FiClock} boxSize={3} />
+                                <Text fontSize="xs" fontWeight="bold">
+                                  {service.yearsExperience}+ Years Exp.
+                                </Text>
+                              </HStack>
+                            </HStack>
+                          </Box>
+                        ))}
+                    </Stack>
+
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <FeatureCardSmall
+                        icon={FiClock}
+                        label="Experience"
+                        value={`${providerRequest.servicesOffered[0].yearsExperience || "5+"} Years`}
+                      />
+                      <FeatureCardSmall
+                        icon={FiMapPin}
+                        label="Service Radius"
+                        value={`${providerRequest.serviceRadius || "30"} KM`}
+                      />
+                      <FeatureCardSmall
+                        icon={FiDollarSign}
+                        label="Base Pricing"
+                        value={providerRequest.baseRate || "Competitive"}
+                      />
+                      <FeatureCardSmall
+                        icon={FiAward}
+                        label="Status"
+                        value="Verified Expert"
+                      />
+                    </SimpleGrid>
+                  </Stack>
+                </SectionWrapper>
+              )}
+            </Stack>
+          </GridItem>
+
+          {/* RIGHT COLUMN: Sidebar Stats & Info */}
+          <GridItem>
+            <Stack spacing={8} position="sticky" top="24px">
+              {/* Profile Overview Card */}
+              <Box
+                bg="white"
+                p={8}
+                borderRadius="3xl"
+                boxShadow="xl"
+                border="1px solid"
+                borderColor="gray.50"
+              >
+                <VStack spacing={6}>
+                  <VStack spacing={1} textAlign="center">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      color="gray.400"
+                      textTransform="uppercase"
+                      letterSpacing="widest"
+                    >
+                      Profile Stats
+                    </Text>
+                    <Heading size="md" color="gray.800">
+                      {isProvider ? "Professional Insight" : "Member Overview"}
+                    </Heading>
+                  </VStack>
+
+                  <Divider />
+
+                  <SimpleGrid columns={2} spacing={10} w="full">
+                    <SidebarStat
+                      label="Rating"
+                      value="5.0"
+                      icon={StarIcon}
+                      color="orange.400"
+                    />
+                    <SidebarStat
+                      label="Hires"
+                      value="24+"
+                      icon={FiCheckCircle}
+                      color="green.400"
+                    />
+                  </SimpleGrid>
+
+                  <Divider />
+
+                  <VStack spacing={4} w="full">
+                    <DetailItem
+                      label="Languages"
+                      value={profile?.languages || "English"}
+                      icon={FiUser}
+                    />
+                    <DetailItem
+                      label="Member Since"
+                      value="Jan 2024"
+                      icon={FiClock}
+                    />
+                    <DetailItem
+                      label="User Type"
+                      value={
+                        providerRequest?.userType?.toUpperCase() || "INDIVIDUAL"
+                      }
+                      icon={FiBriefcase}
+                    />
+                  </VStack>
+
+                  <Button
+                    w="full"
+                    size="lg"
+                    colorScheme="green"
+                    h="60px"
+                    borderRadius="2xl"
+                    boxShadow="lg"
+                    _hover={{ transform: "translateY(-2px)", boxShadow: "2xl" }}
+                    onClick={() =>
+                      (window.location.href = `mailto:${user.email}`)
+                    }
+                  >
+                    Contact Professional
+                  </Button>
+                </VStack>
+              </Box>
+
+              {/* Service Pricing Summary */}
+              {isProvider && (
+                <Box
+                  bgGradient="linear(to-br, gray.800, gray.900)"
+                  p={8}
+                  borderRadius="3xl"
+                  color="white"
+                  boxShadow="2xl"
+                >
+                  <VStack align="start" spacing={6}>
+                    <Heading size="md">Pricing Terms</Heading>
+                    <VStack align="start" spacing={4} w="full">
+                      <HStack justify="space-between" w="full">
+                        <Text color="gray.400">Rate Type</Text>
+                        <Text fontWeight="bold">
+                          {providerRequest.pricingType || "Hourly"}
+                        </Text>
+                      </HStack>
+                      <HStack justify="space-between" w="full">
+                        <Text color="gray.400">Base Quote</Text>
+                        <Text fontWeight="bold" color="green.400">
+                          {providerRequest.baseRate || "$50/hr"}
+                        </Text>
+                      </HStack>
+                      <HStack justify="space-between" w="full">
+                        <Text color="gray.400">On-site Fee</Text>
+                        <Text fontWeight="bold">
+                          {providerRequest.onSiteCharges || "Included"}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                  </VStack>
+                </Box>
+              )}
+            </Stack>
+          </GridItem>
+        </Grid>
       </Container>
     </Box>
   );
@@ -391,93 +569,89 @@ export default function PublicProfilePage() {
 
 // --- SUB-COMPONENTS ---
 
-const SectionCard = ({ title, icon, children, delay }) => (
+const SectionWrapper = ({ title, icon, children }) => (
   <MotionBox
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
-    transition={{ duration: 0.5, delay }}
-    bg="white"
-    p={{ base: 6, md: 8 }}
-    borderRadius="3xl"
-    boxShadow="0 4px 20px rgba(0,0,0,0.03)"
-    border="1px solid"
-    borderColor="gray.100"
+    transition={{ duration: 0.6 }}
   >
-    <HStack spacing={3} mb={6}>
-      <Flex
-        boxSize="40px"
-        bg="green.50"
-        borderRadius="xl"
-        align="center"
-        justify="center"
-      >
-        <Icon as={icon} color="green.500" boxSize={5} />
+    <HStack spacing={4} mb={6}>
+      <Flex p={3} bg="green.50" borderRadius="2xl" color="green.500">
+        <Icon as={icon} boxSize={6} />
       </Flex>
-      <Heading size="md" color="gray.700">
+      <Heading size="lg" color="gray.800" letterSpacing="tight">
         {title}
       </Heading>
     </HStack>
-    {children}
+    <Box>{children}</Box>
   </MotionBox>
 );
 
-const FeatureCard = ({ icon, title, value }) => (
-  <VStack
-    bg="gray.50"
-    p={6}
+const FeatureCardSmall = ({ icon, label, value }) => (
+  <HStack
+    bg="white"
+    p={5}
     borderRadius="2xl"
-    align="center"
-    spacing={3}
-    border="1px dashed"
-    borderColor="gray.200"
-    transition="all 0.2s"
-    _hover={{ bg: "green.50", borderColor: "green.200" }}
+    spacing={4}
+    border="1px solid"
+    borderColor="gray.100"
+    boxShadow="sm"
+    _hover={{
+      borderColor: "green.200",
+      boxShadow: "md",
+      transform: "translateY(-2px)",
+    }}
+    transition="all 0.3s"
   >
-    <Icon as={icon} color="gray.400" boxSize={6} />
-    <Text
-      fontSize="sm"
-      color="gray.500"
-      fontWeight="bold"
-      textTransform="uppercase"
-    >
-      {title}
-    </Text>
-    <Text fontSize="xl" fontWeight="bold" color="gray.700">
-      {value}
-    </Text>
-  </VStack>
+    <Flex p={3} bg="green.50" borderRadius="xl" color="green.500">
+      <Icon as={icon} boxSize={5} />
+    </Flex>
+    <VStack align="start" spacing={0}>
+      <Text
+        fontSize="xs"
+        fontWeight="bold"
+        color="gray.400"
+        textTransform="uppercase"
+      >
+        {label}
+      </Text>
+      <Text fontSize="md" fontWeight="bold" color="gray.700">
+        {value}
+      </Text>
+    </VStack>
+  </HStack>
 );
 
-const DetailRow = ({ label, value }) => (
-  <Box>
+const SidebarStat = ({ label, value, icon, color }) => (
+  <VStack spacing={2} align="center">
+    <HStack color={color} spacing={1}>
+      <Icon as={icon} boxSize={5} />
+      <Text fontSize="xl" fontWeight="900" color="gray.800">
+        {value}
+      </Text>
+    </HStack>
     <Text
       fontSize="xs"
       fontWeight="bold"
       color="gray.400"
       textTransform="uppercase"
-      mb={1}
-    >
-      {label}
-    </Text>
-    <Text fontSize="md" fontWeight="medium" color="gray.700">
-      {value || "N/A"}
-    </Text>
-  </Box>
-);
-
-const StatBox = ({ label, value }) => (
-  <VStack spacing={0} align="flex-start">
-    <Text fontSize="2xl" fontWeight="900">
-      {value}
-    </Text>
-    <Text
-      fontSize="xs"
-      opacity={0.8}
-      fontWeight="bold"
-      textTransform="uppercase"
     >
       {label}
     </Text>
   </VStack>
+);
+
+const DetailItem = ({ label, value, icon }) => (
+  <HStack justify="space-between" w="full" py={1}>
+    <HStack spacing={3} color="gray.400">
+      <Icon as={icon} boxSize={4} />
+      <Text fontSize="sm" fontWeight="medium">
+        {label}
+      </Text>
+    </HStack>
+    <Text fontSize="sm" fontWeight="bold" color="gray.700">
+      {value}
+    </Text>
+  </HStack>
 );

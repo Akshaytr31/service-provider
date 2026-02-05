@@ -15,7 +15,7 @@ export async function GET(req, { params }) {
       include: {
         seekerProfile: true,
         providerRequests: {
-          where: { status: "APPROVED" }, // Only show approved provider profiles publically? Or all? User said "share... with or without account", likely approved ones make sense but user might want to share their own even if pending. Let's show the most recent one to replicate private view but maybe we should filter. For now, let's allow fetching the latest one just like the private profile does.
+          where: { status: "APPROVED" },
           orderBy: { createdAt: "desc" },
           take: 1,
         },
@@ -24,6 +24,48 @@ export async function GET(req, { params }) {
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
+    }
+
+    let providerRequest = user.providerRequests?.[0] || null;
+
+    if (providerRequest) {
+      // 1. Resolve Primary Subcategory manually
+      if (providerRequest.subCategoryId) {
+        const subCat = await prisma.subCategory.findUnique({
+          where: { id: providerRequest.subCategoryId },
+          include: { category: true },
+        });
+        providerRequest.subCategory = subCat;
+      }
+
+      // 2. Resolve additional subcategories for servicesOffered if they exist
+      if (providerRequest.servicesOffered) {
+        const services = Array.isArray(providerRequest.servicesOffered)
+          ? providerRequest.servicesOffered
+          : [];
+
+        const subCategoryIds = services
+          .map((s) => parseInt(s.subCategoryId))
+          .filter((id) => !isNaN(id));
+
+        if (subCategoryIds.length > 0) {
+          const subCategories = await prisma.subCategory.findMany({
+            where: { id: { in: subCategoryIds } },
+            include: { category: true },
+          });
+
+          providerRequest.servicesOffered = services.map((s) => {
+            const subCat = subCategories.find(
+              (sc) => sc.id === parseInt(s.subCategoryId),
+            );
+            return {
+              ...s,
+              subCategoryName: subCat?.name || "Unknown Service",
+              categoryName: subCat?.category?.name || "Other",
+            };
+          });
+        }
+      }
     }
 
     // Sanitize data for public view
@@ -46,7 +88,7 @@ export async function GET(req, { params }) {
       {
         user: publicUser,
         profile: user.seekerProfile || null,
-        providerRequest: user.providerRequests?.[0] || null,
+        providerRequest: providerRequest,
       },
       { status: 200 },
     );
