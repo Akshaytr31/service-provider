@@ -47,7 +47,9 @@ import {
   FiBriefcase,
   FiMoreHorizontal,
   FiSend,
+  FiMessageSquare,
 } from "react-icons/fi";
+import ChatBox from "@/app/components/ChatBox"; // Ensure path is correct
 
 function ClarificationChat() {
   const [messages, setMessages] = useState([]);
@@ -171,7 +173,8 @@ function ClarificationChat() {
 export default function ProviderDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeView, setActiveView] = useState("home"); // home, requests, services, post
+  const [activeView, setActiveView] = useState("home"); // home, requests, services, post, messages
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
   const bg = useColorModeValue("gray.50", "gray.900");
 
   if (status === "loading")
@@ -240,6 +243,8 @@ export default function ProviderDashboard() {
         return <RequestsView onBack={() => setActiveView("home")} />;
       case "services":
         return <ServicesView onBack={() => setActiveView("home")} />;
+      case "messages":
+        return <MessagesView onBack={() => setActiveView("home")} onSelectChat={setSelectedChatUser} />;
       case "post":
         return (
           <Box>
@@ -264,6 +269,14 @@ export default function ProviderDashboard() {
       <Container maxW="container.xl" py={8}>
         {renderContent()}
       </Container>
+      
+      <ChatBox 
+        isOpen={!!selectedChatUser}
+        onClose={() => setSelectedChatUser(null)}
+        otherUserId={selectedChatUser?.id}
+        otherUserName={selectedChatUser?.name}
+        otherUserAvatar={selectedChatUser?.image}
+      />
     </Box>
   );
 }
@@ -446,6 +459,18 @@ function DashboardOverview({ user, onNavigate }) {
                   >
                     <Icon as={FiUsers} color="orange.500" boxSize={5} />
                     <Text fontSize="xs">Profile</Text>
+                  </Button>
+                  <Button
+                    height="80px"
+                    flexDirection="column"
+                    gap={2}
+                    variant="outline"
+                    borderRadius="xl"
+                    onClick={() => onNavigate("messages")}
+                    _hover={{ bg: "teal.50", borderColor: "teal.200" }}
+                  >
+                    <Icon as={FiMessageSquare} color="teal.500" boxSize={5} />
+                    <Text fontSize="xs">Messages</Text>
                   </Button>
                 </SimpleGrid>
               </CardBody>
@@ -806,7 +831,7 @@ function ServicesView({ onBack }) {
                       : "ACTIVE"}
                   </Badge>
                   <Text fontWeight="bold" color="green.600">
-                    {service.price}
+                    ₹{service.price}
                   </Text>
                 </Flex>
               </CardBody>
@@ -821,6 +846,97 @@ function ServicesView({ onBack }) {
             </Card>
           ))}
         </SimpleGrid>
+      )}
+    </Box>
+  );
+}
+
+function MessagesView({ onBack, onSelectChat }) {
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchConversations() {
+      try {
+        const res = await fetch("/api/messages");
+        if (res.ok) {
+          const data = await res.json();
+          setConversations(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error fetching conversations", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchConversations();
+  }, []);
+
+  return (
+    <Box mt={6}>
+      <Button
+        position={"absolute"}
+        top={"0"}
+        left={"0"}
+        variant="ghost"
+        colorScheme="black"
+        onClick={onBack}
+        leftIcon={<FiArrowLeft />}
+      >
+        Back to Dashboard
+      </Button>
+      <Heading mb={6} color="green.600">
+        Messages
+      </Heading>
+
+      {loading ? (
+        <Flex justify="center" p={10}>
+          <Spinner color="green.500" />
+        </Flex>
+      ) : conversations.length === 0 ? (
+        <Box
+          bg="white"
+          p={10}
+          borderRadius="xl"
+          boxShadow="sm"
+          textAlign="center"
+        >
+          <Text color="gray.500">No conversations yet.</Text>
+        </Box>
+      ) : (
+        <VStack spacing={4} align="stretch">
+          {conversations.map((user) => (
+            <Flex
+              key={user.id}
+              bg="white"
+              p={4}
+              borderRadius="xl"
+              boxShadow="sm"
+              align="center"
+              justify="space-between"
+              cursor="pointer"
+              _hover={{ bg: "gray.50" }}
+              onClick={() => onSelectChat(user)}
+            >
+              <HStack spacing={4}>
+                <Avatar name={user.name} src={user.image} />
+                <Box>
+                  <Text fontWeight="bold" color="gray.700">
+                    {user.name}
+                  </Text>
+                  <Text fontSize="sm" color="gray.500" noOfLines={1}>
+                    {user.lastMessage || "Click to view chat"}
+                  </Text>
+                </Box>
+              </HStack>
+              <Text fontSize="xs" color="gray.400">
+                {user.timestamp
+                  ? new Date(user.timestamp).toLocaleDateString()
+                  : ""}
+              </Text>
+            </Flex>
+          ))}
+        </VStack>
       )}
     </Box>
   );

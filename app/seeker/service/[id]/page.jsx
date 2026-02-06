@@ -19,10 +19,12 @@ import {
   VStack,
   HStack,
   Tooltip,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ChatBox from "@/app/components/ChatBox"; // Ensure this path is correct
 import {
   FiMapPin,
   FiClock,
@@ -43,6 +45,11 @@ export default function ServiceDetailsPage() {
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const {
+    isOpen: isChatOpen,
+    onOpen: onChatOpen,
+    onClose: onChatClose,
+  } = useDisclosure();
 
   useEffect(() => {
     const fetchService = async () => {
@@ -304,7 +311,7 @@ export default function ServiceDetailsPage() {
                       {service.providerName || "Service Provider"}
                     </Heading>
                     <Text color="gray.500" fontSize="md" mb={3}>
-                      Professional Service Provider • Member since 2024
+                      Professional Service Provider
                     </Text>
                     <HStack spacing={4}>
                       <Badge
@@ -336,6 +343,18 @@ export default function ServiceDetailsPage() {
                     }}
                   >
                     View Profile
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="solid"
+                    colorScheme="green"
+                    ml={2}
+                    leftIcon={
+                      <Icon as={require("react-icons/fi").FiMessageSquare} />
+                    }
+                    onClick={onChatOpen}
+                  >
+                    Chat
                   </Button>
                 </Flex>
               </Box>
@@ -497,6 +516,16 @@ export default function ServiceDetailsPage() {
           </Box>
         </SimpleGrid>
       </Container>
+
+      {service && (
+        <ChatBox
+          isOpen={isChatOpen}
+          onClose={onChatClose}
+          otherUserId={service.providerUserId}
+          otherUserName={service.providerName}
+          otherUserAvatar={service.providerAvatar}
+        />
+      )}
     </Box>
   );
 }

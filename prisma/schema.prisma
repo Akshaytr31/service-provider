@@ -25,6 +25,8 @@ model users {
   email_verified        Boolean           @default(false)
   seekerProfile         SeekerProfile?
   providerRequests      ProviderRequest[]
+  sentMessages          Message[]         @relation("SentMessages")
+  receivedMessages      Message[]         @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -189,4 +191,20 @@ model Clarification {
 
   @@index([providerRequestId], map: "clarifications_provider_request_id_fkey")
   @@map("clarifications")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String   @db.Text
+  senderId   Int      @map("sender_id")
+  receiverId Int      @map("receiver_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  isRead     Boolean  @default(false) @map("is_read")
+
+  sender     users    @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   users    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([senderId], map: "messages_sender_id_fkey")
+  @@index([receiverId], map: "messages_receiver_id_fkey")
+  @@map("messages")
 }
