@@ -28,6 +28,11 @@ import {
   Divider,
   useToast,
   Textarea,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Stack,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -48,8 +53,106 @@ import {
   FiMoreHorizontal,
   FiSend,
   FiMessageSquare,
+  FiAlertTriangle,
+  FiAlertCircle,
 } from "react-icons/fi";
 import ChatBox from "@/app/components/ChatBox"; // Ensure path is correct
+
+function LicenseExpiryAlert() {
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function checkLicenses() {
+      try {
+        const res = await fetch("/api/provider/current-request");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.licenses)) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today
+
+            const newAlerts = [];
+
+            data.licenses.forEach((lic) => {
+              if (!lic.expiry) return;
+
+              const expiryDate = new Date(lic.expiry);
+              expiryDate.setHours(0, 0, 0, 0); // Normalize expiry
+
+              const diffTime = expiryDate - today;
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+              if (diffDays < 0) {
+                newAlerts.push({
+                  id: lic.name + "expired",
+                  status: "error",
+                  title: "License Expired",
+                  message: `Your license "${lic.name}" has expired. Please update it immediately.`,
+                  icon: FiAlertCircle,
+                });
+              } else if (diffDays <= 7) {
+                newAlerts.push({
+                  id: lic.name + "warning",
+                  status: "warning",
+                  title: "License Expiring Soon",
+                  message: `Your license "${lic.name}" expires in ${diffDays} day${diffDays !== 1 ? "s" : ""}.`,
+                  icon: FiAlertTriangle,
+                });
+              }
+            });
+            setAlerts(newAlerts);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check licenses", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkLicenses();
+  }, []);
+
+  if (loading || alerts.length === 0) return null;
+
+  return (
+    <Stack spacing={3} mb={6}>
+      {alerts.map((alert) => (
+        <Alert
+          key={alert.id}
+          status={alert.status}
+          variant="subtle"
+          borderRadius="lg"
+          flexDirection={{ base: "column", sm: "row" }}
+          alignItems="flex-start"
+          textAlign={{ base: "center", sm: "left" }}
+          py={4}
+        >
+          <AlertIcon as={alert.icon} boxSize="20px" mr={0} />
+          <Box flex="1" ml={{ base: 0, sm: 3 }} mt={{ base: 2, sm: 0 }}>
+            <AlertTitle mr={2} fontSize="sm" fontWeight="bold">
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription fontSize="sm" maxWidth="sm">
+              {alert.message}
+            </AlertDescription>
+          </Box>
+          <Button
+            size="sm"
+            colorScheme={alert.status === "error" ? "red" : "orange"}
+            variant="solid"
+            ml={{ base: 0, sm: 4 }}
+            mt={{ base: 2, sm: 0 }}
+            onClick={() => router.push("/profile")}
+          >
+            Update
+          </Button>
+        </Alert>
+      ))}
+    </Stack>
+  );
+}
 
 function ClarificationChat() {
   const [messages, setMessages] = useState([]);
@@ -244,7 +347,12 @@ export default function ProviderDashboard() {
       case "services":
         return <ServicesView onBack={() => setActiveView("home")} />;
       case "messages":
-        return <MessagesView onBack={() => setActiveView("home")} onSelectChat={setSelectedChatUser} />;
+        return (
+          <MessagesView
+            onBack={() => setActiveView("home")}
+            onSelectChat={setSelectedChatUser}
+          />
+        );
       case "post":
         return (
           <Box>
@@ -269,8 +377,8 @@ export default function ProviderDashboard() {
       <Container maxW="container.xl" py={8}>
         {renderContent()}
       </Container>
-      
-      <ChatBox 
+
+      <ChatBox
         isOpen={!!selectedChatUser}
         onClose={() => setSelectedChatUser(null)}
         otherUserId={selectedChatUser?.id}
@@ -295,6 +403,7 @@ function DashboardOverview({ user, onNavigate }) {
 
   return (
     <VStack spacing={8} align="stretch">
+      <LicenseExpiryAlert />
       {/* Header */}
       <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
         <Box>
@@ -799,50 +908,47 @@ function ServicesView({ onBack }) {
             >
               {service.coverPhoto ? (
                 <Box
-                  h="150px"
+                  h="160px"
+                  bg="gray.100"
                   bgImage={`url(${service.coverPhoto})`}
                   bgSize="cover"
-                  bgPos="center"
+                  bgPosition="center"
                 />
               ) : (
                 <Box
-                  h="150px"
-                  bg="green.100"
+                  h="160px"
+                  bg="gray.100"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Icon as={FiGrid} boxSize={10} color="green.300" />
+                  <Icon as={FiBriefcase} boxSize={8} color="gray.400" />
                 </Box>
               )}
-              <CardBody p={5}>
-                <Heading size="md" mb={2} color="gray.700" noOfLines={1}>
+              <CardBody>
+                <Heading size="sm" mb={2} color="gray.700" noOfLines={1}>
                   {service.title}
                 </Heading>
-                <Text fontSize="sm" color="gray.500" noOfLines={2} mb={3}>
-                  {service.description}
+                <Text fontSize="xs" color="gray.500">
+                  {service.location || "Online"}
                 </Text>
-                <Flex justify="space-between" align="center">
-                  <Badge
-                    colorScheme={service.status === "BLOCKED" ? "red" : "green"}
+                {service.price && (
+                  <Text
+                    mt={2}
+                    color="green.600"
+                    fontWeight="bold"
+                    fontSize="sm"
                   >
-                    {service.status === "BLOCKED"
-                      ? "BLOCKED (License Expired)"
-                      : "ACTIVE"}
-                  </Badge>
-                  <Text fontWeight="bold" color="green.600">
-                    ₹{service.price}
+                    {service.price}
                   </Text>
-                </Flex>
+                )}
+                <Badge
+                  colorScheme={service.status === "ACTIVE" ? "green" : "red"}
+                  mt={2}
+                >
+                  {service.status}
+                </Badge>
               </CardBody>
-              {service.status === "BLOCKED" && (
-                <CardFooter bg="red.50" p={3}>
-                  <Text fontSize="xs" color="red.600">
-                    Linked license has expired. Please renew it in your profile
-                    to re-activate this service.
-                  </Text>
-                </CardFooter>
-              )}
             </Card>
           ))}
         </SimpleGrid>
@@ -852,24 +958,32 @@ function ServicesView({ onBack }) {
 }
 
 function MessagesView({ onBack, onSelectChat }) {
+  // We can redirect to the chat component or show a list of recent chats
+  // For now, let's just trigger the ChatBox for the last interacted user or similar
+  // Or better, show a list of conversations.
+  // Since ChatBox is global, let's just show a placeholder list that opens the chat.
+
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Mock fetching conversations (you might need a real API for this)
   useEffect(() => {
-    async function fetchConversations() {
-      try {
-        const res = await fetch("/api/messages");
-        if (res.ok) {
-          const data = await res.json();
-          setConversations(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error("Error fetching conversations", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchConversations();
+    // Simulate fetch
+    setTimeout(() => {
+      setConversations([
+        {
+          id: 1,
+          user: { id: 2, name: "John Doe", image: null },
+          lastMessage: "Hello, regarding the service...",
+        },
+        {
+          id: 2,
+          user: { id: 3, name: "Jane Smith", image: null },
+          lastMessage: "Can we reschedule?",
+        },
+      ]);
+      setLoading(false);
+    }, 1000);
   }, []);
 
   return (
@@ -893,48 +1007,31 @@ function MessagesView({ onBack, onSelectChat }) {
         <Flex justify="center" p={10}>
           <Spinner color="green.500" />
         </Flex>
-      ) : conversations.length === 0 ? (
-        <Box
-          bg="white"
-          p={10}
-          borderRadius="xl"
-          boxShadow="sm"
-          textAlign="center"
-        >
-          <Text color="gray.500">No conversations yet.</Text>
-        </Box>
       ) : (
-        <VStack spacing={4} align="stretch">
-          {conversations.map((user) => (
-            <Flex
-              key={user.id}
-              bg="white"
-              p={4}
-              borderRadius="xl"
-              boxShadow="sm"
-              align="center"
-              justify="space-between"
+        <VStack align="stretch" spacing={4}>
+          {conversations.map((conv) => (
+            <Card
+              key={conv.id}
+              onClick={() => onSelectChat(conv.user)}
               cursor="pointer"
               _hover={{ bg: "gray.50" }}
-              onClick={() => onSelectChat(user)}
             >
-              <HStack spacing={4}>
-                <Avatar name={user.name} src={user.image} />
-                <Box>
-                  <Text fontWeight="bold" color="gray.700">
-                    {user.name}
-                  </Text>
-                  <Text fontSize="sm" color="gray.500" noOfLines={1}>
-                    {user.lastMessage || "Click to view chat"}
-                  </Text>
-                </Box>
-              </HStack>
-              <Text fontSize="xs" color="gray.400">
-                {user.timestamp
-                  ? new Date(user.timestamp).toLocaleDateString()
-                  : ""}
-              </Text>
-            </Flex>
+              <CardBody>
+                <HStack>
+                  <Avatar
+                    size="sm"
+                    name={conv.user.name}
+                    src={conv.user.image}
+                  />
+                  <Box>
+                    <Text fontWeight="bold">{conv.user.name}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {conv.lastMessage}
+                    </Text>
+                  </Box>
+                </HStack>
+              </CardBody>
+            </Card>
           ))}
         </VStack>
       )}
@@ -943,70 +1040,27 @@ function MessagesView({ onBack, onSelectChat }) {
 }
 
 function RejectedView() {
-  const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    async function fetchReason() {
-      try {
-        const res = await fetch("/api/provider/current-request");
-        if (res.ok) {
-          const data = await res.json();
-          setReason(data.rejectionReason);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchReason();
-  }, []);
-
   return (
-    <Box p={10} textAlign="center" marginTop={"170px"}>
-      <VStack spacing={6}>
-        <Icon as={FiGrid} boxSize={16} color="red.500" />
-        <Box>
-          <Heading color="red.600" mb={2}>
-            Application Rejected
-          </Heading>
-          <Text fontSize="lg" color="gray.600">
-            Your application to become a provider was not approved.
-          </Text>
-        </Box>
-
-        {loading ? (
-          <Spinner color="red.500" />
-        ) : (
-          <Box
-            bg="red.50"
-            p={6}
-            borderRadius="xl"
-            border="1px solid"
-            borderColor="red.100"
-            maxW="600px"
-            w="full"
-          >
-            <Text fontWeight="bold" color="red.800" mb={1}>
-              Reason for Rejection:
-            </Text>
-            <Text color="red.700">
-              {reason || "No specific reason provided."}
-            </Text>
-          </Box>
-        )}
-
-        <Button
-          colorScheme="red"
-          variant="outline"
-          size="lg"
-          onClick={() => router.push("/provider-onboarding")}
-        >
-          Review and Reapply
-        </Button>
-      </VStack>
+    <Box p={6} marginTop={"70px"} textAlign="center">
+      <Box
+        bg="red.50"
+        p={10}
+        borderRadius="xl"
+        border="1px solid"
+        borderColor="red.100"
+        display="inline-block"
+        mb={6}
+      >
+        <Icon as={FiAlertTriangle} boxSize={12} color="red.400" mb={4} />
+        <Heading size="lg" color="red.600" mb={2}>
+          Request Rejected
+        </Heading>
+        <Text color="gray.600" mb={4}>
+          Your provider request was rejected. Please check your email or the
+          clarification messages below for details.
+        </Text>
+      </Box>
+      <ClarificationChat />
     </Box>
   );
 }

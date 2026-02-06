@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { transporter } from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export async function GET() {
 
     let blockedCount = 0;
     let unblockedCount = 0;
+    let reminderCount = 0;
 
     for (const req of requests) {
       if (!req.user?.email) continue;
@@ -19,7 +21,10 @@ export async function GET() {
       const licenses = req.licenses;
       if (!Array.isArray(licenses)) continue;
 
+      let licensesUpdated = false;
       const today = new Date();
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(today.getDate() + 7);
 
       // Track which subcategories have at least one VALID license
       const validSubCategoryIds = new Set();
@@ -36,7 +41,37 @@ export async function GET() {
         // Check if fresh
         if (expiryDate > today) {
           validSubCategoryIds.add(subId);
+
+          // Check if expiring soon (within 7 days) AND reminder not sent
+          // We check if it is within the next 7 days window: today < expiry <= sevenDaysFromNow
+          if (expiryDate <= sevenDaysFromNow && !lic.reminderSent) {
+            try {
+              await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: req.user.email,
+                subject: `Action Required: License Expiring Soon (${lic.name || "Document"})`,
+                html: `
+                    <p>Dear ${req.user.name || "User"},</p>
+                    <p>Your license <strong>${lic.name} (Version ${lic.version || 1})</strong> is expiring on <strong>${expiryDate.toDateString()}</strong>.</p>
+                    <p>Please log in to your profile and upload the latest version to avoid service disruption.</p>
+                `,
+              });
+              lic.reminderSent = true;
+              licensesUpdated = true;
+              reminderCount++;
+            } catch (e) {
+              console.error("Failed to send reminder email", e);
+            }
+          }
         }
+      }
+
+      // Update provider request if licenses were modified (reminderSent flag added)
+      if (licensesUpdated) {
+        await prisma.providerRequest.update({
+          where: { id: req.id },
+          data: { licenses },
+        });
       }
 
       // Fetch provider's services
@@ -80,7 +115,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: `License check complete. Blocked: ${blockedCount}, Unblocked: ${unblockedCount}`,
+      message: `License check complete. Blocked: ${blockedCount}, Unblocked: ${unblockedCount}, Reminders Sent: ${reminderCount}`,
     });
   } catch (error) {
     console.error("Cron Error:", error);
