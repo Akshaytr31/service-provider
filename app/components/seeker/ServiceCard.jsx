@@ -2,131 +2,151 @@
 
 import {
   Box,
-  Heading,
   Text,
   Stack,
   Card,
-  CardBody,
-  Flex,
-  Button,
-  Badge,
-  Icon,
-  Divider,
   Image,
   Skeleton,
-  AspectRatio,
+  Button,
+  Flex,
+  Badge,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { InfoIcon, EmailIcon } from "@chakra-ui/icons";
+import { StarIcon } from "@chakra-ui/icons";
+import { useRouter } from "next/navigation";
 
 const MotionCard = motion(Card);
 
 function ServiceCard({ service }) {
   if (!service) return null;
 
+  const router = useRouter();
+
   const hasCoverPhoto = Boolean(service.coverPhoto);
+  const hasProvider = Boolean(service.providerName);
+  const hasRating = service.rating && service.rating > 0;
+
+  const handleCardClick = () => {
+    router.push(`/service/${service.id}`);
+  };
 
   return (
     <MotionCard
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -6 }}
-      transition="0.3s ease"
-      bg="white"
-      borderRadius="xl"
-      border="1px solid"
-      borderColor="green.100"
-      boxShadow="sm"
+      role="group"
+      borderRadius="lg"
       overflow="hidden"
-      h="100%"
+      bg="white"
+      cursor="pointer"
+      transition="0.25s"
+      _hover={{ boxShadow: "xl" }}
+      onClick={handleCardClick}
     >
-      {/* COVER PHOTO */}
-      <AspectRatio ratio={16 / 9}>
-        <Box position="relative" w="100%" h="100%">
-          {hasCoverPhoto ? (
-            <Image
-              src={service.coverPhoto}
-              alt={service.title}
-              objectFit="cover"
-              w="100%"
-              h="100%"
-              bg="green.50"
-            />
+      {/* IMAGE */}
+      <Box position="relative">
+        {hasCoverPhoto ? (
+          <Image
+            src={service.coverPhoto}
+            alt={service.title}
+            w="100%"
+            h="260px"
+            objectFit="cover"
+          />
+        ) : (
+          <Skeleton w="100%" h="260px" />
+        )}
+
+        {/* RATING BADGE */}
+        {/* RATING OR NEW BADGE */}
+        <Flex
+          position="absolute"
+          top={2}
+          left={2}
+          bg="white"
+          px={2}
+          py={1}
+          borderRadius="md"
+          align="center"
+          gap={1}
+          fontSize="xs"
+          fontWeight="semibold"
+          boxShadow="sm"
+        >
+          {hasRating ? (
+            <>
+              <StarIcon color="green.400" boxSize={3} />
+              {service.rating}
+              {service.reviewCount && (
+                <Text color="gray.500">({service.reviewCount})</Text>
+              )}
+            </>
           ) : (
-            <Skeleton w="100%" h="100%" />
+            <Text color="green.600">New</Text>
           )}
+        </Flex>
 
-          {/* BADGE */}
-          <Badge
-            position="absolute"
-            top={3}
-            left={3}
-            colorScheme="green"
-            fontSize="2xs"
-            px={3}
-            py={1}
-            borderRadius="lg"
+        {/* HOVER ACTION */}
+        <Flex
+          position="absolute"
+          bottom="0"
+          left="0"
+          right="0"
+          bg="white"
+          p={3}
+          opacity={0}
+          transform="translateY(100%)"
+          transition="0.25s"
+          _groupHover={{
+            opacity: 1,
+            transform: "translateY(0%)",
+          }}
+        >
+          <Button
+            w="full"
+            size="sm"
+            colorScheme="pink"
+            borderRadius="md"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/seeker/service/${service.id}`);
+            }}
           >
-            Service
-          </Badge>
-        </Box>
-      </AspectRatio>
+            Book Service
+          </Button>
+        </Flex>
+      </Box>
 
-      {/* CONTENT */}
-      <CardBody p={6}>
-        <Stack spacing={4}>
-          {/* HEADER */}
-          <Flex justify="space-between" align="flex-start">
-            <Heading size="md" noOfLines={1} color="green.700">
-              {service.title}
-            </Heading>
+      {/* DETAILS */}
+      <Stack spacing={1} p={3}>
+        {/* Provider (only if exists) */}
+        {hasProvider && (
+          <Text fontSize="sm" fontWeight="bold">
+            {service.providerName}
+          </Text>
+        )}
 
-            <Box textAlign="right">
-              <Text fontSize="xl" fontWeight="bold" color="green.600">
-                ₹{service.price}
-              </Text>
-              <Text fontSize="10px" color="green.400">
-                Per Hour
-              </Text>
-            </Box>
-          </Flex>
+        {/* Title */}
+        <Text fontSize="sm" color="gray.600" noOfLines={1}>
+          {service.title}
+        </Text>
 
-          {/* DESCRIPTION */}
-          <Text fontSize="sm" color="gray.600" noOfLines={3}>
-            {service.description}
+        {/* Price */}
+        <Flex align="center" gap={2} mt={1}>
+          <Text fontWeight="bold" fontSize="md">
+            ₹{service.price}
           </Text>
 
-          <Divider />
+          <Text fontSize="xs" color="gray.500">
+            per hour
+          </Text>
+        </Flex>
 
-          {/* LOCATION */}
-          <Flex align="center" gap={2}>
-            <Icon as={InfoIcon} color="green.500" />
-            <Text fontSize="xs" color="gray.600">
-              {service.location}
-            </Text>
-          </Flex>
-
-          {/* PROVIDER */}
-          <Flex align="center" gap={2}>
-            <Icon as={EmailIcon} color="green.500" />
-            <Text fontSize="xs" color="gray.600" noOfLines={1}>
-              {service.providerEmail}
-            </Text>
-          </Flex>
-
-          {/* CTA */}
-          <Button
-            mt={3}
-            w="full"
-            bg="green.500"
-            color="white"
-            _hover={{ bg: "green.600" }}
-            borderRadius="xl"
-          >
-            Contact Provider
-          </Button>
-        </Stack>
-      </CardBody>
+        {/* Location */}
+        {service.location && (
+          <Text fontSize="xs" color="gray.400">
+            {service.location}
+          </Text>
+        )}
+      </Stack>
     </MotionCard>
   );
 }
