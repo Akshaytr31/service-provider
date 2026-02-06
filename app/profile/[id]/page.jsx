@@ -49,6 +49,9 @@ import {
   FiClock,
   FiCheckCircle,
   FiExternalLink,
+  FiMap,
+  FiHome,
+  FiHash,
 } from "react-icons/fi";
 import { useParams } from "next/navigation";
 
@@ -176,7 +179,12 @@ export default function PublicProfilePage() {
         </Box>
 
         {/* Identity Information Overlapping */}
-        <Container maxW="container.xl" h="full" position="absolute" top={"-10px"}>
+        <Container
+          maxW="container.xl"
+          h="full"
+          position="absolute"
+          top={"-10px"}
+        >
           <Flex
             position="absolute"
             alignItems={"flex-start"}
@@ -351,7 +359,6 @@ export default function PublicProfilePage() {
                   <Stack spacing={8}>
                     {/* All Services List */}
                     <Stack spacing={4}>
-
                       {/* Additional Services */}
                       {providerRequest.servicesOffered &&
                         Array.isArray(providerRequest.servicesOffered) &&
@@ -436,6 +443,177 @@ export default function PublicProfilePage() {
                       />
                     </SimpleGrid>
                   </Stack>
+                </SectionWrapper>
+              )}
+
+              {/* Location Section - Premium Redesign */}
+              {isProvider && (
+                <SectionWrapper title="Service Location" icon={FiMapPin}>
+                  <Box
+                    borderRadius="3xl"
+                    overflow="hidden"
+                    boxShadow="2xl"
+                    bg="white"
+                    position="relative"
+                    role="group"
+                  >
+                    <Grid templateColumns={{ base: "1fr", md: "2fr 3fr" }}>
+                      {/* Details Column - Stylish Left Panel */}
+                      <Box
+                        p={8}
+                        bgGradient="linear(to-br, green.600, green.700)"
+                        color="white"
+                        position="relative"
+                        overflow="hidden"
+                      >
+                        {/* Decorative background circles */}
+                        <Box
+                          position="absolute"
+                          top="-20%"
+                          left="-20%"
+                          boxSize="200px"
+                          bg="whiteAlpha.100"
+                          borderRadius="full"
+                        />
+                        <Box
+                          position="absolute"
+                          bottom="-10%"
+                          right="-10%"
+                          boxSize="150px"
+                          bg="whiteAlpha.100"
+                          borderRadius="full"
+                        />
+
+                        <VStack
+                          align="start"
+                          spacing={8}
+                          position="relative"
+                          zIndex={1}
+                        >
+                          <VStack align="start" spacing={2}>
+                            <Badge
+                              colorScheme="whiteAlpha"
+                              bg="whiteAlpha.300"
+                              color="white"
+                              px={3}
+                              py={1}
+                              borderRadius="full"
+                            >
+                              Location
+                            </Badge>
+                            <Heading
+                              size="lg"
+                              fontWeight="900"
+                              lineHeight="short"
+                            >
+                              {providerRequest.city}, {providerRequest.country}
+                            </Heading>
+                            <Text color="blue.100" fontSize="sm" opacity={0.9}>
+                              Primary service area and surrounding districts.
+                            </Text>
+                          </VStack>
+
+                          <SimpleGrid columns={1} spacing={5} w="full">
+                            <HStack spacing={4}>
+                              <Flex
+                                boxSize="50px"
+                                bg="whiteAlpha.200"
+                                borderRadius="xl"
+                                align="center"
+                                justify="center"
+                                backdropFilter="blur(5px)"
+                                border="1px solid"
+                                borderColor="whiteAlpha.300"
+                              >
+                                <Icon as={FiMapPin} boxSize={6} color="white" />
+                              </Flex>
+                              <Box>
+                                <Text
+                                  fontSize="xs"
+                                  textTransform="uppercase"
+                                  letterSpacing="widest"
+                                  opacity={0.7}
+                                >
+                                  State/District
+                                </Text>
+                                <Text fontSize="lg" fontWeight="bold">
+                                  {providerRequest.state}
+                                </Text>
+                              </Box>
+                            </HStack>
+
+                            <HStack spacing={4}>
+                              <Flex
+                                boxSize="50px"
+                                bg="whiteAlpha.200"
+                                borderRadius="xl"
+                                align="center"
+                                justify="center"
+                                backdropFilter="blur(5px)"
+                                border="1px solid"
+                                borderColor="whiteAlpha.300"
+                              >
+                                <Icon as={FiHash} boxSize={6} color="white" />
+                              </Flex>
+                              <Box>
+                                <Text
+                                  fontSize="xs"
+                                  textTransform="uppercase"
+                                  letterSpacing="widest"
+                                  opacity={0.7}
+                                >
+                                  Postal Code
+                                </Text>
+                                <Text fontSize="lg" fontWeight="bold">
+                                  {providerRequest.zipCode}
+                                </Text>
+                              </Box>
+                            </HStack>
+                          </SimpleGrid>
+
+                          <Button
+                            size="sm"
+                            bg="white"
+                            color="blue.600"
+                            rightIcon={<Icon as={FiExternalLink} />}
+                            _hover={{ bg: "blue.50" }}
+                            onClick={() =>
+                              window.open(
+                                `https://maps.google.com/?q=${encodeURIComponent(`${providerRequest.address || ""} ${providerRequest.city || ""} ${providerRequest.country || ""}`)}`,
+                                "_blank",
+                              )
+                            }
+                          >
+                            Open in Google Maps
+                          </Button>
+                        </VStack>
+                      </Box>
+
+                      {/* Map Column - Full height interactive */}
+                      <Box
+                        position="relative"
+                        h={{ base: "300px", md: "auto" }}
+                      >
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{
+                            border: 0,
+                            filter: "grayscale(20%) Contrast(1.1)",
+                          }}
+                          loading="lazy"
+                          allowFullScreen
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                            `${providerRequest.address || ""} ${
+                              providerRequest.city || ""
+                            } ${providerRequest.state || ""} ${
+                              providerRequest.country || ""
+                            }`,
+                          )}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                        ></iframe>
+                      </Box>
+                    </Grid>
+                  </Box>
                 </SectionWrapper>
               )}
             </Stack>
