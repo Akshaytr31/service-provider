@@ -27,7 +27,7 @@ function ServiceCard({ service }) {
   const hasRating = service.rating && service.rating > 0;
 
   const handleCardClick = () => {
-    router.push(`/service/${service.id}`);
+    router.push(`/seeker/service/${service.id}`);
   };
 
   return (
@@ -107,7 +107,7 @@ function ServiceCard({ service }) {
             borderRadius="md"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/seeker/service/${service.id}`);
+              handleCardClick();
             }}
           >
             Book Service
@@ -125,7 +125,7 @@ function ServiceCard({ service }) {
         )}
 
         {/* Title */}
-        <Text fontSize="sm" color="gray.600" noOfLines={1}>
+        <Text fontSize="sm" fontWeight="bold" color="gray.600" noOfLines={1}>
           {service.title}
         </Text>
 

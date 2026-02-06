@@ -138,7 +138,7 @@ export default function SeekerDashboard() {
 
       <Container maxW="container.xl" position="relative" zIndex={1}>
         {/* HERO SECTION - Compact */}
-        <VStack spacing={4} mb={10} textAlign="center" pt={8}>
+        <VStack spacing={4} mb={6} textAlign="center" pt={8}>
           <Heading
             as="h1"
             size="2xl"
@@ -152,35 +152,32 @@ export default function SeekerDashboard() {
             Connect with verified professionals for any job.
           </Text>
         </VStack>
+      </Container>
 
-        {/* STICKY FILTER BAR */}
-        <Box
-          position="sticky"
-          top="70px" 
-          zIndex={100}
-          mb={10}
-        >
-          <FilterBar
-            filters={filters}
-            handleFilterChange={handleFilterChange}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            isScrolled={isScrolled}
-            onReset={() => {
-              setFilters({
-                categoryId: "",
-                subCategoryId: "",
-                location: "",
-                minPrice: 0,
-                maxPrice: 1000,
-              });
-              setPriceRange([0, 1000]);
-            }}
-          />
-        </Box>
+      {/* STICKY FILTER BAR */}
+      <Box position="sticky" top="70px" zIndex={100} mb={10} width="full">
+        <FilterBar
+          filters={filters}
+          handleFilterChange={handleFilterChange}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          isScrolled={isScrolled}
+          onReset={() => {
+            setFilters({
+              categoryId: "",
+              subCategoryId: "",
+              location: "",
+              minPrice: 0,
+              maxPrice: 1000,
+            });
+            setPriceRange([0, 1000]);
+          }}
+        />
+      </Box>
 
+      <Container maxW="container.xl" position="relative" zIndex={1}>
         {/* RESULTS GRID */}
         <AnimatePresence mode="wait">
           {loading ? (
