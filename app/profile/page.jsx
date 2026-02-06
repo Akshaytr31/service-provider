@@ -981,6 +981,8 @@ export default function ProfilePage() {
                               size="md"
                               borderRadius="xl"
                               boxShadow="md"
+                              variant="surface"
+
                               _hover={{
                                 transform: "translateY(-1px)",
                                 boxShadow: "lg",
