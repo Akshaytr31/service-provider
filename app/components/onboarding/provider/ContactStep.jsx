@@ -115,22 +115,6 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
         </FormControl>
       </HStack>
 
-      {/* <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          Full Address
-        </FormLabel>
-        <Textarea
-          name="address"
-          placeholder="Full Address"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={formData.address}
-          onChange={handleChange}
-          rows={3}
-        />
-      </FormControl> */}
-
       <GoogleMap formData={formData} setFormData={setFormData} />
 
       <FormControl isRequired>

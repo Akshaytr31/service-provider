@@ -114,6 +114,59 @@ export default function GoogleMap({ formData, setFormData, viewOnly = false }) {
     }
   }, [formData?.latitude, formData?.longitude]); // removed position dependency to avoid loop
 
+  /* -------------------------------------------
+     NEW: Auto-geocode when address text changes
+     ------------------------------------------- */
+  useEffect(() => {
+    // 1. Construct the query string from formData
+    const { city, zipCode, state, country } = formData || {};
+    const parts = [city, zipCode, state, country].filter((p) => p && p.trim());
+
+    if (parts.length === 0) return;
+
+    const query = parts.join(", ");
+
+    // 2. define the async search function
+    const searchAddress = async (q) => {
+      try {
+        const provider = new OpenStreetMapProvider();
+        const results = await provider.search({ query: q });
+
+        if (results && results.length > 0) {
+          const best = results[0];
+          const newLat = parseFloat(best.y);
+          const newLng = parseFloat(best.x);
+
+          // Update map position
+          setPosition({ lat: newLat, lng: newLng });
+
+          // Update parent formData so it persists
+          // We do NOT overwrite the text fields (city/zip) to avoid fighting the user.
+          setFormData((prev) => ({
+            ...prev,
+            latitude: newLat,
+            longitude: newLng,
+          }));
+        }
+      } catch (error) {
+        console.error("Auto-geocoding error:", error);
+      }
+    };
+
+    // 3. Debounce the call
+    const timerId = setTimeout(() => {
+      searchAddress(query);
+    }, 1500); // 1.5s debounce to wait for typing to finish
+
+    return () => clearTimeout(timerId);
+  }, [
+    formData?.city,
+    formData?.zipCode,
+    formData?.state,
+    formData?.country,
+    setFormData,
+  ]);
+
   const useCurrentLocation = () => {
     navigator.geolocation.getCurrentPosition((pos) => {
       const lat = pos.coords.latitude;
@@ -140,7 +193,7 @@ export default function GoogleMap({ formData, setFormData, viewOnly = false }) {
             ...prev,
             latitude: lat,
             longitude: lng,
-            address: "Current Location", 
+            address: "Current Location",
           }));
         });
     });
