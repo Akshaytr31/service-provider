@@ -240,18 +240,18 @@ export default function GoogleMap({ formData, setFormData, viewOnly = false }) {
       )}
 
       <Box borderRadius="lg" overflow="hidden">
+        <style>
+          {`
+              .leaflet-control-zoom {
+                z-index: 5 !important;
+              }
+            `}
+        </style>
         <MapContainer
           center={position}
           zoom={13}
           style={{ height: "300px", width: "100%", zIndex: 4 }}
         >
-          <style>
-            {`
-              .leaflet-control-zoom {
-                z-index: 5 !important;
-              }
-            `}
-          </style>
           <TileLayer
             attribution="© OpenStreetMap"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

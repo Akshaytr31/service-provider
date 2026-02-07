@@ -1,13 +1,11 @@
-import {
-  Stack,
-  HStack,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
-} from "@chakra-ui/react";
+import { Stack, HStack, FormControl, FormLabel, Input } from "@chakra-ui/react";
+import dynamic from "next/dynamic";
 
-export default function AddressStep({ form, handleChange }) {
+const GoogleMap = dynamic(() => import("../../googleMap/GoogleMap"), {
+  ssr: false,
+});
+
+export default function AddressStep({ form, handleChange, setForm }) {
   return (
     <Stack
       spacing={6}
@@ -34,7 +32,7 @@ export default function AddressStep({ form, handleChange }) {
           />
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             Zip Code
           </FormLabel>
@@ -52,51 +50,39 @@ export default function AddressStep({ form, handleChange }) {
         </FormControl>
       </HStack>
 
-      <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          State/Emirates/Governorate
-        </FormLabel>
-        <Input
-          name="state"
-          placeholder="State"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={form.state}
-          onChange={handleChange}
-        />
-      </FormControl>
+      <HStack spacing={4}>
+        <FormControl isRequired>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            State/Emirates/Governorate
+          </FormLabel>
+          <Input
+            name="state"
+            placeholder="State"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
+            value={form.state}
+            onChange={handleChange}
+          />
+        </FormControl>
 
-      <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          Country
-        </FormLabel>
-        <Input
-          name="country"
-          placeholder="Country"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={form.country}
-          onChange={handleChange}
-        />
-      </FormControl>
+        <FormControl isRequired>
+          <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
+            Country
+          </FormLabel>
+          <Input
+            name="country"
+            placeholder="Country"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
+            value={form.country}
+            onChange={handleChange}
+          />
+        </FormControl>
+      </HStack>
 
-      <FormControl isRequired>
-        <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-          Full Address
-        </FormLabel>
-        <Textarea
-          name="address"
-          placeholder="Full Address"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={form.address}
-          onChange={handleChange}
-          rows={3}
-        />
-      </FormControl>
+      <GoogleMap formData={form} setFormData={setForm} />
     </Stack>
   );
 }

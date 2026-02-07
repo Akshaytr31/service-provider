@@ -51,6 +51,8 @@ export default function SeekerOnboarding() {
     zipCode: "",
     state: "",
     country: "",
+    latitude: "",
+    longitude: "",
     // Individual fields
     firstName: "",
     lastName: "",
@@ -169,10 +171,8 @@ export default function SeekerOnboarding() {
       case 2:
         if (
           !form.city ||
-          !form.zipCode ||
           !form.state ||
-          !form.country ||
-          !form.address
+          !form.country
         ) {
           return "Please complete all address fields";
         }
@@ -418,7 +418,13 @@ export default function SeekerOnboarding() {
         />
       )}
 
-      {step === 2 && <AddressStep form={form} handleChange={handleChange} />}
+      {step === 2 && (
+        <AddressStep
+          form={form}
+          setForm={setForm}
+          handleChange={handleChange}
+        />
+      )}
 
       {step === 3 && <EducationStep form={form} setForm={setForm} />}
 
