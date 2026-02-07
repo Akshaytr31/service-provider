@@ -45,14 +45,14 @@ export async function POST(req) {
     if (!email || !password || !userType) {
       return NextResponse.json(
         { message: "Invalid signup payload" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
         { message: "Password must be at least 6 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -63,7 +63,7 @@ export async function POST(req) {
     if (existingUser) {
       return NextResponse.json(
         { message: "User already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -72,6 +72,14 @@ export async function POST(req) {
     /* ================= TRANSACTION ================= */
 
     await prisma.$transaction(async (tx) => {
+      // 0️⃣ Construct Display Name
+      let displayName = "";
+      if (userType === "business") {
+        displayName = businessName;
+      } else {
+        displayName = `${firstName} ${lastName}`;
+      }
+
       // 1️⃣ Create user
       const user = await tx.users.create({
         data: {
@@ -79,6 +87,7 @@ export async function POST(req) {
           password: hashedPassword,
           role: "seeker",
           email_verified: true,
+          name: displayName,
         },
       });
 
@@ -122,7 +131,7 @@ export async function POST(req) {
 
       console.log(
         "Inserting Seeker Profile Data:",
-        JSON.stringify(profileData, null, 2)
+        JSON.stringify(profileData, null, 2),
       );
 
       // 3️⃣ Create seeker profile
@@ -133,13 +142,13 @@ export async function POST(req) {
 
     return NextResponse.json(
       { message: "Seeker account created successfully" },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Signup error details:", error);
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

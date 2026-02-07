@@ -5,9 +5,35 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// Helper to resolve display name
+function getDisplayName(user) {
+  if (user.name) return user.name;
+
+  // Try Seeker Profile
+  if (user.seekerProfile) {
+    if (user.seekerProfile.userType === "business") {
+      return user.seekerProfile.businessName || "Unknown Business";
+    }
+    return (
+      `${user.seekerProfile.firstName || ""} ${user.seekerProfile.lastName || ""}`.trim() ||
+      "Unknown Individual"
+    );
+  }
+
+  // Try Provider Request (take the first one)
+  if (user.providerRequests && user.providerRequests.length > 0) {
+    const req = user.providerRequests[0];
+    if (req.businessName) return req.businessName;
+    return (
+      `${req.firstName || ""} ${req.lastName || ""}`.trim() ||
+      "Unknown Provider"
+    );
+  }
+
+  return "Unknown User";
+}
+
 // GET: Fetch messages for the current user
-// Supports query params: ?otherUserId=123 (fetch conversation with specific user)
-// OR ?conversations=true (fetch list of recent conversations - simplified for now)
 export async function GET(req) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -16,11 +42,26 @@ export async function GET(req) {
 
   const { searchParams } = new URL(req.url);
   const otherUserId = searchParams.get("otherUserId");
-  const lastId = searchParams.get("lastId"); // For polling optimization
+  const lastId = searchParams.get("lastId");
 
   const currentUserId = parseInt(session.user.id);
 
   try {
+    const commonInclude = {
+      sender: {
+        include: {
+          seekerProfile: true,
+          providerRequests: true,
+        },
+      },
+      receiver: {
+        include: {
+          seekerProfile: true,
+          providerRequests: true,
+        },
+      },
+    };
+
     if (otherUserId) {
       // Fetch messages between current user and other user
       const otherId = parseInt(otherUserId);
@@ -39,38 +80,47 @@ export async function GET(req) {
       const messages = await prisma.message.findMany({
         where: whereClause,
         orderBy: { createdAt: "asc" },
-        include: {
-          sender: { select: { id: true, name: true, image: true } },
-          receiver: { select: { id: true, name: true, image: true } },
-        },
+        include: commonInclude,
       });
 
-      return NextResponse.json(messages);
+      // Map messages to include resolved names
+      const mappedMessages = messages.map((msg) => ({
+        ...msg,
+        sender: {
+          ...msg.sender,
+          name: getDisplayName(msg.sender),
+        },
+        receiver: {
+          ...msg.receiver,
+          name: getDisplayName(msg.receiver),
+        },
+      }));
+
+      return NextResponse.json(mappedMessages);
     } else {
-      // Fetch list of active conversations (simplified: just latest messages grouped)
-      // For V1, we might just return empty or handle this client-side if needed.
-      // But let's basic implementation: find distinct users messaged with.
+      // Fetch list of active conversations
       const messages = await prisma.message.findMany({
         where: {
           OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
         },
         orderBy: { createdAt: "desc" },
-        distinct: ["senderId", "receiverId"], // This might not be perfect for conversation list but okay for V1
-        include: {
-          sender: { select: { id: true, name: true, image: true } },
-          receiver: { select: { id: true, name: true, image: true } },
-        },
+        distinct: ["senderId", "receiverId"],
+        include: commonInclude,
       });
 
-      // Post-process to get unique conversation partners
-      // This is a bit naive but works for small scale
       const partners = new Map();
       messages.forEach((msg) => {
-        const partner =
-          msg.senderId === currentUserId ? msg.receiver : msg.sender;
-        if (!partners.has(partner.id)) {
-          partners.set(partner.id, {
-            ...partner,
+        const isSender = msg.senderId === currentUserId;
+        const partnerUser = isSender ? msg.receiver : msg.sender;
+
+        if (!partners.has(partnerUser.id)) {
+          const resolvedPartner = {
+            ...partnerUser,
+            name: getDisplayName(partnerUser),
+          };
+
+          partners.set(partnerUser.id, {
+            ...resolvedPartner,
             lastMessage: msg.content,
             timestamp: msg.createdAt,
           });
@@ -112,11 +162,25 @@ export async function POST(req) {
         receiverId: parseInt(receiverId),
       },
       include: {
-        sender: { select: { id: true, name: true, image: true } },
+        sender: {
+          include: {
+            seekerProfile: true,
+            providerRequests: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(newMessage);
+    // Map response
+    const mappedMessage = {
+      ...newMessage,
+      sender: {
+        ...newMessage.sender,
+        name: getDisplayName(newMessage.sender),
+      },
+    };
+
+    return NextResponse.json(mappedMessage);
   } catch (error) {
     console.error("Error sending message:", error);
     return NextResponse.json(

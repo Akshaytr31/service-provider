@@ -43,6 +43,7 @@ import {
   FiList,
   FiPlusCircle,
   FiArrowLeft,
+  FiArrowRight,
   FiClock,
   FiCheckCircle,
   FiTrendingUp,
@@ -958,80 +959,123 @@ function ServicesView({ onBack }) {
 }
 
 function MessagesView({ onBack, onSelectChat }) {
-  // We can redirect to the chat component or show a list of recent chats
-  // For now, let's just trigger the ChatBox for the last interacted user or similar
-  // Or better, show a list of conversations.
-  // Since ChatBox is global, let's just show a placeholder list that opens the chat.
-
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock fetching conversations (you might need a real API for this)
   useEffect(() => {
-    // Simulate fetch
-    setTimeout(() => {
-      setConversations([
-        {
-          id: 1,
-          user: { id: 2, name: "John Doe", image: null },
-          lastMessage: "Hello, regarding the service...",
-        },
-        {
-          id: 2,
-          user: { id: 3, name: "Jane Smith", image: null },
-          lastMessage: "Can we reschedule?",
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    async function fetchConversations() {
+      try {
+        const res = await fetch("/api/messages");
+        if (res.ok) {
+          const data = await res.json();
+          // API returns array of users with lastMessage property mixed in
+          const formatted = Array.isArray(data)
+            ? data.map((item) => ({
+                id: item.id,
+                user: { id: item.id, name: item.name, image: item.image },
+                lastMessage: item.lastMessage,
+                timestamp: item.timestamp, // Assuming API returns this, or fallback
+              }))
+            : [];
+          setConversations(formatted);
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchConversations();
   }, []);
 
   return (
     <Box mt={6}>
-      <Button
-        position={"absolute"}
-        top={"0"}
-        left={"0"}
-        variant="ghost"
-        colorScheme="black"
-        onClick={onBack}
-        leftIcon={<FiArrowLeft />}
-      >
-        Back to Dashboard
-      </Button>
-      <Heading mb={6} color="green.600">
-        Messages
-      </Heading>
+      <Flex align="center" mb={6}>
+        <IconButton
+          icon={<FiArrowLeft />}
+          variant="ghost"
+          onClick={onBack}
+          mr={4}
+          aria-label="Back"
+        />
+        <Heading size="lg" color="green.700">
+          Messages
+        </Heading>
+      </Flex>
 
       {loading ? (
         <Flex justify="center" p={10}>
-          <Spinner color="green.500" />
+          <Spinner color="green.500" size="xl" />
+        </Flex>
+      ) : conversations.length === 0 ? (
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          bg="white"
+          p={12}
+          borderRadius="2xl"
+          boxShadow="sm"
+          border="1px solid"
+          borderColor="gray.100"
+        >
+          <Icon as={FiMessageSquare} boxSize={12} color="gray.300" mb={4} />
+          <Text color="gray.500" fontSize="lg">
+            No messages yet
+          </Text>
+          <Text color="gray.400" fontSize="sm">
+            When seekers contact you, they will appear here.
+          </Text>
         </Flex>
       ) : (
         <VStack align="stretch" spacing={4}>
           {conversations.map((conv) => (
-            <Card
+            <Flex
               key={conv.id}
               onClick={() => onSelectChat(conv.user)}
               cursor="pointer"
-              _hover={{ bg: "gray.50" }}
+              bg="white"
+              p={5}
+              borderRadius="xl"
+              boxShadow="sm"
+              border="1px solid"
+              borderColor="gray.100"
+              transition="all 0.2s"
+              _hover={{
+                transform: "translateY(-2px)",
+                boxShadow: "md",
+                borderColor: "green.200",
+              }}
+              align="center"
             >
-              <CardBody>
-                <HStack>
-                  <Avatar
-                    size="sm"
-                    name={conv.user.name}
-                    src={conv.user.image}
-                  />
-                  <Box>
-                    <Text fontWeight="bold">{conv.user.name}</Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {conv.lastMessage}
+              <Avatar
+                size="md"
+                name={conv.user?.name || "Seeker"}
+                src={conv.user?.image}
+                mr={5}
+              />
+
+              <Box flex="1">
+                <Flex justify="space-between" align="center" mb={1}>
+                  <HStack>
+                    <Text fontWeight="bold" fontSize="lg" color="gray.800">
+                      {conv.user?.name || "Unknown Seeker"}
                     </Text>
-                  </Box>
-                </HStack>
-              </CardBody>
-            </Card>
+                  </HStack>
+                  {conv.timestamp && (
+                    <Text fontSize="xs" color="gray.400">
+                      {new Date(conv.timestamp).toLocaleDateString()}
+                    </Text>
+                  )}
+                </Flex>
+
+                <Text color="gray.600" noOfLines={1} fontSize="md">
+                  {conv.lastMessage || "No messages yet"}
+                </Text>
+              </Box>
+
+              <Icon as={FiArrowRight} color="gray.300" ml={4} />
+            </Flex>
           ))}
         </VStack>
       )}
