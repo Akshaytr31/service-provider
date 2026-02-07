@@ -373,8 +373,6 @@ export default function BasicInfoStep({
                   focusBorderColor="green.400"
                   value={formData.trnNumber}
                   onChange={handleChange}
-                  inputMode="numeric"
-                  pattern="[0-9]*"
                 />
               </FormControl>
             </Box>
