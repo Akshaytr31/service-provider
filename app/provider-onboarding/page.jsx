@@ -336,117 +336,117 @@ export default function ProviderOnboardingPage() {
   /*==================Validation ============*/
 
   const validateStep = () => {
-    // switch (step) {
-    //   case 0:
-    //     // Account Verification (Unauthenticated Only)
-    //     if (status !== "authenticated") {
-    //       const newErrors = {
-    //         email: "",
-    //         password: "",
-    //         confirmPassword: "",
-    //         otp: "",
-    //       };
-    //       let hasError = false;
-    //       if (!formData.email) {
-    //         newErrors.email = "Email is required";
-    //         hasError = true;
-    //       }
-    //       if (!formData.password) {
-    //         newErrors.password = "Password is required";
-    //         hasError = true;
-    //       }
-    //       if (formData.password !== formData.confirmPassword) {
-    //         newErrors.confirmPassword = "Passwords do not match";
-    //         hasError = true;
-    //       }
-    //       if (otpSent && !formData.otp) {
-    //         newErrors.otp = "Please enter OTP";
-    //         hasError = true;
-    //       }
-    //       if (hasError) {
-    //         setAccountErrors(newErrors);
-    //         return "Please fix account errors";
-    //       }
-    //     }
-    //     return null;
-    //   case 1:
-    //     // Profile Mega Step (Basic Info, Identity, Service, Pricing)
-    //     if (formData.userType === "individual") {
-    //       if (!formData.firstName || !formData.lastName) {
-    //         return "Please enter first name and last name";
-    //       }
-    //       if (!formData.idType || !formData.idNumber) {
-    //         return "Please enter ID type and ID number";
-    //       }
-    //       if (!formData.backgroundCheckConsent) {
-    //         return "Please confirm background check consent";
-    //       }
-    //     } else {
-    //       // business
-    //       if (
-    //         !formData.businessName ||
-    //         !formData.businessType ||
-    //         !formData.registrationNumber ||
-    //         !formData.establishmentYear ||
-    //         !formData.trnNumber
-    //       ) {
-    //         return "Please complete all business details";
-    //       }
-    //     }
-    //     // Common for both in profile step
-    //     if (formData.services.length === 0) {
-    //       return "Please add at least one service";
-    //     }
-    //     if (
-    //       formData.services.some(
-    //         (s) =>
-    //           !s.categoryId ||
-    //           !s.subCategoryId ||
-    //           !s.description ||
-    //           !s.yearsExperience,
-    //       )
-    //     ) {
-    //       return "Please complete all fields for each added service (Category, Sub-Category, Description, Experience)";
-    //     }
-    //     if (
-    //       !formData.pricingType ||
-    //       !formData.baseRate ||
-    //       formData.paymentMethods.length === 0
-    //     ) {
-    //       return "Please complete pricing details";
-    //     }
-    //     return null;
-    //   case 2:
-    //     // Contact Details
-    //     if (
-    //       !formData.city ||
-    //       !formData.state ||
-    //       !formData.country ||
-    //       !formData.address ||
-    //       !formData.serviceRadius
-    //     ) {
-    //       return "Please fill all contact details";
-    //     }
-    //     return null;
-    //   case 3:
-    //     // Availability
-    //     if (
-    //       formData.availableDays.length === 0 ||
-    //       !formData.availableHoursStart ||
-    //       !formData.availableHoursEnd
-    //     ) {
-    //       return "Please set availability details";
-    //     }
-    //     return null;
-    //   case 4:
-    //     // Terms
-    //     if (!formData.termsAccepted) {
-    //       return "You must accept the terms and conditions";
-    //     }
-    //     return null;
-    //   default:
-    //     return null;
-    // }
+    switch (step) {
+      case 0:
+        // Account Verification (Unauthenticated Only)
+        if (status !== "authenticated") {
+          const newErrors = {
+            email: "",
+            password: "",
+            confirmPassword: "",
+            otp: "",
+          };
+          let hasError = false;
+          if (!formData.email) {
+            newErrors.email = "Email is required";
+            hasError = true;
+          }
+          if (!formData.password) {
+            newErrors.password = "Password is required";
+            hasError = true;
+          }
+          if (formData.password !== formData.confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match";
+            hasError = true;
+          }
+          if (otpSent && !formData.otp) {
+            newErrors.otp = "Please enter OTP";
+            hasError = true;
+          }
+          if (hasError) {
+            setAccountErrors(newErrors);
+            return "Please fix account errors";
+          }
+        }
+        return null;
+      case 1:
+        // Profile Mega Step (Basic Info, Identity, Service, Pricing)
+        if (formData.userType === "individual") {
+          if (!formData.firstName || !formData.lastName) {
+            return "Please enter first name and last name";
+          }
+          if (!formData.idType || !formData.idNumber) {
+            return "Please enter ID type and ID number";
+          }
+          if (!formData.backgroundCheckConsent) {
+            return "Please confirm background check consent";
+          }
+        } else {
+          // business
+          if (
+            !formData.businessName ||
+            !formData.businessType ||
+            !formData.registrationNumber ||
+            !formData.establishmentYear ||
+            !formData.trnNumber
+          ) {
+            return "Please complete all business details";
+          }
+        }
+        // Common for both in profile step
+        if (formData.services.length === 0) {
+          return "Please add at least one service";
+        }
+        if (
+          formData.services.some(
+            (s) =>
+              !s.categoryId ||
+              !s.subCategoryId ||
+              !s.description ||
+              !s.yearsExperience,
+          )
+        ) {
+          return "Please complete all fields for each added service (Category, Sub-Category, Description, Experience)";
+        }
+        if (
+          !formData.pricingType ||
+          !formData.baseRate ||
+          formData.paymentMethods.length === 0
+        ) {
+          return "Please complete pricing details";
+        }
+        return null;
+      case 2:
+        // Contact Details
+        if (
+          !formData.city ||
+          !formData.state ||
+          !formData.country ||
+          !formData.address ||
+          !formData.serviceRadius
+        ) {
+          return "Please fill all contact details";
+        }
+        return null;
+      case 3:
+        // Availability
+        if (
+          formData.availableDays.length === 0 ||
+          !formData.availableHoursStart ||
+          !formData.availableHoursEnd
+        ) {
+          return "Please set availability details";
+        }
+        return null;
+      case 4:
+        // Terms
+        if (!formData.termsAccepted) {
+          return "You must accept the terms and conditions";
+        }
+        return null;
+      default:
+        return null;
+    }
   };
 
   /* ================= NEXT ================= */

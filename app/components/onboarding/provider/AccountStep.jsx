@@ -10,9 +10,10 @@ import {
   HStack,
   Button,
   Text,
+  Spinner,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AccountStep({
   formData,
@@ -30,9 +31,55 @@ export default function AccountStep({
   accountErrors,
   setAccountErrors,
 }) {
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+
   const clearError = (field) => {
     setAccountErrors((prev) => ({ ...prev, [field]: "" }));
   };
+
+  // Debounced email check
+  useEffect(() => {
+    const checkEmail = async () => {
+      if (!formData.email || !formData.email.includes("@")) return;
+
+      setIsCheckingEmail(true);
+      try {
+        const res = await fetch("/api/auth/check-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+        const data = await res.json();
+
+        if (data.exists) {
+          setAccountErrors((prev) => ({
+            ...prev,
+            email: "This email is already registered.",
+          }));
+        } else {
+          // Clear email error only if it was "already registered"
+          setAccountErrors((prev) => {
+            if (prev.email === "This email is already registered.") {
+              return { ...prev, email: "" };
+            }
+            return prev;
+          });
+        }
+      } catch (error) {
+        console.error("Error checking email:", error);
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (formData.email) {
+        checkEmail();
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [formData.email, setAccountErrors]);
 
   return (
     <Stack
@@ -57,19 +104,30 @@ export default function AccountStep({
             <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
               Email
             </FormLabel>
-            <Input
-              name="email"
-              type="email"
-              placeholder="Email Address"
-              borderRadius="lg"
-              fontSize="sm"
-              focusBorderColor="green.400"
-              onChange={(e) => {
-                handleChange(e);
-                clearError("email");
-              }}
-              value={formData.email}
-            />
+            <InputGroup>
+              <Input
+                name="email"
+                type="email"
+                placeholder="Email Address"
+                borderRadius="lg"
+                fontSize="sm"
+                focusBorderColor="green.400"
+                onChange={(e) => {
+                  handleChange(e);
+                  if (
+                    accountErrors?.email === "This email is already registered."
+                  ) {
+                    clearError("email");
+                  }
+                }}
+                value={formData.email}
+              />
+              {isCheckingEmail && (
+                <InputRightElement>
+                  <Spinner size="xs" color="green.500" />
+                </InputRightElement>
+              )}
+            </InputGroup>
             {accountErrors?.email && (
               <Text color="red.500" fontSize="xs" mt={1}>
                 {accountErrors.email}
@@ -155,7 +213,10 @@ export default function AccountStep({
           {!otpSent ? (
             <Button
               onClick={handleSendOtp}
-              isLoading={otpLoading}
+              isLoading={otpLoading || isCheckingEmail}
+              isDisabled={
+                otpLoading || isCheckingEmail || !!accountErrors?.email
+              }
               variant="solid"
               bg="green.500"
               color="white"
