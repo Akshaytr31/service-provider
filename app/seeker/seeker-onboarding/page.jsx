@@ -364,11 +364,11 @@ export default function SeekerOnboarding() {
   };
 
   return (
-    <Container maxW="container.md" py={10} marginTop={"70px"}>
+    <Container maxW="container.md" py={10} marginTop={"80px"}>
       <Heading mb={4}>Seeker Onboarding</Heading>
       <Box
         position="fixed"
-        top="62px"
+        top="70px"
         left="0"
         width="100vw"
         zIndex="1"
@@ -379,7 +379,7 @@ export default function SeekerOnboarding() {
         <Progress
           h="4px"
           value={((step + 1) / TOTAL_STEPS) * 100}
-          colorScheme="blue"
+          colorScheme="green"
           borderRadius="md"
         />
       </Box>
@@ -434,7 +434,7 @@ export default function SeekerOnboarding() {
         <Button variant="outline" onClick={handleBack} isDisabled={step === 0}>
           Back
         </Button>
-        <Button colorScheme="blue" onClick={handleNext} isLoading={loading}>
+        <Button colorScheme="green" onClick={handleNext} isLoading={loading}>
           {step === 0
             ? otpSent
               ? "Verify & Next"

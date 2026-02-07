@@ -10,8 +10,11 @@ import {
   IconButton,
   Button,
   HStack,
+  Text,
+  Spinner,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { ViewIcon, ViewOffIcon, CheckIcon, CloseIcon } from "@chakra-ui/icons";
+import { useState, useEffect } from "react";
 
 export default function AccountStep({
   form,
@@ -29,6 +32,43 @@ export default function AccountStep({
   handleNext,
   loading,
 }) {
+  const [emailError, setEmailError] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  useEffect(() => {
+    const checkEmail = async () => {
+      if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        setEmailError("");
+        return;
+      }
+
+      setCheckingEmail(true);
+      try {
+        const res = await fetch("/api/auth/check-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email }),
+        });
+        const data = await res.json();
+        if (data.exists) {
+          setEmailError("Email is already registered. Please login instead.");
+        } else {
+          setEmailError("");
+        }
+      } catch (error) {
+        console.error("Email check failed:", error);
+      } finally {
+        setCheckingEmail(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      checkEmail();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [form.email]);
+
   return (
     <Stack
       spacing={6}
@@ -42,19 +82,34 @@ export default function AccountStep({
       <Heading size="sm" color="green.700" fontWeight="bold">
         Account Details
       </Heading>
-      <FormControl isRequired>
+      <FormControl isRequired isInvalid={!!emailError}>
         <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
           Email
         </FormLabel>
-        <Input
-          type="email"
-          placeholder="Email Address"
-          size="sm"
-          borderRadius="lg"
-          focusBorderColor="green.400"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
+        <InputGroup>
+          <Input
+            type="email"
+            placeholder="Email Address"
+            size="sm"
+            borderRadius="lg"
+            focusBorderColor="green.400"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            isReadOnly={otpSent}
+          />
+          <InputRightElement>
+            {checkingEmail ? (
+              <Spinner size="xs" color="green.500" />
+            ) : form.email && !emailError ? (
+              <CheckIcon color="green.500" fontSize="xs" />
+            ) : null}
+          </InputRightElement>
+        </InputGroup>
+        {emailError && (
+          <Text fontSize="xs" color="red.500" mt={1}>
+            {emailError}
+          </Text>
+        )}
       </FormControl>
       <Flex gap={2}>
         <FormControl isRequired>
@@ -113,7 +168,8 @@ export default function AccountStep({
       {!otpSent ? (
         <Button
           onClick={handleSendOtp}
-          isLoading={otpLoading}
+          isLoading={otpLoading || checkingEmail}
+          isDisabled={!!emailError}
           variant="solid"
           bg="green.500"
           color="white"
