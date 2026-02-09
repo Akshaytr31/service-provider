@@ -69,8 +69,39 @@ export default function PostService() {
 
         if (providerRes.ok) {
           const providerRequest = await providerRes.json();
+          const licenses = providerRequest.licenses || [];
 
           let allServices = [];
+
+          // Helper to find license status
+          const getLicenseStatus = (subCatId) => {
+            if (!subCatId) return "N/A";
+
+            // Find ALL licenses that match this subcategory
+            const matchingLicenses = licenses.filter(
+              (l) => parseInt(l.subCategoryId) === parseInt(subCatId),
+            );
+
+            if (matchingLicenses.length === 0) return "MISSING";
+
+            // Prioritize statuses: APPROVED > PENDING > EXPIRED
+            if (matchingLicenses.some((l) => l.status === "APPROVED"))
+              return "APPROVED";
+            if (matchingLicenses.some((l) => l.status === "PENDING"))
+              return "PENDING";
+            if (matchingLicenses.some((l) => l.status === "EXPIRED"))
+              return "EXPIRED";
+
+            // Fallback for missing/unknown status
+            // If the provider request itself is APPROVED, assume undefined license status means APPROVED
+            const requestStatus = providerRequest.status;
+            return (
+              matchingLicenses[0].status ||
+              (requestStatus === "APPROVED" || requestStatus === "approved"
+                ? "APPROVED"
+                : "PENDING")
+            );
+          };
 
           // 1. Add services from servicesOffered array
           if (
@@ -89,6 +120,7 @@ export default function PostService() {
                 subCategoryId: service.subCategoryId,
                 categoryName: category?.name || "Unknown Category",
                 subCategoryName: subCategory?.name || "Unknown Subcategory",
+                licenseStatus: getLicenseStatus(service.subCategoryId),
               };
             });
           }
@@ -118,6 +150,9 @@ export default function PostService() {
                   categoryName: category.name,
                   subCategoryName: subCategory.name,
                   isPrimary: true,
+                  licenseStatus: getLicenseStatus(
+                    providerRequest.subCategoryId,
+                  ),
                 });
               }
             }
@@ -227,6 +262,23 @@ export default function PostService() {
       return;
     }
 
+    // License Check
+    const selectedService = approvedServices[selectedServiceIndex];
+    if (
+      selectedService &&
+      selectedService.licenseStatus &&
+      selectedService.licenseStatus !== "APPROVED"
+    ) {
+      toast({
+        title: "License Not Approved",
+        description: `You cannot post this service because the required license is ${selectedService.licenseStatus}. Please wait for admin approval.`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
     const res = await fetch("/api/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -324,12 +376,34 @@ export default function PostService() {
                 borderColor="gray.200"
                 icon={<Icon as={FiCheck} color="green.500" />}
               >
-                {approvedServices.map((service, index) => (
-                  <option key={index} value={index}>
-                    {service.categoryName} → {service.subCategoryName}
-                  </option>
-                ))}
+                {approvedServices.map((service, index) => {
+                  const isApproved = service.licenseStatus === "APPROVED";
+                  const statusLabel = isApproved
+                    ? ""
+                    : ` (${service.licenseStatus || "Pending Approval"})`;
+                  return (
+                    <option key={index} value={index}>
+                      {service.categoryName} → {service.subCategoryName}
+                      {statusLabel}
+                    </option>
+                  );
+                })}
               </Select>
+              {approvedServices[selectedServiceIndex]?.licenseStatus !==
+                "APPROVED" && (
+                <Text fontSize="xs" color="red.500" mt={1}>
+                  * License for{" "}
+                  <Text as="span" fontWeight="bold">
+                    {approvedServices[selectedServiceIndex]?.subCategoryName}
+                  </Text>{" "}
+                  is{" "}
+                  {approvedServices[selectedServiceIndex]?.licenseStatus ===
+                  "MISSING"
+                    ? "missing"
+                    : "pending approval"}
+                  . You cannot post this service yet.
+                </Text>
+              )}
             </FormControl>
 
             <HStack>
