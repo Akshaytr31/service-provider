@@ -628,16 +628,33 @@ export default function ProviderRequestDetails() {
               <Stack spacing={6} w="full">
                 {/* Unified Service List */}
                 {(function () {
+                  const otherServicesRaw =
+                    providerRequest.servicesOffered || [];
+
+                  // Find the root service object within servicesOffered to get extraSkills
+                  const rootServiceRaw = otherServicesRaw.find(
+                    (s) =>
+                      Number(s.categoryId) ===
+                        Number(providerRequest.categoryId) &&
+                      Number(s.subCategoryId) ===
+                        Number(providerRequest.subCategoryId),
+                  );
+
                   const rootService = {
                     categoryId: providerRequest.categoryId,
                     subCategoryId: providerRequest.subCategoryId,
-                    yearsExperience: providerRequest.yearsExperience,
-                    description: providerRequest.description,
-                    extraSkills: providerRequest.skills,
+                    yearsExperience:
+                      providerRequest.yearsExperience ||
+                      rootServiceRaw?.yearsExperience,
+                    description:
+                      providerRequest.description ||
+                      rootServiceRaw?.description,
+                    // Use skills from providerRequest if available, otherwise fallback to the found service object
+                    extraSkills:
+                      providerRequest.skills || rootServiceRaw?.extraSkills,
                     isRoot: true,
                   };
-                  const otherServicesRaw =
-                    providerRequest.servicesOffered || [];
+
                   const otherServices = otherServicesRaw
                     .filter((s) => {
                       const isSameCategory =
