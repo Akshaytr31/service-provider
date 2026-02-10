@@ -23,6 +23,7 @@ model users {
   otp                   String?           @db.VarChar(10)
   otpExpiry             DateTime?
   email_verified        Boolean           @default(false)
+  privacyPolicyAcceptedAt DateTime?       @map("privacy_policy_accepted_at")
   seekerProfile         SeekerProfile?
   providerRequests      ProviderRequest[]
   sentMessages          Message[]         @relation("SentMessages")

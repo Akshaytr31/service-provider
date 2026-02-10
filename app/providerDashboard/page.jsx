@@ -58,6 +58,7 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import ChatBox from "@/app/components/ChatBox"; // Ensure path is correct
+import PrivacyPolicyNotification from "../components/PrivacyPolicyNotification";
 
 function LicenseExpiryAlert() {
   const [alerts, setAlerts] = useState([]);
@@ -375,6 +376,7 @@ export default function ProviderDashboard() {
 
   return (
     <Box minH="100vh" bg={bg} marginTop={"70px"} pb={10}>
+      <PrivacyPolicyNotification />
       <Container maxW="container.xl" py={8}>
         {renderContent()}
       </Container>

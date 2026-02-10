@@ -25,6 +25,7 @@ import {
 } from "react-icons/fi";
 import PlatformStatsCard from "../components/seeker/StatusCard";
 import HeaderCard from "../components/seeker/HeaderCard";
+import PrivacyPolicyNotification from "../components/PrivacyPolicyNotification";
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
@@ -133,6 +134,7 @@ export default function SeekerDashboard() {
 
   return (
     <Box minH="100vh" bg="#FFFFFF" position="relative">
+      <PrivacyPolicyNotification />
       {/* HEADER / HERO SECTION */}
       <Box
         bgGradient="linear(to-br, green.50, blue.50, purple.50)"
@@ -184,7 +186,7 @@ export default function SeekerDashboard() {
           </Flex>
         </Container>
       </Box>
-      
+
       <Container maxW="8xl" px={8} pb={10}>
         <Flex gap={8} align="start" direction={{ base: "column", lg: "row" }}>
           {/* DESKTOP SIDEBAR FILTER */}
