@@ -185,7 +185,7 @@ export default function SeekerDashboard() {
         </Container>
       </Box>
       
-      <Container maxW="8xl" px={8} pb={20}>
+      <Container maxW="8xl" px={8} pb={10}>
         <Flex gap={8} align="start" direction={{ base: "column", lg: "row" }}>
           {/* DESKTOP SIDEBAR FILTER */}
           <FilterBar

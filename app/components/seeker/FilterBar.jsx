@@ -37,6 +37,7 @@ import {
   useBreakpointValue,
   Text as ChakraText,
   Box,
+  Tooltip,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import {
@@ -404,6 +405,7 @@ export default function FilterBar({
                 _hover={isCollapsed ? { bg: "green.50" } : {}}
               />
             </Flex>
+            <Divider width="80%" alignSelf="center" />
 
             {!isCollapsed ? (
               <Box p={6} flex="1" overflowY="auto" className="custom-scrollbar">
@@ -433,36 +435,75 @@ export default function FilterBar({
                 spacing={6}
                 pt={8}
                 align="center"
-                onClick={() => setIsCollapsed(false)}
-                cursor="pointer"
-                _hover={{ opacity: 0.8 }}
                 h="full"
+                as={motion.div}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                <Icon
-                  as={FiGrid}
-                  boxSize={5}
-                  color="gray.400"
-                  title="Category"
-                />
-                <Icon
-                  as={FiMapPin}
-                  boxSize={5}
-                  color="gray.400"
-                  title="Location"
-                />
-                <Icon
-                  as={FiDollarSign}
-                  boxSize={5}
-                  color="gray.400"
-                  title="Price"
-                />
-                <Icon
-                  as={FiCalendar}
-                  boxSize={5}
-                  color="gray.400"
-                  title="Date"
-                />
-                <Icon as={FiClock} boxSize={5} color="gray.400" title="Time" />
+                {[
+                  {
+                    icon: FiMapPin,
+                    label: "Location",
+                    isActive: !!filters.location,
+                    onClick: () => setIsCollapsed(false),
+                  },
+                  {
+                    icon: FiGrid,
+                    label: "Category",
+                    isActive: !!filters.categoryId,
+                    onClick: () => setIsCollapsed(false),
+                  },
+                  {
+                    icon: FiDollarSign,
+                    label: "Price",
+                    isActive: filters.minPrice > 0 || filters.maxPrice < 2000,
+                    onClick: () => setIsCollapsed(false),
+                  },
+                  {
+                    icon: FiCalendar,
+                    label: "Date",
+                    isActive: false, // Placeholder logic
+                    onClick: () => setIsCollapsed(false),
+                  },
+                  {
+                    icon: FiClock,
+                    label: "Time",
+                    isActive: false, // Placeholder logic
+                    onClick: () => setIsCollapsed(false),
+                  },
+                ].map((item, index) => (
+                  <Tooltip
+                    key={index}
+                    label={item.label}
+                    placement="right"
+                    hasArrow
+                    bg="gray.800"
+                    color="white"
+                    px={3}
+                    py={1}
+                    borderRadius="md"
+                    openDelay={0}
+                  >
+                    <IconButton
+                      icon={<Icon as={item.icon} boxSize={5} />}
+                      variant="ghost"
+                      color={item.isActive ? "green.600" : "gray.400"}
+                      bg={item.isActive ? "green.50" : "transparent"}
+                      onClick={item.onClick}
+                      aria-label={item.label}
+                      borderRadius="full"
+                      size="lg"
+                      _hover={{
+                        bg: "green.50",
+                        color: "green.600",
+                        transform: "scale(1.1)",
+                      }}
+                      transition="all 0.2s"
+                    />
+                  </Tooltip>
+                ))}
               </VStack>
             )}
           </CardBody>

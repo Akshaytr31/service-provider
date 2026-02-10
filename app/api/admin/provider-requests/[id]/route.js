@@ -54,10 +54,7 @@ export async function GET(req, context) {
 
           // Send Email
           if (request.user?.email) {
-            const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
-            // Using a simple async fire-and-forget or await?
-            // Better to await to ensure it sends, or catch error so it doesn't block response.
-            // We'll await inside the loop for safety.
+
             try {
               await transporter.sendMail({
                 from: process.env.EMAIL_USER,
@@ -67,7 +64,6 @@ export async function GET(req, context) {
                     <p>Dear ${request.user.name || "User"},</p>
                     <p>Your license <strong>${license.name} (Version ${license.version || 1})</strong> has expired.</p>
                     <p>Please log in to your profile and upload the latest version immediately.</p>
-                    <a href="${dashboardLink}">Update License Now</a>
                 `,
               });
             } catch (e) {
@@ -157,7 +153,6 @@ export async function PATCH(req, context) {
 
       // Send Email
       if (request.user?.email) {
-        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
           to: request.user.email,
@@ -166,7 +161,6 @@ export async function PATCH(req, context) {
             <p>Dear ${request.user.name || "User"},</p>
             <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been marked as <strong>EXPIRED</strong> by the admin.</p>
             <p>Please log in to your profile and upload the latest version of this document immediately to avoid service disruption.</p>
-            <a href="${dashboardLink}">Update License Now</a>
           `,
         });
       }
@@ -216,7 +210,6 @@ export async function PATCH(req, context) {
 
       // Send Email
       if (request.user?.email) {
-        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
         try {
           await transporter.sendMail({
             from: process.env.EMAIL_USER,
@@ -226,7 +219,6 @@ export async function PATCH(req, context) {
                 <p>Dear ${request.user.name || "User"},</p>
                 <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been <strong>APPROVED</strong> by the admin.</p>
                 <p>Thank you for keeping your documentation up to date.</p>
-                <a href="${dashboardLink}">View Profile</a>
             `,
           });
         } catch (e) {
@@ -278,7 +270,6 @@ export async function PATCH(req, context) {
 
       // Send Email
       if (request.user?.email) {
-        const dashboardLink = `${process.env.NEXTAUTH_URL}/profile`;
         try {
           await transporter.sendMail({
             from: process.env.EMAIL_USER,
@@ -288,7 +279,6 @@ export async function PATCH(req, context) {
                 <p>Dear ${request.user.name || "User"},</p>
                 <p>Your license <strong>${licenseName} (Version ${licenseVersion})</strong> has been <strong>REJECTED</strong> by the admin.</p>
                 <p>Please log in to your profile to upload a valid document.</p>
-                <a href="${dashboardLink}">Update License Now</a>
             `,
           });
         } catch (e) {
