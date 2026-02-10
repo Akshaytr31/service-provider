@@ -1,4 +1,4 @@
-"use client";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
   Card,
@@ -36,13 +36,18 @@ import {
   useDisclosure,
   useBreakpointValue,
   Text as ChakraText,
-  Container,
+  Box,
 } from "@chakra-ui/react";
+import { useState } from "react";
 import {
   FiMapPin,
   FiChevronDown,
   FiDollarSign,
   FiFilter,
+  FiChevronLeft,
+  FiGrid,
+  FiClock,
+  FiCalendar,
 } from "react-icons/fi";
 
 // Extracted FilterContent component to prevent re-renders and focus loss
@@ -326,21 +331,8 @@ const FilterContent = ({
         </RangeSlider>
       </VStack>
     )}
-
-    {/* Reset Button */}
-    <Button
-      size="sm"
-      variant="ghost"
-      colorScheme="red"
-      borderRadius="full"
-      onClick={onReset}
-      w={isMobileView ? "full" : "auto"}
-    >
-      Reset
-    </Button>
   </Flex>
 );
-
 export default function FilterBar({
   filters,
   handleFilterChange,
@@ -352,83 +344,182 @@ export default function FilterBar({
   onReset,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  // Ensure we know if it's mobile to conditionally render Drawer
   const isMobile = useBreakpointValue({ base: true, lg: false });
+  const drawerPlacement =
+    useBreakpointValue({ base: "bottom", lg: "left" }) || "bottom";
 
   return (
     <>
-      {/* DESTKOP VIEW */}
-      <Card
+      {/* DESKTOP SIDEBAR - PERSISTENT & COLLAPSIBLE */}
+      <Box
         display={{ base: "none", lg: "block" }}
-        boxShadow={isScrolled ? "sm" : "none"}
-        borderTop="1px solid"
-        borderBottom="1px solid"
-        borderColor="gray.200"
-        bg="white"
-        overflow="visible"
-        transition="all 0.3s"
-        borderRadius={0}
-        w="full"
+        position="sticky"
+        top="120px"
+        h="calc(100vh - 140px)"
+        w={isCollapsed ? "80px" : "300px"}
+        minW={isCollapsed ? "80px" : "300px"}
+        zIndex={90}
+        transition="width 0.3s ease, min-width 0.3s ease"
+        bg="transparent"
       >
-        <CardBody py={2} px={0}>
-          <Container maxW="container.xl">
-            <FilterContent
-              isMobileView={false}
-              filters={filters}
-              handleFilterChange={handleFilterChange}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
-              onReset={onReset}
-            />
-          </Container>
-        </CardBody>
-      </Card>
+        <Card
+          variant="outline"
+          borderColor="gray.200"
+          borderRadius="xl"
+          bg="white"
+          h="full"
+          shadow="sm"
+          overflow="hidden"
+        >
+          <CardBody p={0} display="flex" flexDirection="column" h="full">
+            <Flex
+              justify={isCollapsed ? "center" : "space-between"}
+              align="center"
+              p={4}
+              borderBottom={isCollapsed ? "none" : "1px solid"}
+              borderColor="gray.100"
+              direction={isCollapsed ? "column" : "row"}
+              gap={isCollapsed ? 4 : 0}
+            >
+              {!isCollapsed && (
+                <ChakraText fontWeight="bold" fontSize="lg" color="gray.800">
+                  Filters
+                </ChakraText>
+              )}
 
-      {/* MOBILE VIEW (Floating Action Button style or similar) */}
-      <Flex display={{ base: "flex", lg: "none" }} justify="flex-end">
+              <IconButton
+                icon={
+                  isCollapsed ? (
+                    <Icon as={FiFilter} boxSize={6} color="green.600" />
+                  ) : (
+                    <Icon as={FiChevronLeft} />
+                  )
+                }
+                size={isCollapsed ? "lg" : "sm"}
+                variant="ghost"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                aria-label={isCollapsed ? "Expand filters" : "Collapse filters"}
+                _hover={isCollapsed ? { bg: "green.50" } : {}}
+              />
+            </Flex>
+
+            {!isCollapsed ? (
+              <Box p={6} flex="1" overflowY="auto" className="custom-scrollbar">
+                <Flex justify="flex-end" mb={2}>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="red"
+                    onClick={onReset}
+                  >
+                    Clear All
+                  </Button>
+                </Flex>
+                <FilterContent
+                  isMobileView={true} // Reusing vertical layout
+                  filters={filters}
+                  handleFilterChange={handleFilterChange}
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  priceRange={priceRange}
+                  setPriceRange={setPriceRange}
+                  onReset={onReset}
+                />
+              </Box>
+            ) : (
+              <VStack
+                spacing={6}
+                pt={8}
+                align="center"
+                onClick={() => setIsCollapsed(false)}
+                cursor="pointer"
+                _hover={{ opacity: 0.8 }}
+                h="full"
+              >
+                <Icon
+                  as={FiGrid}
+                  boxSize={5}
+                  color="gray.400"
+                  title="Category"
+                />
+                <Icon
+                  as={FiMapPin}
+                  boxSize={5}
+                  color="gray.400"
+                  title="Location"
+                />
+                <Icon
+                  as={FiDollarSign}
+                  boxSize={5}
+                  color="gray.400"
+                  title="Price"
+                />
+                <Icon
+                  as={FiCalendar}
+                  boxSize={5}
+                  color="gray.400"
+                  title="Date"
+                />
+                <Icon as={FiClock} boxSize={5} color="gray.400" title="Time" />
+              </VStack>
+            )}
+          </CardBody>
+        </Card>
+      </Box>
+
+      {/* MOBILE TRIGGER - Right Side Floating Button */}
+      <Flex
+        display={{ base: "flex", lg: "none" }}
+        justify="flex-end"
+        position="fixed"
+        top="70px"
+        right="20px"
+        zIndex={100}
+      >
         <Button
           leftIcon={<Icon as={FiFilter} />}
+          variant="ghost"
           colorScheme="green"
           borderRadius="full"
-          shadow="xl"
           onClick={onOpen}
-          bg="white"
-          color="green.600"
-          _hover={{ bg: "green.50" }}
+          size="lg"
         >
           Filters
         </Button>
       </Flex>
 
-      {/* MOBILE DRAWER */}
-      <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
-        <DrawerOverlay />
-        <DrawerContent borderTopRadius="2xl">
-          <DrawerCloseButton />
-          <DrawerHeader borderBottomWidth="1px">Filters</DrawerHeader>
-          <DrawerBody py={6}>
-            <FilterContent
-              isMobileView={true}
-              filters={filters}
-              handleFilterChange={handleFilterChange}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
-              onReset={onReset}
-            />
-          </DrawerBody>
-          <DrawerFooter borderTopWidth="1px">
-            <Button variant="outline" mr={3} onClick={onReset} w="full">
-              Reset
-            </Button>
-            <Button colorScheme="green" onClick={onClose} w="full">
-              Done
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+      {/* MOBILE DRAWER (Only for Mobile View) */}
+      {isMobile && (
+        <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
+          <DrawerOverlay />
+          <DrawerContent borderTopRadius="2xl">
+            <DrawerCloseButton />
+            <DrawerHeader borderBottomWidth="1px">Filters</DrawerHeader>
+            <DrawerBody py={6}>
+              <FilterContent
+                isMobileView={true}
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                onReset={onReset}
+              />
+            </DrawerBody>
+            <DrawerFooter borderTopWidth="1px">
+              <Button variant="outline" mr={3} onClick={onReset} w="full">
+                Reset
+              </Button>
+              <Button colorScheme="green" onClick={onClose} w="full">
+                Done
+              </Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      )}
     </>
   );
 }

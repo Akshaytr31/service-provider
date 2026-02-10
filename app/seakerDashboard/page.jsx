@@ -16,7 +16,15 @@ import ServiceCard from "../components/seeker/ServiceCard";
 import FilterBar from "../components/seeker/FilterBar";
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiFilter } from "react-icons/fi";
+import {
+  FiFilter,
+  FiUserCheck,
+  FiBriefcase,
+  FiAward,
+  FiShield,
+} from "react-icons/fi";
+import PlatformStatsCard from "../components/seeker/StatusCard";
+import HeaderCard from "../components/seeker/HeaderCard";
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
@@ -124,131 +132,165 @@ export default function SeekerDashboard() {
   }, [services, filters, selectedCategory]);
 
   return (
-    <Box minH="100vh" bg="#FAFAFA" pt="80px" pb={20} position="relative">
-      {/* BACKGROUND DECORATION */}
+    <Box minH="100vh" bg="#FFFFFF" position="relative">
+      {/* HEADER / HERO SECTION */}
       <Box
-        position="absolute"
-        top="0"
-        left="0"
-        right="0"
-        h="400px"
-        bgGradient="linear(to-b, green.50, transparent)"
-        zIndex="0"
-      />
-
-      <Container maxW="container.xl" position="relative" zIndex={1}>
-        {/* HERO SECTION - Compact */}
-        <VStack spacing={4} mb={6} textAlign="center" pt={8}>
-          <Heading
-            as="h1"
-            size="2xl"
-            color="green.900"
-            fontWeight="900"
-            letterSpacing="-0.02em"
-          >
-            Find Expert Services
-          </Heading>
-          <Text color="gray.500" fontSize="lg" maxW="2xl">
-            Connect with verified professionals for any job.
-          </Text>
-        </VStack>
-      </Container>
-
-      {/* STICKY FILTER BAR */}
-      <Box position="sticky" top="70px" zIndex={100} mb={10} width="full">
-        <FilterBar
-          filters={filters}
-          handleFilterChange={handleFilterChange}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          isScrolled={isScrolled}
-          onReset={() => {
-            setFilters({
-              categoryId: "",
-              subCategoryId: "",
-              location: "",
-              minPrice: 0,
-              maxPrice: 1000,
-            });
-            setPriceRange([0, 1000]);
-          }}
+        bgGradient="linear(to-br, green.50, blue.50, purple.50)"
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        pt={24}
+        pb={12}
+        px={8}
+        mb={8}
+        position="relative"
+        overflow="hidden"
+      >
+        {/* Decorative shapes */}
+        <Box
+          position="absolute"
+          top="-50px"
+          right="-50px"
+          w="200px"
+          h="200px"
+          borderRadius="full"
+          bg="green.100"
+          opacity={0.3}
+          filter="blur(40px)"
         />
+        <Box
+          position="absolute"
+          bottom="-30px"
+          left="-30px"
+          w="150px"
+          h="150px"
+          borderRadius="full"
+          bg="blue.100"
+          opacity={0.3}
+          filter="blur(40px)"
+        />
+
+        <Container maxW="8xl" position="relative" zIndex={1}>
+          <Flex
+            justify="space-between"
+            align="center"
+            direction={{ base: "column", lg: "row" }}
+            gap={8}
+          >
+            {/* Left Column */}
+            <HeaderCard />
+
+            {/* Right Column - Stats Card */}
+            <PlatformStatsCard />
+          </Flex>
+        </Container>
       </Box>
+      
+      <Container maxW="8xl" px={8} pb={20}>
+        <Flex gap={8} align="start" direction={{ base: "column", lg: "row" }}>
+          {/* DESKTOP SIDEBAR FILTER */}
+          <FilterBar
+            filters={filters}
+            handleFilterChange={handleFilterChange}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            isScrolled={isScrolled}
+            onReset={() => {
+              setFilters({
+                categoryId: "",
+                subCategoryId: "",
+                location: "",
+                minPrice: 0,
+                maxPrice: 3000,
+              });
+              setPriceRange([0, 3000]);
+            }}
+          />
 
-      <Container maxW="container.xl" position="relative" zIndex={1}>
-        {/* RESULTS GRID */}
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <Skeleton
-                  key={i}
-                  height="340px"
-                  borderRadius="2xl"
-                  startColor="white"
-                  endColor="gray.100"
-                />
-              ))}
-            </SimpleGrid>
-          ) : (
-            <Box minH="400px">
-              <Flex justify="space-between" align="center" mb={6}>
-                <Text color="gray.500" fontSize="sm" fontWeight="medium">
-                  Showing{" "}
-                  <Text as="span" color="green.600" fontWeight="bold">
-                    {filteredServices.length}
-                  </Text>{" "}
-                  results
-                </Text>
-              </Flex>
-
-              <MotionGrid
-                templateColumns="repeat(auto-fill, minmax(280px, 1fr))"
-                gap={6}
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: {
-                      staggerChildren: 0.05,
-                    },
-                  },
-                }}
-              >
-                {filteredServices.map((service) => (
-                  <ServiceCard key={service.id} service={service} />
-                ))}
-              </MotionGrid>
-
-              {!loading && filteredServices.length === 0 && (
-                <Flex
-                  direction="column"
-                  align="center"
-                  justify="center"
-                  py={20}
-                  bg="white"
-                  borderRadius="3xl"
-                  border="1px dashed"
-                  borderColor="gray.200"
+          {/* RESULTS GRID - Takes remaining space */}
+          <Box flex="1" w="full" minW="0">
+            <AnimatePresence mode="wait">
+              {loading ? (
+                <SimpleGrid
+                  columns={{ base: 1, md: 2, lg: 3, xl: 3, "2xl": 4 }} // Adjusted columns for wider container
+                  spacing={6}
                 >
-                  <Box p={4} bg="gray.50" borderRadius="full" mb={4}>
-                    <Icon as={FiFilter} w={8} h={8} color="gray.400" />
-                  </Box>
-                  <Heading size="md" color="gray.700" mb={2}>
-                    No matches found
-                  </Heading>
-                  <Text color="gray.400">
-                    Try adjusting your filters to see more results.
-                  </Text>
-                </Flex>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <Skeleton
+                      key={i}
+                      height="380px"
+                      borderRadius="xl"
+                      startColor="gray.50"
+                      endColor="gray.100"
+                    />
+                  ))}
+                </SimpleGrid>
+              ) : (
+                <Box minH="400px">
+                  <Flex justify="space-between" align="center" mb={6}>
+                    <Text color="gray.500" fontSize="sm" fontWeight="medium">
+                      Showing{" "}
+                      <Text as="span" color="green.600" fontWeight="bold">
+                        {filteredServices.length}
+                      </Text>{" "}
+                      results
+                    </Text>
+                  </Flex>
+
+                  <MotionGrid
+                    templateColumns="repeat(auto-fill, minmax(300px, 1fr))" // Slightly wider cards if needed
+                    gap={6}
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: {
+                        opacity: 1,
+                        transition: {
+                          staggerChildren: 0.05,
+                        },
+                      },
+                    }}
+                  >
+                    {filteredServices.map((service) => (
+                      <ServiceCard key={service.id} service={service} />
+                    ))}
+                  </MotionGrid>
+
+                  {!loading && filteredServices.length === 0 && (
+                    <Flex
+                      direction="column"
+                      align="center"
+                      justify="center"
+                      py={24}
+                      bg="gray.50"
+                      borderRadius="2xl"
+                      border="1px dashed"
+                      borderColor="gray.200"
+                    >
+                      <Box
+                        p={4}
+                        bg="white"
+                        borderRadius="full"
+                        mb={4}
+                        shadow="sm"
+                      >
+                        <Icon as={FiFilter} w={8} h={8} color="gray.400" />
+                      </Box>
+                      <Heading size="md" color="gray.700" mb={2}>
+                        No matches found
+                      </Heading>
+                      <Text color="gray.400">
+                        Try adjusting your filters to see more results.
+                      </Text>
+                    </Flex>
+                  )}
+                </Box>
               )}
-            </Box>
-          )}
-        </AnimatePresence>
+            </AnimatePresence>
+          </Box>
+        </Flex>
       </Container>
     </Box>
   );
