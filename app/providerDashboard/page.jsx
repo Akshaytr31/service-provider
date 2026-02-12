@@ -38,6 +38,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import PostService from "../components/PostServices";
 import { useState, useEffect, useRef } from "react";
+import BookingRequests from "../components/provider/BookingRequests";
+import { motion } from "framer-motion";
 import {
   FiGrid,
   FiList,
@@ -773,151 +775,7 @@ function ServicesPreviewPreview() {
 // ---------------- EXISTING SUB-COMPONENTS (Modified Style) ---------------- //
 
 function RequestsView({ onBack }) {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const toast = useToast();
-
-  const fetchBookings = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/bookings");
-      if (res.ok) {
-        const data = await res.json();
-        setBookings(Array.isArray(data) ? data : []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch bookings", error);
-      toast({ title: "Failed to load bookings", status: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const handleUpdateStatus = async (id, status) => {
-    try {
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        toast({ title: `Booking ${status}`, status: "success" });
-        fetchBookings();
-      } else {
-        toast({ title: "Failed to update", status: "error" });
-      }
-    } catch (error) {
-      toast({ title: "Error updating booking", status: "error" });
-    }
-  };
-
-  return (
-    <Box mt={6}>
-      <Button
-        mb={6}
-        variant="ghost"
-        colorScheme="black"
-        onClick={onBack}
-        leftIcon={<FiArrowLeft />}
-      >
-        Back to Dashboard
-      </Button>
-      <Heading mb={6} color="green.600">
-        Booking Requests
-      </Heading>
-
-      {loading ? (
-        <Flex justify="center">
-          <Spinner />
-        </Flex>
-      ) : bookings.length === 0 ? (
-        <Text color="gray.500">No bookings found.</Text>
-      ) : (
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          {bookings.map((booking) => (
-            <Card
-              key={booking.id}
-              borderTop="4px solid"
-              borderColor={
-                booking.status === "CONFIRMED"
-                  ? "green.400"
-                  : booking.status === "REJECTED"
-                    ? "red.400"
-                    : "orange.400"
-              }
-            >
-              <CardBody>
-                <Flex justify="space-between" mb={4}>
-                  <VStack align="start" spacing={1}>
-                    <Text fontWeight="bold" fontSize="lg">
-                      {booking.service?.title}
-                    </Text>
-                    <Badge
-                      colorScheme={
-                        booking.status === "CONFIRMED"
-                          ? "green"
-                          : booking.status === "REJECTED"
-                            ? "red"
-                            : "orange"
-                      }
-                    >
-                      {booking.status}
-                    </Badge>
-                  </VStack>
-                  <Text fontWeight="bold" color="green.600">
-                    ₹{booking.service?.price}
-                  </Text>
-                </Flex>
-
-                <Stack spacing={3} mb={6}>
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiCalendar} color="gray.400" />
-                    <Text>{new Date(booking.date).toLocaleDateString()}</Text>
-                  </Flex>
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiClock} color="gray.400" />
-                    <Text>{booking.time}</Text>
-                  </Flex>
-                  <Flex align="center" gap={2}>
-                    <Icon as={FiUsers} color="gray.400" />
-                    <Text>
-                      {booking.seeker?.name} ({booking.seeker?.mobile})
-                    </Text>
-                  </Flex>
-                </Stack>
-
-                {booking.status === "PENDING" && (
-                  <Flex gap={3}>
-                    <Button
-                      flex={1}
-                      colorScheme="green"
-                      onClick={() =>
-                        handleUpdateStatus(booking.id, "CONFIRMED")
-                      }
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      flex={1}
-                      colorScheme="red"
-                      variant="outline"
-                      onClick={() => handleUpdateStatus(booking.id, "REJECTED")}
-                    >
-                      Decline
-                    </Button>
-                  </Flex>
-                )}
-              </CardBody>
-            </Card>
-          ))}
-        </SimpleGrid>
-      )}
-    </Box>
-  );
+  return <BookingRequests onBack={onBack} />;
 }
 
 function ServicesView({ onBack }) {
