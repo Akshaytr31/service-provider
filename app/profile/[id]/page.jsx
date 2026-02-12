@@ -53,7 +53,7 @@ import {
   FiHome,
   FiHash,
 } from "react-icons/fi";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -61,6 +61,7 @@ const MotionStack = motion(Stack);
 
 export default function PublicProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const { id } = params;
 
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,11 @@ export default function PublicProfilePage() {
         setProfile(data.profile || {});
         setUser(data.user || {});
         setProviderRequest(data.providerRequest || null);
+
+        // Redirect to slug if accessing by ID and slug exists
+        if (data.user?.slug && id !== data.user.slug && !isNaN(parseInt(id))) {
+          router.replace(`/profile/${data.user.slug}`);
+        }
       } catch (err) {
         console.error("Failed to fetch profile", err);
         setError(err.message);

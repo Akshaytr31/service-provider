@@ -3,15 +3,19 @@ import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
   try {
-    const { id: idString } = await params;
-    const id = parseInt(idString);
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
+    const isId = !isNaN(id);
 
-    if (isNaN(id)) {
-      return NextResponse.json({ message: "Invalid ID" }, { status: 400 });
+    let whereClause = {};
+    if (isId) {
+      whereClause = { id: id };
+    } else {
+      whereClause = { slug: idParam };
     }
 
     const user = await prisma.users.findUnique({
-      where: { id: id },
+      where: whereClause,
       include: {
         seekerProfile: true,
         providerRequests: {
@@ -82,6 +86,7 @@ export async function GET(req, { params }) {
       email: user.email,
       mobile: user.mobile,
       isProviderAtFirst: user.isProviderAtFirst,
+      slug: user.slug,
     };
 
     return NextResponse.json(

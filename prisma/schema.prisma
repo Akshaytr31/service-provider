@@ -11,6 +11,7 @@ model users {
   id                    Int               @id @default(autoincrement())
   name                  String?           @db.VarChar(255)
   email                 String?           @unique @db.VarChar(255)
+  slug                  String?           @unique @db.VarChar(255)
   image                 String?           @db.Text
   role                  String            @default("seeker") @db.VarChar(20)
   providerRequestStatus String            @default("none") @db.VarChar(20)

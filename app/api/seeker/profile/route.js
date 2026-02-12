@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { NextResponse } from "next/server";
+import { generateUniqueSlug } from "@/lib/slug";
 
 export async function GET() {
   try {
@@ -32,6 +33,7 @@ export async function GET() {
       dateOfBirth: user.dateOfBirth,
       image: user.image,
       isProviderAtFirst: user.isProviderAtFirst,
+      slug: user.slug,
     };
 
     return NextResponse.json(
@@ -76,6 +78,7 @@ export async function POST(req) {
       establishmentYear,
       trnNumber,
       businessExpiryDate,
+      slug,
       // Common
       gender,
       address,
@@ -103,6 +106,29 @@ export async function POST(req) {
         await tx.users.update({
           where: { email: userEmail },
           data: { role: "seeker" },
+        });
+      }
+
+      // 2.5 Update/Generate Slug
+      let newSlug = slug;
+
+      // If no slug provided and user has none, auto-generate from name
+      if (!newSlug && !user.slug) {
+        const nameSource =
+          firstName && lastName
+            ? `${firstName} ${lastName}`
+            : businessName || user.name || "user";
+        newSlug = await generateUniqueSlug(nameSource, tx.users);
+      }
+      // If slug provided and different, ensure uniqueness
+      else if (newSlug && newSlug !== user.slug) {
+        newSlug = await generateUniqueSlug(newSlug, tx.users);
+      }
+
+      if (newSlug && newSlug !== user.slug) {
+        await tx.users.update({
+          where: { email: userEmail },
+          data: { slug: newSlug },
         });
       }
 

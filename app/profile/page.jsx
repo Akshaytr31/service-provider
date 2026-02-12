@@ -156,7 +156,7 @@ export default function ProfilePage() {
   // Share functionality
   const handleShare = () => {
     if (!user?.id) return;
-    const shareUrl = `${window.location.origin}/profile/${user.id}`;
+    const shareUrl = `${window.location.origin}/profile/${form.slug || user.id}`;
     navigator.clipboard.writeText(shareUrl);
     toast({
       title: "Link Copied!",
@@ -186,6 +186,7 @@ export default function ProfilePage() {
     address: "",
     zipCode: "",
     userType: "individual",
+    slug: "",
     businessName: "",
     businessType: "",
   });
@@ -229,7 +230,9 @@ export default function ProfilePage() {
         country: profileData.country || "",
         address: profileData.address || "",
         zipCode: profileData.zipCode || "",
+        zipCode: profileData.zipCode || "",
         userType: profileData.userType || "individual",
+        slug: userData.slug || "",
         businessName: profileData.businessName || "",
         businessType: profileData.businessType || "",
       });
@@ -555,6 +558,10 @@ export default function ProfilePage() {
                                 value={form.lastName}
                               />
                               <DisplayField
+                                label="Public Profile Slug"
+                                value={form.slug}
+                              />
+                              <DisplayField
                                 label="Gender"
                                 value={form.gender}
                               />
@@ -670,6 +677,31 @@ export default function ProfilePage() {
                                 borderRadius="xl"
                                 focusBorderColor="green.400"
                               />
+                            </FormControl>
+
+                            <FormControl>
+                              <FormLabel fontSize="sm" color="gray.600">
+                                Public Profile Slug
+                              </FormLabel>
+                              <Input
+                                value={form.slug}
+                                placeholder="e.g. john-doe-123"
+                                onChange={(e) =>
+                                  setForm({
+                                    ...form,
+                                    slug: e.target.value
+                                      .toLowerCase()
+                                      .replace(/[^a-z0-9-]/g, ""),
+                                  })
+                                }
+                                borderRadius="xl"
+                                focusBorderColor="green.400"
+                              />
+                              <Text fontSize="xs" color="gray.400" mt={1}>
+                                Your profile will be available at:{" "}
+                                {window.location.host}/profile/
+                                {form.slug || user?.id}
+                              </Text>
                             </FormControl>
 
                             <FormControl>
@@ -982,7 +1014,6 @@ export default function ProfilePage() {
                               borderRadius="xl"
                               boxShadow="md"
                               variant="surface"
-
                               _hover={{
                                 transform: "translateY(-1px)",
                                 boxShadow: "lg",
@@ -1374,7 +1405,7 @@ export default function ProfilePage() {
                                 label="Gender"
                                 value={providerRequest.gender}
                               />
-                              {!isEditing && (
+                              {/* {!isEditing && (
                                 <>
                                   <DisplayField
                                     label="ID Type"
@@ -1385,7 +1416,7 @@ export default function ProfilePage() {
                                     value={providerRequest.idNumber}
                                   />
                                 </>
-                              )}
+                              )} */}
                             </>
                           )}
                         </Grid>
