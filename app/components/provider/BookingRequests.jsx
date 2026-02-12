@@ -29,6 +29,8 @@ import {
   InputLeftElement,
   useToast,
   Avatar,
+  IconButton,
+  Spacer,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -40,11 +42,12 @@ import {
   FiList,
   FiSearch,
   FiFilter,
+  FiMessageSquare,
 } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 
-export default function BookingRequests({ onBack }) {
+export default function BookingRequests({ onBack, onMessage }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -323,6 +326,22 @@ export default function BookingRequests({ onBack }) {
                           {booking.seeker?.mobile || "No mobile"}
                         </Text>
                       </Box>
+                      <Spacer />
+                      <IconButton
+                        icon={<FiMessageSquare />}
+                        size="sm"
+                        colorScheme="blue"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMessage(booking.seeker);
+                        }}
+                        aria-label="Message Seeker"
+                        borderRadius="full"
+                        bg="white"
+                        boxShadow="sm"
+                        _hover={{ bg: "blue.50", color: "blue.600" }}
+                      />
                     </HStack>
                   </CardBody>
 

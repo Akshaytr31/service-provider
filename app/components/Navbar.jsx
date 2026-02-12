@@ -13,6 +13,7 @@ import {
   HStack,
   Divider,
   VStack,
+  Portal,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,6 +28,9 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import ConfirmDialog from "./ConfirmDialog";
 import NotificationBell from "./NotificationBell";
+import MessageNotification from "./MessageNotification";
+import ChatBox from "./ChatBox";
+import { useState } from "react";
 
 const MotionBox = motion(Box);
 
@@ -44,6 +48,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const [selectedChatUser, setSelectedChatUser] = useState(null);
 
   const user = session?.user;
 
@@ -96,14 +101,9 @@ export default function Navbar() {
           <Flex gap={6} align="center" display={{ base: "none", md: "flex" }}>
             <HStack spacing={4}>
               <NotificationBell />
-              <IconButton
-                variant="ghost"
-                icon={<EmailIcon boxSize={5} />}
-                color="gray.600"
-                borderRadius="full"
-                _hover={{ bg: "green.50", color: "green.600" }}
-                aria-label="Messages"
-              />
+              {session && (
+                <MessageNotification onOpenChat={setSelectedChatUser} />
+              )}
             </HStack>
 
             <Divider orientation="vertical" h="24px" borderColor="gray.200" />
@@ -310,6 +310,17 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </Container>
+
+      {/* Global ChatBox */}
+      <Portal>
+        <ChatBox
+          isOpen={!!selectedChatUser}
+          onClose={() => setSelectedChatUser(null)}
+          otherUserId={selectedChatUser?.id}
+          otherUserName={selectedChatUser?.name}
+          otherUserAvatar={selectedChatUser?.image}
+        />
+      </Portal>
     </Box>
   );
 }

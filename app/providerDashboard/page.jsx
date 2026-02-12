@@ -348,7 +348,12 @@ export default function ProviderDashboard() {
   const renderContent = () => {
     switch (activeView) {
       case "requests":
-        return <RequestsView onBack={() => setActiveView("home")} />;
+        return (
+          <RequestsView
+            onBack={() => setActiveView("home")}
+            onMessage={setSelectedChatUser}
+          />
+        );
       case "services":
         return <ServicesView onBack={() => setActiveView("home")} />;
       case "messages":
@@ -774,8 +779,8 @@ function ServicesPreviewPreview() {
 
 // ---------------- EXISTING SUB-COMPONENTS (Modified Style) ---------------- //
 
-function RequestsView({ onBack }) {
-  return <BookingRequests onBack={onBack} />;
+function RequestsView({ onBack, onMessage }) {
+  return <BookingRequests onBack={onBack} onMessage={onMessage} />;
 }
 
 function ServicesView({ onBack }) {

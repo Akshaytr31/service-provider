@@ -116,7 +116,13 @@ export async function GET(req) {
       },
       include: {
         seeker: {
-          select: { name: true, email: true, image: true, mobile: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            mobile: true,
+          },
         },
         provider: { select: { name: true, email: true, id: true } },
         service: { select: { title: true, price: true } },
