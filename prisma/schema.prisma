@@ -29,6 +29,8 @@ model users {
   providerRequests      ProviderRequest[]
   sentMessages          Message[]         @relation("SentMessages")
   receivedMessages      Message[]         @relation("ReceivedMessages")
+  bookings              Booking[]         @relation("SeekerBookings")
+  providerBookings      Booking[]         @relation("ProviderBookings")
 
   @@map("users")
 }
@@ -57,6 +59,7 @@ model services {
   servicesOffered Json?     @map("services_offered")
   status        String      @default("ACTIVE") @db.VarChar(20)
   subCategory   SubCategory @relation(fields: [subCategoryId], references: [id])
+  bookings      Booking[]
    
   @@index([subCategoryId], map: "services_sub_category_id_fkey")
   @@map("services")
@@ -209,4 +212,21 @@ model Message {
   @@index([senderId], map: "messages_sender_id_fkey")
   @@index([receiverId], map: "messages_receiver_id_fkey")
   @@map("messages")
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  seekerId   Int      @map("seeker_id")
+  providerId Int      @map("provider_id")
+  serviceId  Int      @map("service_id")
+  date       DateTime
+  time       String   @db.VarChar(20)
+  status     String   @default("PENDING") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  seeker   users    @relation("SeekerBookings", fields: [seekerId], references: [id])
+  provider users    @relation("ProviderBookings", fields: [providerId], references: [id])
+  service  services @relation(fields: [serviceId], references: [id])
+
+  @@map("bookings")
 }

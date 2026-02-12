@@ -56,6 +56,7 @@ import {
   FiMessageSquare,
   FiAlertTriangle,
   FiAlertCircle,
+  FiCalendar,
 } from "react-icons/fi";
 import ChatBox from "@/app/components/ChatBox"; // Ensure path is correct
 import PrivacyPolicyNotification from "../components/PrivacyPolicyNotification";
@@ -648,25 +649,24 @@ function StatCard({ label, value, helperText, icon, color, trend }) {
 }
 
 function RequestsPreview({ onNavigate }) {
-  // Using simplified logic from RequestsView but only showing top 3
-  const [jobs, setJobs] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchJobs() {
+    async function fetchBookings() {
       try {
-        const res = await fetch("/api/provider/jobs");
+        const res = await fetch("/api/bookings");
         if (res.ok) {
           const data = await res.json();
-          setJobs(Array.isArray(data) ? data.slice(0, 3) : []);
+          setBookings(Array.isArray(data) ? data.slice(0, 3) : []);
         }
       } catch (error) {
-        console.error("Failed to fetch jobs", error);
+        console.error("Failed to fetch bookings", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchJobs();
+    fetchBookings();
   }, []);
 
   if (loading)
@@ -675,7 +675,7 @@ function RequestsPreview({ onNavigate }) {
         <Spinner color="green.500" />
       </Flex>
     );
-  if (jobs.length === 0)
+  if (bookings.length === 0)
     return (
       <Box p={6} textAlign="center">
         <Text color="gray.500">No active requests.</Text>
@@ -684,26 +684,37 @@ function RequestsPreview({ onNavigate }) {
 
   return (
     <VStack divider={<Divider />} spacing={0} align="stretch">
-      {jobs.map((job) => (
+      {bookings.map((booking) => (
         <Flex
-          key={job.id}
+          key={booking.id}
           p={4}
           justify="space-between"
           align="center"
           _hover={{ bg: "gray.50" }}
           transition="bg 0.2s"
+          cursor="pointer"
+          onClick={() => onNavigate("requests")}
         >
           <Box>
             <Text fontWeight="bold" color="gray.700" noOfLines={1}>
-              {job.title || "Request"}
+              {booking.service?.title || "Service Request"}
             </Text>
             <Text fontSize="xs" color="gray.500">
-              {job.description
-                ? job.description.substring(0, 50) + "..."
-                : "No details"}
+              {booking.seeker?.name || "Seeker"} •{" "}
+              {new Date(booking.date).toLocaleDateString()} at {booking.time}
             </Text>
           </Box>
-          <Badge colorScheme="green">{job.status || "New"}</Badge>
+          <Badge
+            colorScheme={
+              booking.status === "CONFIRMED"
+                ? "green"
+                : booking.status === "REJECTED"
+                  ? "red"
+                  : "orange"
+            }
+          >
+            {booking.status}
+          </Badge>
         </Flex>
       ))}
       <Box p={2} textAlign="center">
@@ -762,32 +773,52 @@ function ServicesPreviewPreview() {
 // ---------------- EXISTING SUB-COMPONENTS (Modified Style) ---------------- //
 
 function RequestsView({ onBack }) {
-  const [jobs, setJobs] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/bookings");
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch bookings", error);
+      toast({ title: "Failed to load bookings", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchJobs() {
-      try {
-        const res = await fetch("/api/provider/jobs");
-        if (res.ok) {
-          const data = await res.json();
-          setJobs(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch jobs", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchJobs();
+    fetchBookings();
   }, []);
+
+  const handleUpdateStatus = async (id, status) => {
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        toast({ title: `Booking ${status}`, status: "success" });
+        fetchBookings();
+      } else {
+        toast({ title: "Failed to update", status: "error" });
+      }
+    } catch (error) {
+      toast({ title: "Error updating booking", status: "error" });
+    }
+  };
 
   return (
     <Box mt={6}>
       <Button
-        position={"absolute"}
-        top={"0"}
-        left={"0"}
+        mb={6}
         variant="ghost"
         colorScheme="black"
         onClick={onBack}
@@ -796,47 +827,90 @@ function RequestsView({ onBack }) {
         Back to Dashboard
       </Button>
       <Heading mb={6} color="green.600">
-        Seeker Requests
+        Booking Requests
       </Heading>
 
       {loading ? (
-        <Flex justify="center" p={10}>
-          <Spinner color="green.500" />
+        <Flex justify="center">
+          <Spinner />
         </Flex>
-      ) : jobs.length === 0 ? (
-        <Box
-          bg="white"
-          p={10}
-          borderRadius="xl"
-          boxShadow="sm"
-          textAlign="center"
-        >
-          <Text color="gray.500">No requests found at the moment.</Text>
-        </Box>
+      ) : bookings.length === 0 ? (
+        <Text color="gray.500">No bookings found.</Text>
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          {jobs.map((job, idx) => (
+          {bookings.map((booking) => (
             <Card
-              key={job.id || idx}
-              borderRadius="xl"
-              boxShadow="md"
-              borderLeft="4px solid"
-              borderColor="green.400"
-              overflow="hidden"
+              key={booking.id}
+              borderTop="4px solid"
+              borderColor={
+                booking.status === "CONFIRMED"
+                  ? "green.400"
+                  : booking.status === "REJECTED"
+                    ? "red.400"
+                    : "orange.400"
+              }
             >
               <CardBody>
-                <Heading size="sm" mb={2} color="gray.700">
-                  {job.title || "Request"}
-                </Heading>
-                <Text fontSize="sm" color="gray.500" mb={4}>
-                  {job.description}
-                </Text>
-                <Flex justify="space-between" align="center">
-                  <Badge colorScheme="green">{job.status || "Open"}</Badge>
-                  <Text fontSize="xs" color="gray.400">
-                    {new Date(job.createdAt || Date.now()).toLocaleDateString()}
+                <Flex justify="space-between" mb={4}>
+                  <VStack align="start" spacing={1}>
+                    <Text fontWeight="bold" fontSize="lg">
+                      {booking.service?.title}
+                    </Text>
+                    <Badge
+                      colorScheme={
+                        booking.status === "CONFIRMED"
+                          ? "green"
+                          : booking.status === "REJECTED"
+                            ? "red"
+                            : "orange"
+                      }
+                    >
+                      {booking.status}
+                    </Badge>
+                  </VStack>
+                  <Text fontWeight="bold" color="green.600">
+                    ₹{booking.service?.price}
                   </Text>
                 </Flex>
+
+                <Stack spacing={3} mb={6}>
+                  <Flex align="center" gap={2}>
+                    <Icon as={FiCalendar} color="gray.400" />
+                    <Text>{new Date(booking.date).toLocaleDateString()}</Text>
+                  </Flex>
+                  <Flex align="center" gap={2}>
+                    <Icon as={FiClock} color="gray.400" />
+                    <Text>{booking.time}</Text>
+                  </Flex>
+                  <Flex align="center" gap={2}>
+                    <Icon as={FiUsers} color="gray.400" />
+                    <Text>
+                      {booking.seeker?.name} ({booking.seeker?.mobile})
+                    </Text>
+                  </Flex>
+                </Stack>
+
+                {booking.status === "PENDING" && (
+                  <Flex gap={3}>
+                    <Button
+                      flex={1}
+                      colorScheme="green"
+                      onClick={() =>
+                        handleUpdateStatus(booking.id, "CONFIRMED")
+                      }
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      flex={1}
+                      colorScheme="red"
+                      variant="outline"
+                      onClick={() => handleUpdateStatus(booking.id, "REJECTED")}
+                    >
+                      Decline
+                    </Button>
+                  </Flex>
+                )}
               </CardBody>
             </Card>
           ))}

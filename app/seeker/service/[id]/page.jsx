@@ -497,12 +497,7 @@ export default function ServiceDetailsPage() {
                   }}
                   transition="all 0.3s"
                   onClick={() => {
-                    toast({
-                      title: "Booking Initiated",
-                      description: "We are connecting you with the provider...",
-                      status: "success",
-                      duration: 3000,
-                    });
+                    router.push(`/seeker/service/${params.id}/book`);
                   }}
                 >
                   Book Service
