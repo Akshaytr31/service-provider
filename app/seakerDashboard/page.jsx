@@ -34,6 +34,7 @@ export default function SeekerDashboard() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [unavailableIds, setUnavailableIds] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Filter States
@@ -43,6 +44,8 @@ export default function SeekerDashboard() {
     location: "",
     minPrice: 0,
     maxPrice: 1000,
+    date: "",
+    time: "",
   });
 
   const [priceRange, setPriceRange] = useState([0, 1000]); // Visual state for slider
@@ -56,31 +59,65 @@ export default function SeekerDashboard() {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCategories = async () => {
       try {
-        const [servicesRes, categoriesRes] = await Promise.all([
-          fetch("/api/services"),
-          fetch("/api/categories"),
-        ]);
-
-        if (!servicesRes.ok || !categoriesRes.ok) {
-          throw new Error("Failed to fetch data");
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data.categories || data);
         }
-
-        const servicesData = await servicesRes.json();
-        const categoriesData = await categoriesRes.json();
-
-        setServices(servicesData);
-        setCategories(categoriesData.categories || categoriesData); // Handle potential structure difference
       } catch (error) {
-        console.error("Failed to fetch data", error);
+        console.error("Failed to fetch categories", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/services");
+        if (res.ok) {
+          const data = await res.json();
+          setServices(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch services", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchServices();
   }, []);
+
+  // Fetch Availability (unavailable service IDs) when Date/Time changes
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!filters.date || !filters.time) {
+        setUnavailableIds([]);
+        return;
+      }
+
+      try {
+        const params = new URLSearchParams();
+        params.append("date", filters.date);
+        params.append("time", filters.time);
+
+        const res = await fetch(`/api/availability?${params.toString()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUnavailableIds(data.serviceIds || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch availability", error);
+      }
+    };
+
+    fetchAvailability();
+  }, [filters.date, filters.time]);
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({
@@ -128,9 +165,12 @@ export default function SeekerDashboard() {
       const price = Number(service.price);
       if (price < filters.minPrice || price > filters.maxPrice) return false;
 
+      // 5. Availability (Date & Time)
+      if (unavailableIds.includes(service.id)) return false;
+
       return true;
     });
-  }, [services, filters, selectedCategory]);
+  }, [services, filters, selectedCategory, unavailableIds]);
 
   return (
     <Box minH="100vh" bg="#FFFFFF" position="relative">
@@ -205,8 +245,11 @@ export default function SeekerDashboard() {
                 location: "",
                 minPrice: 0,
                 maxPrice: 3000,
+                date: "",
+                time: "",
               });
               setPriceRange([0, 3000]);
+              setUnavailableIds([]);
             }}
           />
 

@@ -228,6 +228,76 @@ const FilterContent = ({
       </>
     )}
 
+    {isMobileView && <Divider />}
+
+    {/* Date Input */}
+    <Flex
+      align="center"
+      gap={2}
+      maxW={!isMobileView ? { lg: "180px" } : "full"}
+      w="full"
+      border="1px solid"
+      borderColor="gray.200"
+      borderRadius="lg"
+      px={2}
+      h="40px"
+    >
+      <Icon as={FiCalendar} color="green.500" />
+      <Input
+        type="date"
+        variant="unstyled"
+        placeholder="Date"
+        value={filters.date || ""}
+        min={new Date().toISOString().split("T")[0]}
+        onChange={(e) => handleFilterChange("date", e.target.value)}
+        _placeholder={{ color: "gray.400", fontWeight: "medium" }}
+        h="full"
+        fontSize="sm"
+      />
+    </Flex>
+
+    {/* Time Input */}
+    <Flex
+      align="center"
+      gap={2}
+      maxW={!isMobileView ? { lg: "140px" } : "full"}
+      w="full"
+      border="1px solid"
+      borderColor="gray.200"
+      borderRadius="lg"
+      px={2}
+      h="40px"
+    >
+      <Icon as={FiClock} color="green.500" />
+      <Input
+        as="select"
+        variant="unstyled"
+        value={filters.time || ""}
+        onChange={(e) => handleFilterChange("time", e.target.value)}
+        placeholder="Time"
+        h="full"
+        fontSize="sm"
+        color={filters.time ? "gray.800" : "gray.400"}
+      >
+        <option value="">Time</option>
+        {[
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "13:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+        ].map((time) => (
+          <option key={time} value={time}>
+            {time}
+          </option>
+        ))}
+      </Input>
+    </Flex>
+
     {!isMobileView && (
       <Divider
         orientation="vertical"
@@ -464,13 +534,13 @@ export default function FilterBar({
                   {
                     icon: FiCalendar,
                     label: "Date",
-                    isActive: false, // Placeholder logic
+                    isActive: !!filters.date,
                     onClick: () => setIsCollapsed(false),
                   },
                   {
                     icon: FiClock,
                     label: "Time",
-                    isActive: false, // Placeholder logic
+                    isActive: !!filters.time,
                     onClick: () => setIsCollapsed(false),
                   },
                 ].map((item, index) => (

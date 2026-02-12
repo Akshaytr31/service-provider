@@ -10,9 +10,10 @@ export async function GET(req) {
   const session = await getServerSession(authOptions);
   const { searchParams } = new URL(req.url);
   const mine = searchParams.get("mine");
+  const date = searchParams.get("date");
+  const time = searchParams.get("time");
 
-  let query =
-    "SELECT * FROM services WHERE status = 'ACTIVE' ORDER BY createdAt DESC";
+  let query = "SELECT * FROM services WHERE status = 'ACTIVE'";
   let params = [];
 
   if (mine === "true") {
