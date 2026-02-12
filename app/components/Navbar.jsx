@@ -26,6 +26,7 @@ import SearchBox from "./SearchBox";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import ConfirmDialog from "./ConfirmDialog";
+import NotificationBell from "./NotificationBell";
 
 const MotionBox = motion(Box);
 
@@ -94,14 +95,7 @@ export default function Navbar() {
           {/* Desktop Menu */}
           <Flex gap={6} align="center" display={{ base: "none", md: "flex" }}>
             <HStack spacing={4}>
-              <IconButton
-                variant="ghost"
-                icon={<BellIcon boxSize={5} />}
-                color="gray.600"
-                borderRadius="full"
-                _hover={{ bg: "green.50", color: "green.600" }}
-                aria-label="Notifications"
-              />
+              <NotificationBell />
               <IconButton
                 variant="ghost"
                 icon={<EmailIcon boxSize={5} />}

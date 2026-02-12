@@ -63,7 +63,7 @@ export async function POST(req) {
         serviceId: parseInt(serviceId),
         date: new Date(date),
         time: time,
-        status: { not: "REJECTED" },
+        status: "CONFIRMED",
       },
     });
 

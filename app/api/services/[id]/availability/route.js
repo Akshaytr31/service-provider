@@ -15,7 +15,7 @@ export async function GET(req, props) {
       where: {
         serviceId: parseInt(id),
         date: new Date(dateStr),
-        status: { not: "REJECTED" },
+        status: "CONFIRMED",
       },
       select: { time: true },
     });

@@ -22,6 +22,7 @@ export async function PATCH(req, props) {
     // Verify ownership (Must be provider of the booking)
     const booking = await prisma.booking.findUnique({
       where: { id: parseInt(id) },
+      include: { service: true },
     });
 
     if (!booking)
@@ -35,6 +36,24 @@ export async function PATCH(req, props) {
       where: { id: parseInt(id) },
       data: { status },
     });
+
+    // Notify Seeker
+    if (status === "CONFIRMED" || status === "REJECTED") {
+      const message =
+        status === "CONFIRMED"
+          ? `Good news! Your booking for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`
+          : `Your booking request for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been rejected.`;
+
+      await prisma.notification.create({
+        data: {
+          userId: booking.seekerId,
+          message,
+          type: "BOOKING_UPDATE",
+          isRead: false,
+          link: `/seeker/bookings`, // Assuming there is a bookings page, or just dashboard
+        },
+      });
+    }
 
     return NextResponse.json(updated);
   } catch (error) {
