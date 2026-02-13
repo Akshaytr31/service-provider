@@ -104,33 +104,81 @@ export async function GET(req) {
           OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
         },
         orderBy: { createdAt: "desc" },
-        distinct: ["senderId", "receiverId"],
+        // distinct: ["senderId", "receiverId"], // Can't easily use distinct with complex ordering/filtering in all DBs safely for this logic
+        // Better to fetch recent messages and group manually to get accurate counts
         include: commonInclude,
       });
 
       const partners = new Map();
-      messages.forEach((msg) => {
+
+      // Process messages to group by partner
+      for (const msg of messages) {
         const isSender = msg.senderId === currentUserId;
         const partnerUser = isSender ? msg.receiver : msg.sender;
+        const partnerId = partnerUser.id;
 
-        if (!partners.has(partnerUser.id)) {
+        if (!partners.has(partnerId)) {
           const resolvedPartner = {
             ...partnerUser,
             name: getDisplayName(partnerUser),
           };
 
-          partners.set(partnerUser.id, {
-            ...resolvedPartner,
+          partners.set(partnerId, {
+            id: partnerId,
+            user: resolvedPartner,
             lastMessage: msg.content,
             timestamp: msg.createdAt,
+            unreadCount: 0,
           });
         }
-      });
+
+        // Count unread: if I am receiver and message is not read
+        if (!isSender && !msg.isRead) {
+          const partnerData = partners.get(partnerId);
+          partnerData.unreadCount += 1;
+        }
+      }
 
       return NextResponse.json(Array.from(partners.values()));
     }
   } catch (error) {
     console.error("Error fetching messages:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+// PUT: Mark messages as read
+export async function PUT(req) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { senderId } = await req.json();
+    const currentUserId = parseInt(session.user.id);
+
+    if (!senderId) {
+      return NextResponse.json({ error: "Missing senderId" }, { status: 400 });
+    }
+
+    await prisma.message.updateMany({
+      where: {
+        senderId: parseInt(senderId),
+        receiverId: currentUserId,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

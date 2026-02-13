@@ -84,6 +84,20 @@ export async function POST(req) {
         time: time,
         status: "PENDING",
       },
+      include: {
+        service: true,
+      },
+    });
+
+    // Notify Provider
+    await prisma.notification.create({
+      data: {
+        userId: provider.id,
+        message: `New booking request for "${booking.service.title}" on ${new Date(date).toLocaleDateString()} at ${time}`,
+        type: "BOOKING_REQUEST",
+        isRead: false,
+        link: `/providerDashboard`,
+      },
     });
 
     return NextResponse.json(booking);

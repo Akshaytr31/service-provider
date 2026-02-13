@@ -35,14 +35,31 @@ export default function ChatBox({
 
   const currentUserId = session?.user?.id;
 
-  // Polling logic
+  // Mark as read when chat opens or updates
+  const markMessagesAsRead = async () => {
+    if (!otherUserId || !isOpen) return;
+    try {
+      await fetch("/api/messages", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senderId: otherUserId }),
+      });
+      // Optionally trigger a global refresh of notifications if we had a context for it
+      // For now, the polling in MessageNotification will pick it up eventually
+    } catch (error) {
+      console.error("Failed to mark messages as read", error);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && otherUserId && currentUserId) {
       setLoading(true);
       fetchMessages();
+      markMessagesAsRead(); // Mark read immediately on open
 
       pollIntervalRef.current = setInterval(() => {
         fetchMessages(true); // Silent update
+        markMessagesAsRead(); // Keep marking read as long as open
       }, 3000);
     } else {
       setMessages([]);

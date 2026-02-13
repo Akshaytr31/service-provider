@@ -89,14 +89,18 @@ export default function NotificationBell() {
         {unreadCount > 0 && (
           <Badge
             position="absolute"
-            top="-2px"
-            right="-2px"
-            colorScheme="red"
+            top="-1px"
+            right="-1px"
+            bg="green"
+            color="white"
             borderRadius="full"
-            variant="solid"
-            fontSize="0.6em"
-            px={1.5}
-            zIndex={2}
+            boxSize="18px"
+            fontSize="10px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            // border="2px solid white"
+            padding={"3px 8px"}
           >
             {unreadCount}
           </Badge>

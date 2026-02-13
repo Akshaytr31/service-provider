@@ -438,7 +438,7 @@ const UserList = ({ users }) => {
       </Box>
 
       <Box
-        maxH="600px"
+        maxH="500px"
         overflowY="auto"
         css={{
           "&::-webkit-scrollbar": { width: "4px" },
