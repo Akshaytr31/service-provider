@@ -419,9 +419,9 @@ export default function AdminDashboard() {
                 borderColor="gray.100"
               >
                 <CardBody>
-                  <Heading size="md" mb={6} color="gray.800">
+                  {/* <Heading size="md" mb={6} color="gray.800">
                     Category Management
-                  </Heading>
+                  </Heading> */}
                   <CategoryManager />
                 </CardBody>
               </Card>

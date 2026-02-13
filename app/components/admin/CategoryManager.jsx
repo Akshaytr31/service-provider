@@ -94,105 +94,255 @@ export default function CategoryManager() {
     });
   };
 
+  /* ================= TOGGLE STATE ================= */
+  const [activeView, setActiveView] = useState("category"); // 'category' | 'subcategory'
+
   return (
-    <Box >
-      <Flex direction={{ base: "column", md: "row" }} gap={4} alignItems={"flex-start"}>
-        {/* ================= CATEGORY CARD ================= */}
+    <Box
+      maxW="800px"
+      mx="auto"
+    >
+      <VStack spacing={{ base: 4, md: 5 }} align="stretch">
+        <Flex direction="column" align="center" textAlign="center">
+          <Heading
+            size={{ base: "lg", md: "xl" }}
+            mb={2}
+            color="green.700"
+            letterSpacing="tight"
+          >
+            Manage Categories
+          </Heading>
+          <Text color="gray.500" fontSize={{ base: "md", md: "lg" }}>
+            Organize your services efficiently
+          </Text>
+        </Flex>
 
-        <Card mb={6} boxShadow="md" flex="1">
-          <CardHeader>
-            <Heading size="md" color="gray.700">Add Category</Heading>
-            <Text fontSize="sm" color="gray.500">
-              Create a new main service category
-            </Text>
-          </CardHeader>
+        <Flex justify="center" w="full">
+          <HStack
+            spacing={{ base: 1, md: 2 }}
+            bg="white"
+            p={1.5}
+            borderRadius="full"
+            boxShadow="md"
+            border="1px solid"
+            borderColor="green.100"
+            w={{ base: "full", sm: "auto" }}
+          >
+            <Button
+              onClick={() => setActiveView("category")}
+              variant={activeView === "category" ? "solid" : "ghost"}
+              colorScheme="green"
+              borderRadius="full"
+              px={{ base: 4, md: 8 }}
+              size={{ base: "sm", md: "md" }}
+              flex={{ base: 1, sm: "auto" }}
+              _hover={{
+                transform: activeView === "category" ? "none" : "scale(1.05)",
+              }}
+              transition="all 0.2s"
+            >
+              Add Category
+            </Button>
+            <Button
+              onClick={() => setActiveView("subcategory")}
+              variant={activeView === "subcategory" ? "solid" : "ghost"}
+              colorScheme="green"
+              borderRadius="full"
+              px={{ base: 4, md: 8 }}
+              size={{ base: "sm", md: "md" }}
+              flex={{ base: 1, sm: "auto" }}
+              _hover={{
+                transform:
+                  activeView === "subcategory" ? "none" : "scale(1.05)",
+              }}
+              transition="all 0.2s"
+            >
+              Add Sub-Category
+            </Button>
+          </HStack>
+        </Flex>
 
-          <Divider />
-
-          <CardBody>
-            <VStack spacing={4}>
-              <Input
-                placeholder="Category name *"
-                value={categoryForm.name}
-                onChange={(e) =>
-                  setCategoryForm({ ...categoryForm, name: e.target.value })
-                }
-              />
-
-              <Input
-                placeholder="Image URL (optional)"
-                value={categoryForm.image}
-                onChange={(e) =>
-                  setCategoryForm({ ...categoryForm, image: e.target.value })
-                }
-              />
-
-              <Button
-                colorScheme="blue"
-                leftIcon={<AddIcon />}
-                alignSelf="flex-end"
-                onClick={addCategory}
+        <Box minH="400px">
+          {activeView === "category" ? (
+            <Card
+              variant="outline"
+              boxShadow="xl"
+              borderRadius="2xl"
+              overflow="hidden"
+              borderColor="green.200"
+              bg="white"
+            >
+              <CardHeader
+                bg="green.50"
+                py={6}
+                borderBottom="1px solid"
+                borderBottomColor="green.100"
               >
-                Add Category
-              </Button>
-            </VStack>
-          </CardBody>
-        </Card>
+                <HStack justify="space-between" align="center">
+                  <Box>
+                    <Heading size="md" color="green.800">
+                      Add Category
+                    </Heading>
+                    <Text fontSize="sm" color="green.600" mt={1}>
+                      Create a new main service category
+                    </Text>
+                  </Box>
+                  <Box
+                    p={2}
+                    bg="white"
+                    borderRadius="lg"
+                    color="green.500"
+                    boxShadow="sm"
+                  >
+                    <AddIcon boxSize={5} />
+                  </Box>
+                </HStack>
+              </CardHeader>
 
-        {/* ================= SUB CATEGORY CARD ================= */}
-        <Card boxShadow="md" flex="1">
-          <CardHeader>
-            <Heading size="md" color="gray.700">Add Sub-Category</Heading>
-            <Text fontSize="sm" color="gray.500">
-              Assign a sub-category to an existing category
-            </Text>
-          </CardHeader>
+              <CardBody p={8}>
+                <VStack spacing={6}>
+                  <Input
+                    placeholder="Category name *"
+                    size="lg"
+                    borderRadius="xl"
+                    focusBorderColor="green.500"
+                    borderColor="green.200"
+                    _hover={{ borderColor: "green.300" }}
+                    value={categoryForm.name}
+                    onChange={(e) =>
+                      setCategoryForm({ ...categoryForm, name: e.target.value })
+                    }
+                  />
 
-          <Divider />
+                  <Input
+                    placeholder="Image URL (optional)"
+                    size="lg"
+                    borderRadius="xl"
+                    focusBorderColor="green.500"
+                    borderColor="green.200"
+                    _hover={{ borderColor: "green.300" }}
+                    value={categoryForm.image}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        image: e.target.value,
+                      })
+                    }
+                  />
 
-          <CardBody>
-            <VStack spacing={4}>
-              <Input
-                placeholder="Sub-category name *"
-                value={subCategoryForm.name}
-                onChange={(e) =>
-                  setSubCategoryForm({
-                    ...subCategoryForm,
-                    name: e.target.value,
-                  })
-                }
-              />
-
-              <Select
-                placeholder="Select parent category *"
-                value={subCategoryForm.categoryId}
-                onChange={(e) =>
-                  setSubCategoryForm({
-                    ...subCategoryForm,
-                    categoryId: e.target.value,
-                  })
-                }
+                  <Button
+                    colorScheme="green"
+                    size="lg"
+                    w="full"
+                    borderRadius="xl"
+                    mt={4}
+                    leftIcon={<AddIcon />}
+                    onClick={addCategory}
+                    boxShadow="lg"
+                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
+                    transition="all 0.2s"
+                  >
+                    Create Category
+                  </Button>
+                </VStack>
+              </CardBody>
+            </Card>
+          ) : (
+            <Card
+              variant="outline"
+              boxShadow="xl"
+              borderRadius="2xl"
+              overflow="hidden"
+              borderColor="green.200"
+              bg="white"
+            >
+              <CardHeader
+                bg="green.50"
+                py={6}
+                borderBottom="1px solid"
+                borderBottomColor="green.100"
               >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </Select>
+                <HStack justify="space-between" align="center">
+                  <Box>
+                    <Heading size="md" color="green.800">
+                      Add Sub-Category
+                    </Heading>
+                    <Text fontSize="sm" color="green.600" mt={1}>
+                      Assign a sub-category to an existing category
+                    </Text>
+                  </Box>
+                  <Box
+                    p={2}
+                    bg="white"
+                    borderRadius="lg"
+                    color="green.500"
+                    boxShadow="sm"
+                  >
+                    <AddIcon boxSize={5} />
+                  </Box>
+                </HStack>
+              </CardHeader>
 
-              <HStack w="100%" justify="flex-end">
-                <Button
-                  colorScheme="green"
-                  leftIcon={<AddIcon />}
-                  onClick={addSubCategory}
-                >
-                  Add Sub-Category
-                </Button>
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
-      </Flex>
+              <CardBody p={8}>
+                <VStack spacing={6}>
+                  <Input
+                    placeholder="Sub-category name *"
+                    size="lg"
+                    borderRadius="xl"
+                    focusBorderColor="green.500"
+                    borderColor="green.200"
+                    _hover={{ borderColor: "green.300" }}
+                    value={subCategoryForm.name}
+                    onChange={(e) =>
+                      setSubCategoryForm({
+                        ...subCategoryForm,
+                        name: e.target.value,
+                      })
+                    }
+                  />
+
+                  <Select
+                    placeholder="Select parent category *"
+                    size="lg"
+                    borderRadius="xl"
+                    focusBorderColor="green.500"
+                    borderColor="green.200"
+                    _hover={{ borderColor: "green.300" }}
+                    value={subCategoryForm.categoryId}
+                    onChange={(e) =>
+                      setSubCategoryForm({
+                        ...subCategoryForm,
+                        categoryId: e.target.value,
+                      })
+                    }
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </Select>
+
+                  <Button
+                    colorScheme="green"
+                    size="lg"
+                    w="full"
+                    borderRadius="xl"
+                    mt={4}
+                    leftIcon={<AddIcon />}
+                    onClick={addSubCategory}
+                    boxShadow="lg"
+                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
+                    transition="all 0.2s"
+                  >
+                    Create Sub-Category
+                  </Button>
+                </VStack>
+              </CardBody>
+            </Card>
+          )}
+        </Box>
+      </VStack>
     </Box>
   );
 }

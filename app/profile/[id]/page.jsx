@@ -456,7 +456,7 @@ export default function PublicProfilePage() {
               {isProvider && (
                 <SectionWrapper title="Service Location" icon={FiMapPin}>
                   <Box
-                    borderRadius="3xl"
+                    borderRadius="xl"
                     overflow="hidden"
                     boxShadow="2xl"
                     bg="white"
@@ -632,7 +632,7 @@ export default function PublicProfilePage() {
               <Box
                 bg="white"
                 p={8}
-                borderRadius="3xl"
+                borderRadius="xl"
                 boxShadow="xl"
                 border="1px solid"
                 borderColor="gray.50"
@@ -714,7 +714,7 @@ export default function PublicProfilePage() {
                 <Box
                   bgGradient="linear(to-br, gray.800, gray.900)"
                   p={8}
-                  borderRadius="3xl"
+                  borderRadius="xl"
                   color="white"
                   boxShadow="2xl"
                 >
