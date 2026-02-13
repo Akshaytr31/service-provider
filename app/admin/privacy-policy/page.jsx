@@ -204,7 +204,7 @@ export default function PrivacyPolicyAdminPage() {
             <Heading
               size="xl"
               mb={2}
-              bgGradient="linear(to-r, blue.400, purple.500)"
+              bgGradient="linear(to-r, green.400, green.700)"
               bgClip="text"
             >
               Privacy Policy Center
@@ -216,7 +216,7 @@ export default function PrivacyPolicyAdminPage() {
           <HStack spacing={4}>
             {lastUpdated && (
               <Badge
-                colorScheme="purple"
+                colorScheme="green"
                 p={2}
                 borderRadius="md"
                 variant="subtle"
@@ -227,7 +227,7 @@ export default function PrivacyPolicyAdminPage() {
             )}
             <Button
               leftIcon={<FaSave />}
-              colorScheme="blue"
+              colorScheme="green"
               onClick={handleSave}
               isLoading={saving}
               loadingText="Saving..."
@@ -247,14 +247,14 @@ export default function PrivacyPolicyAdminPage() {
             title="Total Providers"
             stat={stats.totalProviders}
             icon={FaUserCheck}
-            color="blue.400"
+            color="green.700"
             helpText={`${stats.acceptedProviders} Accepted`}
           />
           <StatsCard
             title="Provider Acceptance"
             stat={`${stats.providerRate}%`}
             icon={MdPolicy}
-            color="green.400"
+            color="green.600"
             helpText="Compliance Rate"
             type="increase"
           />
@@ -262,14 +262,14 @@ export default function PrivacyPolicyAdminPage() {
             title="Total Seekers"
             stat={stats.totalSeekers}
             icon={FaUserClock}
-            color="purple.400"
+            color="green.500"
             helpText={`${stats.acceptedSeekers} Accepted`}
           />
           <StatsCard
             title="Seeker Acceptance"
             stat={`${stats.seekerRate}%`}
             icon={FaShieldAlt}
-            color="orange.400"
+            color="green.400"
             helpText="Compliance Rate"
             type="increase"
           />
@@ -296,7 +296,7 @@ export default function PrivacyPolicyAdminPage() {
                   bg={useColorModeValue("gray.50", "gray.800")}
                 >
                   <Heading size="md" display="flex" alignItems="center" gap={2}>
-                    <Icon as={FaFileAlt} color="blue.500" />
+                    <Icon as={FaFileAlt} color="green.500" />
                     Policy Editor
                   </Heading>
                   <Tooltip label="Markdown is supported" hasArrow>
@@ -309,7 +309,7 @@ export default function PrivacyPolicyAdminPage() {
                     onChange={(e) => setContent(e.target.value)}
                     minH="500px"
                     fontSize="sm"
-                    fontFamily="monospace"
+                    // fontFamily="monospace"
                     bg={useColorModeValue("white", "gray.900")}
                     borderColor={useColorModeValue("gray.300", "gray.600")}
                     _focus={{
@@ -345,13 +345,13 @@ export default function PrivacyPolicyAdminPage() {
                   >
                     <Tab
                       fontWeight="bold"
-                      _selected={{ color: "blue.500", borderColor: "blue.500" }}
+                      _selected={{ color: "green.500", borderColor: "green.500" }}
                     >
                       Providers
                     </Tab>
                     <Tab
                       fontWeight="bold"
-                      _selected={{ color: "blue.500", borderColor: "blue.500" }}
+                      _selected={{ color: "green.500", borderColor: "green.500" }}
                     >
                       Seekers
                     </Tab>
@@ -480,7 +480,7 @@ const UserList = ({ users }) => {
                       <Avatar
                         size="xs"
                         name={user.name || "User"}
-                        bg="blue.500"
+                        bg="green.500"
                         color="white"
                       />
                       <Box>

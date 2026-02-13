@@ -82,7 +82,7 @@ export default function ServiceDetailsPage() {
       <Container maxW="container.xl" py={10}>
         <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={10}>
           <Box gridColumn={{ lg: "span 2" }}>
-            <Skeleton height="400px" borderRadius="3xl" mb={8} />
+            <Skeleton height="400px" borderRadius="xl" mb={8} />
             <Stack spacing={4}>
               <Skeleton height="40px" width="60%" />
               <Skeleton height="20px" width="40%" />
@@ -91,7 +91,7 @@ export default function ServiceDetailsPage() {
             </Stack>
           </Box>
           <Box>
-            <Skeleton height="500px" borderRadius="3xl" />
+            <Skeleton height="500px" borderRadius="xl" />
           </Box>
         </SimpleGrid>
       </Container>
@@ -148,7 +148,7 @@ export default function ServiceDetailsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               position="relative"
-              borderRadius="3xl"
+              borderRadius="xl"
               overflow="hidden"
               boxShadow="2xl"
               h={{ base: "300px", md: "500px" }}
@@ -258,7 +258,7 @@ export default function ServiceDetailsPage() {
             >
               <Box
                 bg="white"
-                borderRadius="3xl"
+                borderRadius="xl"
                 p={{ base: 6, md: 10 }}
                 boxShadow="lg"
                 mb={8}
@@ -279,7 +279,7 @@ export default function ServiceDetailsPage() {
               {/* Provider Mini Profile */}
               <Box
                 bg="white"
-                borderRadius="3xl"
+                borderRadius="xl"
                 p={{ base: 6, md: 8 }}
                 boxShadow="lg"
                 mb={8}
@@ -362,7 +362,7 @@ export default function ServiceDetailsPage() {
               {/* REVIEWS PLACEHOLDER */}
               <Box
                 bg="white"
-                borderRadius="3xl"
+                borderRadius="xl"
                 p={{ base: 6, md: 10 }}
                 boxShadow="lg"
               >
@@ -418,14 +418,14 @@ export default function ServiceDetailsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 bg="white"
-                borderRadius="3xl"
+                borderRadius="xl"
                 p={8}
                 boxShadow="2xl"
                 border="1px solid"
                 borderColor="green.100"
               >
                 <Flex justify="space-between" align="baseline" mb={2}>
-                  <Text fontSize="3xl" fontWeight="900" color="gray.800">
+                  <Text fontSize="xl" fontWeight="900" color="gray.800">
                     ₹{service.price}
                   </Text>
                   <Text color="gray.500" fontWeight="medium">
@@ -488,7 +488,7 @@ export default function ServiceDetailsPage() {
                   color="white"
                   fontSize="xl"
                   fontWeight="bold"
-                  borderRadius="2xl"
+                  borderRadius="xl"
                   boxShadow="xl"
                   _hover={{
                     transform: "translateY(-2px)",
