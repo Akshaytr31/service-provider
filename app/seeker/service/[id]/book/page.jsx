@@ -453,7 +453,7 @@ export default function BookingPage() {
                       Total Price
                     </Text>
                     <Heading size="lg" color="green.600">
-                      ₹{service.price}
+                      AED {service.price}
                     </Heading>
                   </HStack>
 

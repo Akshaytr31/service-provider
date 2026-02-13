@@ -730,7 +730,7 @@ export default function PublicProfilePage() {
                       <HStack justify="space-between" w="full">
                         <Text color="gray.400">Base Quote</Text>
                         <Text fontWeight="bold" color="green.400">
-                          {providerRequest.baseRate || "$50/hr"}
+                          {providerRequest.baseRate || "AED 50/hr"}
                         </Text>
                       </HStack>
                       <HStack justify="space-between" w="full">

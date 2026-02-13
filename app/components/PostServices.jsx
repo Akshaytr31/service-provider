@@ -433,7 +433,7 @@ export default function PostService() {
                     <Icon as={FiDollarSign} color="gray.400" />
                   </InputLeftElement>
                   <Input
-                    placeholder="e.g. $50/hr or Fixed"
+                    placeholder="e.g. AED 50/hr or Fixed"
                     name="price"
                     value={form.price}
                     onChange={handleChange}

@@ -132,7 +132,7 @@ function ServiceCard({ service }) {
         {/* Price */}
         <Flex align="center" gap={2} mt={1}>
           <Text fontWeight="bold" fontSize="md">
-            ₹{service.price}
+            AED {service.price}
           </Text>
 
           <Text fontSize="xs" color="gray.500">

@@ -222,7 +222,7 @@ export default function BookingRequests({ onBack, onMessage }) {
                         color="green.600"
                         letterSpacing="tight"
                       >
-                        ₹{booking.service?.price}
+                        AED {booking.service?.price}
                       </Text>
                     </Flex>
 

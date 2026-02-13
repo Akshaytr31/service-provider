@@ -426,7 +426,7 @@ export default function ServiceDetailsPage() {
               >
                 <Flex justify="space-between" align="baseline" mb={2}>
                   <Text fontSize="xl" fontWeight="900" color="gray.800">
-                    ₹{service.price}
+                    AED {service.price}
                   </Text>
                   <Text color="gray.500" fontWeight="medium">
                     per hour
