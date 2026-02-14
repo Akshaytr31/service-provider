@@ -70,6 +70,11 @@ export default function NotificationBell() {
       }
     }
 
+    if (notification.link) {
+      router.push(notification.link);
+      return; // Stop further processing if link exists
+    }
+
     const msg = notification.message.toLowerCase();
 
     if (msg.includes("booking") || msg.includes("request")) {
@@ -82,8 +87,6 @@ export default function NotificationBell() {
       router.push(`/providerDashboard?view=requests&status=${statusParam}`);
     } else if (msg.includes("message")) {
       router.push("/providerDashboard?view=messages");
-    } else if (notification.link) {
-      router.push(notification.link);
     }
   };
 

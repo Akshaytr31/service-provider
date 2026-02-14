@@ -228,6 +228,7 @@ model Booking {
   seeker   users    @relation("SeekerBookings", fields: [seekerId], references: [id])
   provider users    @relation("ProviderBookings", fields: [providerId], references: [id])
   service  services @relation(fields: [serviceId], references: [id])
+  review   Review?
 
   @@map("bookings")
 }
@@ -245,4 +246,15 @@ model Notification {
 
   @@index([userId], map: "notifications_user_id_fkey")
   @@map("notifications")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  bookingId Int      @unique @map("booking_id")
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+
+  @@map("reviews")
 }

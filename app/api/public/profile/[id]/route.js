@@ -72,6 +72,40 @@ export async function GET(req, { params }) {
       }
     }
 
+    // 3. Fetch Reviews and Calculate Rating
+    const reviews = await prisma.review.findMany({
+      where: {
+        booking: {
+          providerId: user.id,
+        },
+      },
+      select: {
+        rating: true,
+        comment: true,
+        createdAt: true,
+        booking: {
+          select: {
+            seeker: {
+              select: {
+                name: true,
+                image: true,
+              },
+            },
+            service: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating =
+      reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
+
     // Sanitize data for public view
     const publicUser = {
       name: user.name,
@@ -94,6 +128,9 @@ export async function GET(req, { params }) {
         user: publicUser,
         profile: user.seekerProfile || null,
         providerRequest: providerRequest,
+        reviews: reviews,
+        averageRating: parseFloat(averageRating),
+        totalReviews: reviews.length,
       },
       { status: 200 },
     );

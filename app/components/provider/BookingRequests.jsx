@@ -87,6 +87,14 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
       if (res.ok) {
         const data = await res.json();
         setBookings(data);
+      } else {
+        const err = await res.json();
+        console.error("Fetch bookings failed:", err);
+        toast({
+          title: "Failed to fetch bookings",
+          description: err.error || res.statusText,
+          status: "error",
+        });
       }
     } catch (error) {
       console.error("Failed to fetch bookings", error);
@@ -417,6 +425,33 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                           Decline
                         </Button>
                       </Flex>
+                    </CardFooter>
+                  )}
+
+                  {booking.status === "CONFIRMED" && (
+                    <CardFooter
+                      p={4}
+                      bg="gray.50"
+                      borderTop="1px solid"
+                      borderColor="gray.100"
+                    >
+                      <Button
+                        w="full"
+                        bg="blue.500"
+                        color="white"
+                        size="md"
+                        fontSize="sm"
+                        fontWeight="600"
+                        _hover={{
+                          bg: "blue.600",
+                          transform: "translateY(-1px)",
+                          boxShadow: "md",
+                        }}
+                        onClick={() => onUpdateStatus(booking.id, "COMPLETED")}
+                        leftIcon={<FiCheckCircle />}
+                      >
+                        Mark as Completed
+                      </Button>
                     </CardFooter>
                   )}
                 </Card>

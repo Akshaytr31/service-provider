@@ -18,7 +18,27 @@ export async function GET(req, props) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }
 
-    return NextResponse.json(rows[0]);
+    // Fetch reviews
+    const [reviews] = await db.query(
+      `SELECT r.rating, r.comment, r.created_at, u.name as seekerName, u.image as seekerImage
+       FROM reviews r
+       JOIN bookings b ON r.booking_id = b.id
+       JOIN users u ON b.seeker_id = u.id
+       WHERE b.service_id = ?
+       ORDER BY r.created_at DESC`,
+      [id],
+    );
+
+    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+    const averageRating =
+      reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : 0;
+
+    return NextResponse.json({
+      ...rows[0],
+      reviews,
+      averageRating: parseFloat(averageRating),
+      totalReviews: reviews.length,
+    });
   } catch (error) {
     console.error("Error fetching service:", error);
     return NextResponse.json(

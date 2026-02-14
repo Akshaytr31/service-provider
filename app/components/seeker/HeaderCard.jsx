@@ -1,10 +1,4 @@
-import {
-  VStack,
-  Heading,
-  Text,
-  Flex,
-  Icon,
-} from "@chakra-ui/react";
+import { VStack, Heading, Text, Flex, Icon, Button } from "@chakra-ui/react";
 import { FiUserCheck, FiShield, FiAward } from "react-icons/fi";
 
 export default function HeroContent() {
@@ -25,9 +19,17 @@ export default function HeroContent() {
           </Text>
         </Heading>
         <Text color="gray.600" fontSize="xl" maxW="500px">
-          Connect with verified, background-checked professionals for
-          any job. Quality service guaranteed.
+          Connect with verified, background-checked professionals for any job.
+          Quality service guaranteed.
         </Text>
+        <Button
+          colorScheme="green"
+          size="lg"
+          onClick={() => (window.location.href = "/seeker/bookings")}
+          _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+        >
+          My Bookings
+        </Button>
       </VStack>
 
       <Flex gap={4} flexWrap="wrap">

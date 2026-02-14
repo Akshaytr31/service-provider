@@ -69,6 +69,9 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
   const [providerRequest, setProviderRequest] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -83,6 +86,9 @@ export default function PublicProfilePage() {
         setProfile(data.profile || {});
         setUser(data.user || {});
         setProviderRequest(data.providerRequest || null);
+        setReviews(data.reviews || []);
+        setAverageRating(data.averageRating || 0);
+        setTotalReviews(data.totalReviews || 0);
 
         // Redirect to slug if accessing by ID and slug exists
         if (data.user?.slug && id !== data.user.slug && !isNaN(parseInt(id))) {
@@ -637,6 +643,57 @@ export default function PublicProfilePage() {
                   </Box>
                 </SectionWrapper>
               )}
+
+              {/* Client Reviews Section */}
+              {reviews.length > 0 && (
+                <SectionWrapper title="Client Reviews" icon={StarIcon}>
+                  <Stack spacing={6}>
+                    {reviews.map((review, idx) => (
+                      <Box
+                        key={idx}
+                        bg="white"
+                        p={6}
+                        borderRadius="xl"
+                        border="1px solid"
+                        borderColor="gray.100"
+                        boxShadow="sm"
+                      >
+                        <HStack spacing={4} align="start" mb={4}>
+                          <Avatar
+                            src={review.booking?.seeker?.image}
+                            name={review.booking?.seeker?.name}
+                            size="sm"
+                          />
+                          <VStack align="start" spacing={0}>
+                            <Text fontWeight="bold" color="gray.800">
+                              {review.booking?.seeker?.name}
+                            </Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {review.booking?.service?.title} •{" "}
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </Text>
+                          </VStack>
+                          <HStack ml="auto">
+                            {[...Array(5)].map((_, i) => (
+                              <Icon
+                                key={i}
+                                as={StarIcon}
+                                color={
+                                  i < review.rating ? "orange.400" : "gray.200"
+                                }
+                                boxSize={4}
+                              />
+                            ))}
+                          </HStack>
+                        </HStack>
+                        <Text color="gray.600" fontSize="sm">
+                          {review.comment}
+                        </Text>
+                      </Box>
+                    ))}
+                  </Stack>
+                </SectionWrapper>
+              )}
             </Stack>
           </GridItem>
 
@@ -673,7 +730,7 @@ export default function PublicProfilePage() {
                   <SimpleGrid columns={2} spacing={10} w="full">
                     <SidebarStat
                       label="Rating"
-                      value="5.0"
+                      value={averageRating || "New"}
                       icon={StarIcon}
                       color="orange.400"
                     />

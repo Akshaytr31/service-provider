@@ -359,7 +359,6 @@ export default function ServiceDetailsPage() {
                 </Flex>
               </Box>
 
-              {/* REVIEWS PLACEHOLDER */}
               <Box
                 bg="white"
                 borderRadius="xl"
@@ -379,15 +378,55 @@ export default function ServiceDetailsPage() {
                         fill="currentColor"
                       />
                       <Heading size="lg" color="green.600">
-                        {service.rating}
+                        {service.averageRating || service.rating}
                       </Heading>
+                      <Text color="gray.500" fontSize="md" fontWeight="medium">
+                        ({service.totalReviews || service.reviewCount} reviews)
+                      </Text>
                     </HStack>
                   )}
                 </HStack>
-                {hasRating ? (
-                  <Text color="gray.500">
-                    Reviews content will be implemented here.
-                  </Text>
+
+                {service.reviews && service.reviews.length > 0 ? (
+                  <Stack spacing={6}>
+                    {service.reviews.map((review, idx) => (
+                      <Box key={idx} p={6} bg="gray.50" borderRadius="xl">
+                        <HStack spacing={4} align="start" mb={4}>
+                          <Avatar
+                            src={review.seekerImage}
+                            name={review.seekerName}
+                            size="sm"
+                          />
+                          <VStack align="start" spacing={0}>
+                            <Text fontWeight="bold" color="gray.800">
+                              {review.seekerName}
+                            </Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {new Date(
+                                review.created_at || review.createdAt,
+                              ).toLocaleDateString()}
+                            </Text>
+                          </VStack>
+                          <HStack ml="auto">
+                            {[...Array(5)].map((_, i) => (
+                              <Icon
+                                key={i}
+                                as={FiStar}
+                                color={
+                                  i < review.rating ? "yellow.400" : "gray.300"
+                                }
+                                fill={
+                                  i < review.rating ? "currentColor" : "none"
+                                }
+                                boxSize={4}
+                              />
+                            ))}
+                          </HStack>
+                        </HStack>
+                        <Text color="gray.600">{review.comment}</Text>
+                      </Box>
+                    ))}
+                  </Stack>
                 ) : (
                   <Flex
                     direction="column"

@@ -39,6 +39,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import PostService from "../components/PostServices";
 import { useState, useEffect, useRef } from "react";
 import BookingRequests from "../components/provider/BookingRequests";
+import ReviewsView from "../components/provider/ReviewsView";
 import { motion } from "framer-motion";
 import {
   FiGrid,
@@ -402,6 +403,15 @@ function ProviderDashboardContent() {
             onSelectChat={setSelectedChatUser}
           />
         );
+      case "reviews":
+        return (
+          <ReviewsView
+            onBack={() => {
+              setActiveView("home");
+              router.push("/providerDashboard");
+            }}
+          />
+        );
       case "post":
         return (
           <Box>
@@ -471,12 +481,34 @@ export default function ProviderDashboard() {
 function DashboardOverview({ user, onNavigate }) {
   const router = useRouter();
   // Mock Data for Stats
+  // Stats state with defaults
   const [stats, setStats] = useState({
-    revenue: 12500,
-    activeJobs: 3,
-    views: 450,
-    rating: 4.8,
+    revenue: 12500, // Still mocked for now or could be calculated
+    activeJobs: 0,
+    views: 0, // Still mocked as we don't track views yet
+    rating: 0,
+    totalReviews: 0,
   });
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/provider/stats");
+        if (res.ok) {
+          const data = await res.json();
+          setStats((prev) => ({
+            ...prev,
+            rating: data.rating,
+            totalReviews: data.totalReviews,
+            activeJobs: data.activeJobs,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <VStack spacing={8} align="stretch">
@@ -530,9 +562,10 @@ function DashboardOverview({ user, onNavigate }) {
         <StatCard
           label="Avg. Rating"
           value={stats.rating}
-          helperText="From 24 reviews"
+          helperText={`From ${stats.totalReviews} reviews`}
           icon={FiStar}
           color="orange"
+          onClick={() => onNavigate("reviews")}
         />
       </SimpleGrid>
 
@@ -629,6 +662,7 @@ function DashboardOverview({ user, onNavigate }) {
                     gap={2}
                     variant="outline"
                     borderRadius="xl"
+                    onClick={() => onNavigate("reviews")}
                     _hover={{ bg: "purple.50", borderColor: "purple.200" }}
                   >
                     <Icon as={FiUsers} color="purple.500" boxSize={5} />
@@ -692,13 +726,18 @@ function DashboardOverview({ user, onNavigate }) {
   );
 }
 
-function StatCard({ label, value, helperText, icon, color, trend }) {
+function StatCard({ label, value, helperText, icon, color, trend, onClick }) {
   return (
     <Card
       borderRadius="xl"
       boxShadow="sm"
       borderTop="4px solid"
       borderColor={`${color}.400`}
+      cursor={onClick ? "pointer" : "default"}
+      onClick={onClick}
+      _hover={
+        onClick ? { transform: "translateY(-2px)", transition: "all 0.2s" } : {}
+      }
     >
       <CardBody>
         <Flex justify="space-between" align="start" mb={2}>
@@ -732,6 +771,8 @@ function RequestsPreview({ onNavigate }) {
         if (res.ok) {
           const data = await res.json();
           setBookings(Array.isArray(data) ? data.slice(0, 3) : []);
+        } else {
+          console.error("RequestsPreview fetch failed:", res.statusText);
         }
       } catch (error) {
         console.error("Failed to fetch bookings", error);

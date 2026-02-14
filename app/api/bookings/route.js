@@ -96,7 +96,7 @@ export async function POST(req) {
         message: `New booking request for "${booking.service.title}" on ${new Date(date).toLocaleDateString()} at ${time}`,
         type: "BOOKING_REQUEST",
         isRead: false,
-        link: `/providerDashboard`,
+        link: `/providerDashboard?view=requests&status=PENDING`,
       },
     });
 
@@ -138,11 +138,17 @@ export async function GET(req) {
             mobile: true,
           },
         },
-        provider: { select: { name: true, email: true, id: true } },
+        provider: {
+          select: { name: true, email: true, id: true, image: true },
+        },
         service: { select: { title: true, price: true } },
+        review: true,
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log(`API: Fetching bookings for ${session.user.email}`);
+    console.log(`Found ${bookings.length} bookings.`);
 
     // Add a computed field to indicate if user is provider or seeker for this blocking?
     // Frontend can infer from checking user.id vs providerId.

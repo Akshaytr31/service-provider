@@ -29,7 +29,12 @@ export async function PATCH(req, props) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
     if (booking.providerId !== user.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      // Allow Seeker to mark as COMPLETED
+      if (booking.seekerId === user.id && status === "COMPLETED") {
+        // Allowed
+      } else {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const updated = await prisma.booking.update({
@@ -38,11 +43,17 @@ export async function PATCH(req, props) {
     });
 
     // Notify Seeker
-    if (status === "CONFIRMED" || status === "REJECTED") {
+    if (
+      status === "CONFIRMED" ||
+      status === "REJECTED" ||
+      status === "COMPLETED"
+    ) {
       const message =
         status === "CONFIRMED"
           ? `Good news! Your booking for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`
-          : `Your booking request for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been rejected.`;
+          : status === "COMPLETED"
+            ? `Your booking for "${booking.service.title}" has been marked as completed. Please leave a review!`
+            : `Your booking request for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been rejected.`;
 
       await prisma.notification.create({
         data: {
@@ -50,7 +61,7 @@ export async function PATCH(req, props) {
           message,
           type: "BOOKING_UPDATE",
           isRead: false,
-          link: `/seeker/bookings`, // Assuming there is a bookings page, or just dashboard
+          link: "/seeker/bookings",
         },
       });
     }
