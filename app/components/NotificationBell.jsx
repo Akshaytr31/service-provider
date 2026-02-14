@@ -69,7 +69,20 @@ export default function NotificationBell() {
         console.error("Failed to mark read", error);
       }
     }
-    if (notification.link) {
+
+    const msg = notification.message.toLowerCase();
+
+    if (msg.includes("booking") || msg.includes("request")) {
+      let statusParam = "PENDING";
+      if (msg.includes("confirmed") || msg.includes("accepted")) {
+        statusParam = "CONFIRMED";
+      } else if (msg.includes("rejected") || msg.includes("cancelled")) {
+        statusParam = "PAST";
+      }
+      router.push(`/providerDashboard?view=requests&status=${statusParam}`);
+    } else if (msg.includes("message")) {
+      router.push("/providerDashboard?view=messages");
+    } else if (notification.link) {
       router.push(notification.link);
     }
   };

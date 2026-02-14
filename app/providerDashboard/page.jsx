@@ -35,7 +35,7 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PostService from "../components/PostServices";
 import { useState, useEffect, useRef } from "react";
 import BookingRequests from "../components/provider/BookingRequests";
@@ -278,12 +278,28 @@ function ClarificationChat() {
   );
 }
 
-export default function ProviderDashboard() {
+// ... (previous imports)
+import { Suspense } from "react";
+
+// ... (other components like LicenseExpiryAlert, ClarificationChat)
+
+function ProviderDashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeView, setActiveView] = useState("home"); // home, requests, services, post, messages
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get("view") || "home";
+  const [activeView, setActiveView] = useState(initialView); // home, requests, services, post, messages
   const [selectedChatUser, setSelectedChatUser] = useState(null);
   const bg = useColorModeValue("gray.50", "gray.900");
+
+  useEffect(() => {
+    const view = searchParams.get("view");
+    if (view) {
+      setActiveView(view);
+    } else {
+      setActiveView("home");
+    }
+  }, [searchParams]);
 
   if (status === "loading")
     return (
@@ -296,7 +312,6 @@ export default function ProviderDashboard() {
   if (!user) return null;
 
   // Safety check: specific to provider dashboard flash issue
-  // If status is not clearly defined yet (rare race condition), show loader
   if (!user.providerRequestStatus) {
     return (
       <Flex justify="center" align="center" h="100vh">
@@ -360,16 +375,30 @@ export default function ProviderDashboard() {
       case "requests":
         return (
           <RequestsView
-            onBack={() => setActiveView("home")}
+            onBack={() => {
+              setActiveView("home");
+              router.push("/providerDashboard"); // Clear query param
+            }}
             onMessage={setSelectedChatUser}
+            initialStatus={searchParams.get("status")}
           />
         );
       case "services":
-        return <ServicesView onBack={() => setActiveView("home")} />;
+        return (
+          <ServicesView
+            onBack={() => {
+              setActiveView("home");
+              router.push("/providerDashboard");
+            }}
+          />
+        );
       case "messages":
         return (
           <MessagesView
-            onBack={() => setActiveView("home")}
+            onBack={() => {
+              setActiveView("home");
+              router.push("/providerDashboard");
+            }}
             onSelectChat={setSelectedChatUser}
           />
         );
@@ -380,7 +409,10 @@ export default function ProviderDashboard() {
               leftIcon={<FiArrowLeft />}
               variant="ghost"
               mb={4}
-              onClick={() => setActiveView("home")}
+              onClick={() => {
+                setActiveView("home");
+                router.push("/providerDashboard");
+              }}
             >
               Back to Dashboard
             </Button>
@@ -388,7 +420,15 @@ export default function ProviderDashboard() {
           </Box>
         );
       default:
-        return <DashboardOverview user={user} onNavigate={setActiveView} />;
+        return (
+          <DashboardOverview
+            user={user}
+            onNavigate={(view) => {
+              setActiveView(view);
+              router.push(`/providerDashboard?view=${view}`);
+            }}
+          />
+        );
     }
   };
 
@@ -409,6 +449,22 @@ export default function ProviderDashboard() {
     </Box>
   );
 }
+
+export default function ProviderDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <Flex justify="center" align="center" h="100vh">
+          <Spinner color="green.500" size="xl" />
+        </Flex>
+      }
+    >
+      <ProviderDashboardContent />
+    </Suspense>
+  );
+}
+
+// ... (Rest of component definitions: DashboardOverview, RequestsPreview, etc.)
 
 // ---------------- DASHBOARD OVERVIEW (NEW) ---------------- //
 
@@ -789,8 +845,14 @@ function ServicesPreviewPreview() {
 
 // ---------------- EXISTING SUB-COMPONENTS (Modified Style) ---------------- //
 
-function RequestsView({ onBack, onMessage }) {
-  return <BookingRequests onBack={onBack} onMessage={onMessage} />;
+function RequestsView({ onBack, onMessage, initialStatus }) {
+  return (
+    <BookingRequests
+      onBack={onBack}
+      onMessage={onMessage}
+      initialStatus={initialStatus}
+    />
+  );
 }
 
 function ServicesView({ onBack }) {

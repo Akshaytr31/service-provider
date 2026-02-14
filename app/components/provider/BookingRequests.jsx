@@ -47,12 +47,39 @@ import {
 
 const MotionBox = motion(Box);
 
-export default function BookingRequests({ onBack, onMessage }) {
+export default function BookingRequests({ onBack, onMessage, initialStatus }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const bg = useColorModeValue("white", "gray.800");
   const toast = useToast();
+
+  // Determine initial tab index from status
+  const getInitialTabIndex = () => {
+    switch (initialStatus) {
+      case "PENDING":
+        return 0;
+      case "UPCOMING":
+      case "CONFIRMED":
+        return 1;
+      case "PAST":
+      case "REJECTED":
+        return 2;
+      case "ALL":
+        return 3;
+      default:
+        return 0;
+    }
+  };
+
+  const [tabIndex, setTabIndex] = useState(getInitialTabIndex());
+
+  // Update tab if initialStatus changes (e.g. navigation while component mounted)
+  useEffect(() => {
+    if (initialStatus) {
+      setTabIndex(getInitialTabIndex());
+    }
+  }, [initialStatus]);
 
   const fetchBookings = async () => {
     try {
@@ -449,7 +476,13 @@ export default function BookingRequests({ onBack, onMessage }) {
           <Spinner size="xl" color="green.500" thickness="4px" />
         </Flex>
       ) : (
-        <Tabs variant="soft-rounded" colorScheme="green" isLazy>
+        <Tabs
+          variant="soft-rounded"
+          colorScheme="green"
+          isLazy
+          index={tabIndex}
+          onChange={(index) => setTabIndex(index)}
+        >
           <TabList mb={6} overflowX="auto" py={2}>
             <Tab
               fontWeight="bold"
@@ -461,7 +494,7 @@ export default function BookingRequests({ onBack, onMessage }) {
               fontWeight="bold"
               _selected={{ color: "white", bg: "green.500" }}
             >
-              Upcoming (
+              Accepted (
               {bookings.filter((b) => b.status === "CONFIRMED").length})
             </Tab>
             <Tab
