@@ -34,7 +34,7 @@ const BASE_STEPS = 10;
 /* ================= COMPONENT ================= */
 
 export default function ProviderOnboardingPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const toast = useToast();
 
@@ -49,10 +49,10 @@ export default function ProviderOnboardingPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   useEffect(() => {
-    if (status === "authenticated") {
+    if (status === "authenticated" && step === 0) {
       setStep(1); // Start at Step 1 (Basic Info) if logged in
     }
-  }, [status]);
+  }, [status, step]);
   const [resendTimer, setResendTimer] = useState(0);
   const [accountErrors, setAccountErrors] = useState({
     email: "",
@@ -591,6 +591,10 @@ export default function ProviderOnboardingPage() {
             description: "Admin will review your request.",
             status: "success",
           });
+
+          // Force session update to reflect new PENDING status
+          await update();
+
           router.push("/providerDashboard");
           return;
         } else {

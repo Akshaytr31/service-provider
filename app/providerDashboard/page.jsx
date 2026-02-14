@@ -295,6 +295,16 @@ export default function ProviderDashboard() {
   const user = session?.user;
   if (!user) return null;
 
+  // Safety check: specific to provider dashboard flash issue
+  // If status is not clearly defined yet (rare race condition), show loader
+  if (!user.providerRequestStatus) {
+    return (
+      <Flex justify="center" align="center" h="100vh">
+        <Spinner color="green.500" size="xl" />
+      </Flex>
+    );
+  }
+
   /* ================= STATUS CHECKS ================= */
   if (user.providerRequestStatus === "none") {
     return (
