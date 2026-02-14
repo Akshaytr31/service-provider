@@ -767,7 +767,7 @@ function RequestsPreview({ onNavigate }) {
   useEffect(() => {
     async function fetchBookings() {
       try {
-        const res = await fetch("/api/bookings");
+        const res = await fetch("/api/bookings?role=provider");
         if (res.ok) {
           const data = await res.json();
           setBookings(Array.isArray(data) ? data.slice(0, 3) : []);

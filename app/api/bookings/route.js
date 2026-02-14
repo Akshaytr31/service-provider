@@ -124,10 +124,21 @@ export async function GET(req) {
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+    const { searchParams } = new URL(req.url);
+    const role = searchParams.get("role");
+
+    let whereClause = {
+      OR: [{ seekerId: user.id }, { providerId: user.id }],
+    };
+
+    if (role === "provider") {
+      whereClause = { providerId: user.id };
+    } else if (role === "seeker") {
+      whereClause = { seekerId: user.id };
+    }
+
     const bookings = await prisma.booking.findMany({
-      where: {
-        OR: [{ seekerId: user.id }, { providerId: user.id }],
-      },
+      where: whereClause,
       include: {
         seeker: {
           select: {

@@ -42,7 +42,7 @@ export default function SeekerBookings() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch("/api/bookings"); // Ensure this endpoint returns user's bookings
+      const res = await fetch("/api/bookings?role=seeker"); // Ensure this endpoint returns user's bookings
       if (res.ok) {
         const data = await res.json();
         setBookings(data);

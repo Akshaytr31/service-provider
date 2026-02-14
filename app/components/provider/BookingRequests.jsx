@@ -83,7 +83,7 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch("/api/bookings");
+      const res = await fetch("/api/bookings?role=provider");
       if (res.ok) {
         const data = await res.json();
         setBookings(data);
