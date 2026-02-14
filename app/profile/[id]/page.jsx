@@ -617,6 +617,21 @@ export default function PublicProfilePage() {
                             }`,
                           )}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
                         ></iframe>
+                        <Box
+                          position="absolute"
+                          top="50%"
+                          left="50%"
+                          transform="translate(-50%, -50%)"
+                          w="150px"
+                          h="150px"
+                          bg="red.500"
+                          opacity={0.3}
+                          borderRadius="full"
+                          pointerEvents="none"
+                          zIndex={10}
+                          border="2px solid"
+                          borderColor="red.800"
+                        />
                       </Box>
                     </Grid>
                   </Box>
