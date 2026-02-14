@@ -15,12 +15,28 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import dynamic from "next/dynamic";
+import CityAutocomplete from "./CityAutocomplete";
 
 const GoogleMap = dynamic(() => import("../../googleMap/GoogleMap"), {
   ssr: false,
 });
 
 export default function ContactStep({ formData, handleChange, setFormData }) {
+  const handleCitySelect = (locationData) => {
+    // Update all relevant fields based on the selected location
+    setFormData((prev) => ({
+      ...prev,
+      city: locationData.city || prev.city,
+      state: locationData.state || prev.state,
+      country: locationData.country || prev.country,
+      zipCode: locationData.zipCode || prev.zipCode,
+      latitude: locationData.lat,
+      longitude: locationData.lon,
+      // You might also want to update the full address text if you have such a field
+      // address: locationData.fullAddress
+    }));
+  };
+
   return (
     <Stack
       spacing={6}
@@ -55,14 +71,11 @@ export default function ContactStep({ formData, handleChange, setFormData }) {
           <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             City
           </FormLabel>
-          <Input
-            name="city"
-            placeholder="City"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
+          <CityAutocomplete
             value={formData.city}
-            onChange={handleChange}
+            onChange={(val) => setFormData((prev) => ({ ...prev, city: val }))}
+            onSelect={handleCitySelect}
+            placeholder="Search City"
           />
         </FormControl>
 
