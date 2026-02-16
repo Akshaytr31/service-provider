@@ -143,7 +143,7 @@ export default function LoginPage() {
           border="1px solid "
           borderColor="gray.100"
         >
-          <Flex direction={{ base: "column", md: "row" }} >
+          <Flex direction={{ base: "column", md: "row" }}>
             {/* Left Column: Social & Sign Up */}
             <Box
               flex={1}
@@ -255,7 +255,6 @@ export default function LoginPage() {
                 </Link>
               </VStack>
             </Box>
-
             {/* Right Column: Credentials Login */}
             <Box flex={1.2} p={{ base: 8, md: 16 }} bg="white">
               <VStack
@@ -273,129 +272,147 @@ export default function LoginPage() {
                   </Text>
                 </Box>
 
-                <Stack spacing={4}>
-                  <FormControl isRequired isInvalid={!!errors.email}>
-                    <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-                      Email address
-                    </FormLabel>
-                    <Input
-                      name="email"
-                      placeholder="e.g. name@example.com"
-                      borderRadius="xl"
-                      value={form.email}
-                      onChange={handleChange}
-                      focusBorderColor="green.400"
-                      bg="gray.50"
-                      border="1px solid"
-                      borderColor="gray.100"
-                      fontSize="sm"
-                      _placeholder={{ color: "gray.400" }}
-                    />
-                    {errors.email && (
-                      <Text color="red.500" fontSize="xs" >
-                        {errors.email}
-                      </Text>
-                    )}
-                  </FormControl>
-
-                  <FormControl isRequired isInvalid={!!errors.password}>
-                    <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
-                      Password
-                    </FormLabel>
-                    <InputGroup >
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleContinue();
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <Stack spacing={4}>
+                    <FormControl isRequired isInvalid={!!errors.email}>
+                      <FormLabel
+                        fontSize="xs"
+                        fontWeight="bold"
+                        color="gray.600"
+                      >
+                        Email address
+                      </FormLabel>
                       <Input
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
+                        name="email"
+                        placeholder="e.g. name@example.com"
                         borderRadius="xl"
-                        fontSize="sm"
-                        value={form.password}
+                        value={form.email}
                         onChange={handleChange}
                         focusBorderColor="green.400"
                         bg="gray.50"
                         border="1px solid"
                         borderColor="gray.100"
+                        fontSize="sm"
                         _placeholder={{ color: "gray.400" }}
                       />
-                      <InputRightElement h="full">
-                        <IconButton
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Toggle password"
-                          icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          color="gray.400"
-                          _hover={{ color: "green.500", bg: "transparent" }}
-                        />
-                      </InputRightElement>
-                    </InputGroup>
-                    {errors.password && (
-                      <Text color="red.500" fontSize="xs" >
-                        {errors.password}
-                      </Text>
-                    )}
-                  </FormControl>
+                      {errors.email && (
+                        <Text color="red.500" fontSize="xs">
+                          {errors.email}
+                        </Text>
+                      )}
+                    </FormControl>
 
-                  <Box textAlign="right">
-                    <Link
-                      href="/forgot-password"
-                      style={{
-                        color: "#718096",
-                        fontSize: "12px",
-                        fontWeight: "bold",
-                        transition: "color 0.2s",
-                      }}
-                      onMouseOver={(e) => (e.target.style.color = "#48BB78")}
-                      onMouseOut={(e) => (e.target.style.color = "#718096")}
-                    >
-                      Forgot password?
-                    </Link>
-                  </Box>
-
-                  {errors.auth && (
-                    <Box
-                      bg="red.50"
-                      p={3}
-                      borderRadius="lg"
-                      border="1px solid"
-                      borderColor="red.100"
-                    >
-                      <Text
-                        color="red.500"
+                    <FormControl isRequired isInvalid={!!errors.password}>
+                      <FormLabel
                         fontSize="xs"
-                        textAlign="center"
                         fontWeight="bold"
+                        color="gray.600"
                       >
-                        {errors.auth}
-                      </Text>
-                    </Box>
-                  )}
+                        Password
+                      </FormLabel>
+                      <InputGroup>
+                        <Input
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          borderRadius="xl"
+                          fontSize="sm"
+                          value={form.password}
+                          onChange={handleChange}
+                          focusBorderColor="green.400"
+                          bg="gray.50"
+                          border="1px solid"
+                          borderColor="gray.100"
+                          _placeholder={{ color: "gray.400" }}
+                        />
+                        <InputRightElement h="full">
+                          <IconButton
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Toggle password"
+                            icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            color="gray.400"
+                            _hover={{ color: "green.500", bg: "transparent" }}
+                          />
+                        </InputRightElement>
+                      </InputGroup>
+                      {errors.password && (
+                        <Text color="red.500" fontSize="xs">
+                          {errors.password}
+                        </Text>
+                      )}
+                    </FormControl>
 
-                  <MotionBox
-                    whileHover={{ translateY: -2 }}
-                    whileTap={{ translateY: 0 }}
-                  >
-                    <Button
-                      bg="green.500"
-                      color="white"
-                      size="lg"
-                      w="full"
-                      h="40px"
-                      fontSize="18px"
-                      fontWeight="bold"
-                      borderRadius="xl"
-                      boxShadow="0 15px 25px -5px rgba(72, 187, 120, 0.4)"
-                      onClick={handleContinue}
-                      _hover={{
-                        bg: "green.600",
-                        boxShadow: "0 20px 30px -10px rgba(72, 187, 120, 0.5)",
-                      }}
-                      transition="all 0.3s"
+                    <Box textAlign="right">
+                      <Link
+                        href="/forgot-password"
+                        style={{
+                          color: "#718096",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          transition: "color 0.2s",
+                        }}
+                        onMouseOver={(e) => (e.target.style.color = "#48BB78")}
+                        onMouseOut={(e) => (e.target.style.color = "#718096")}
+                      >
+                        Forgot password?
+                      </Link>
+                    </Box>
+
+                    {errors.auth && (
+                      <Box
+                        bg="red.50"
+                        p={3}
+                        borderRadius="lg"
+                        border="1px solid"
+                        borderColor="red.100"
+                      >
+                        <Text
+                          color="red.500"
+                          fontSize="xs"
+                          textAlign="center"
+                          fontWeight="bold"
+                        >
+                          {errors.auth}
+                        </Text>
+                      </Box>
+                    )}
+
+                    <MotionBox
+                      whileHover={{ translateY: -2 }}
+                      whileTap={{ translateY: 0 }}
                     >
-                      Sign In
-                    </Button>
-                  </MotionBox>
-                </Stack>
+                      <Button
+                        bg="green.500"
+                        color="white"
+                        size="lg"
+                        w="full"
+                        h="40px"
+                        fontSize="18px"
+                        fontWeight="bold"
+                        borderRadius="xl"
+                        boxShadow="0 15px 25px -5px rgba(72, 187, 120, 0.4)"
+                        type="submit"
+                        isLoading={false} // Add loading state if needed
+                        _hover={{
+                          bg: "green.600",
+                          boxShadow:
+                            "0 20px 30px -10px rgba(72, 187, 120, 0.5)",
+                        }}
+                        transition="all 0.3s"
+                      >
+                        Sign In
+                      </Button>
+                    </MotionBox>
+                  </Stack>
+                </form>
               </VStack>
             </Box>
           </Flex>

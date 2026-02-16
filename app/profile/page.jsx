@@ -635,212 +635,229 @@ export default function ProfilePage() {
                           </CollapsibleSection>
                         </Stack>
                       ) : (
-                        <Stack spacing={6}>
-                          <SectionHeader
-                            title="Edit Profile Details"
-                            icon={EditIcon}
-                          />
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSave();
+                          }}
+                          style={{ width: "100%" }}
+                        >
+                          <Stack spacing={6}>
+                            <SectionHeader
+                              title="Edit Profile Details"
+                              icon={EditIcon}
+                            />
 
-                          <Grid
-                            templateColumns={{
-                              base: "1fr",
-                              md: "repeat(2, 1fr)",
-                            }}
-                            gap={6}
-                          >
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                First Name
-                              </FormLabel>
-                              <Input
-                                value={form.firstName}
-                                onChange={(e) =>
-                                  setForm({
-                                    ...form,
-                                    firstName: e.target.value,
-                                  })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
-
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Last Name
-                              </FormLabel>
-                              <Input
-                                value={form.lastName}
-                                onChange={(e) =>
-                                  setForm({ ...form, lastName: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
-
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Public Profile Slug
-                              </FormLabel>
-                              <Input
-                                value={form.slug}
-                                placeholder="e.g. john-doe-123"
-                                onChange={(e) =>
-                                  setForm({
-                                    ...form,
-                                    slug: e.target.value
-                                      .toLowerCase()
-                                      .replace(/[^a-z0-9-]/g, ""),
-                                  })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                              <Text fontSize="xs" color="gray.400" mt={1}>
-                                Your profile will be available at:{" "}
-                                {window.location.host}/profile/
-                                {form.slug || user?.id}
-                              </Text>
-                            </FormControl>
-
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Gender
-                              </FormLabel>
-                              <Select
-                                value={form.gender}
-                                onChange={(e) =>
-                                  setForm({ ...form, gender: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              >
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                              </Select>
-                            </FormControl>
-
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Date of Birth
-                              </FormLabel>
-                              <Input
-                                type="date"
-                                value={form.dob}
-                                onChange={(e) =>
-                                  setForm({ ...form, dob: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
-
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Mobile
-                              </FormLabel>
-                              <Input
-                                value={form.mobile}
-                                onChange={(e) =>
-                                  setForm({ ...form, mobile: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
-
-                            <GridItem colSpan={{ base: 1, md: 2 }}>
+                            <Grid
+                              templateColumns={{
+                                base: "1fr",
+                                md: "repeat(2, 1fr)",
+                              }}
+                              gap={6}
+                            >
                               <FormControl>
                                 <FormLabel fontSize="sm" color="gray.600">
-                                  Address
+                                  First Name
                                 </FormLabel>
                                 <Input
-                                  value={form.address}
+                                  value={form.firstName}
                                   onChange={(e) =>
                                     setForm({
                                       ...form,
-                                      address: e.target.value,
+                                      firstName: e.target.value,
                                     })
                                   }
                                   borderRadius="xl"
                                   focusBorderColor="green.400"
                                 />
                               </FormControl>
-                            </GridItem>
 
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                City
-                              </FormLabel>
-                              <Input
-                                value={form.city}
-                                onChange={(e) =>
-                                  setForm({ ...form, city: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Last Name
+                                </FormLabel>
+                                <Input
+                                  value={form.lastName}
+                                  onChange={(e) =>
+                                    setForm({
+                                      ...form,
+                                      lastName: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
 
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                State
-                              </FormLabel>
-                              <Input
-                                value={form.state}
-                                onChange={(e) =>
-                                  setForm({ ...form, state: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Public Profile Slug
+                                </FormLabel>
+                                <Input
+                                  value={form.slug}
+                                  placeholder="e.g. john-doe-123"
+                                  onChange={(e) =>
+                                    setForm({
+                                      ...form,
+                                      slug: e.target.value
+                                        .toLowerCase()
+                                        .replace(/[^a-z0-9-]/g, ""),
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                                <Text fontSize="xs" color="gray.400" mt={1}>
+                                  Your profile will be available at:{" "}
+                                  {window.location.host}/profile/
+                                  {form.slug || user?.id}
+                                </Text>
+                              </FormControl>
 
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Country
-                              </FormLabel>
-                              <Input
-                                value={form.country}
-                                onChange={(e) =>
-                                  setForm({ ...form, country: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Gender
+                                </FormLabel>
+                                <Select
+                                  value={form.gender}
+                                  onChange={(e) =>
+                                    setForm({ ...form, gender: e.target.value })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                >
+                                  <option value="">Select Gender</option>
+                                  <option value="Male">Male</option>
+                                  <option value="Female">Female</option>
+                                  <option value="Other">Other</option>
+                                </Select>
+                              </FormControl>
 
-                            <FormControl>
-                              <FormLabel fontSize="sm" color="gray.600">
-                                Zip Code
-                              </FormLabel>
-                              <Input
-                                value={form.zipCode}
-                                onChange={(e) =>
-                                  setForm({ ...form, zipCode: e.target.value })
-                                }
-                                borderRadius="xl"
-                                focusBorderColor="green.400"
-                              />
-                            </FormControl>
-                          </Grid>
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Date of Birth
+                                </FormLabel>
+                                <Input
+                                  type="date"
+                                  value={form.dob}
+                                  onChange={(e) =>
+                                    setForm({ ...form, dob: e.target.value })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
 
-                          <Box pt={6}>
-                            <Button
-                              w="full"
-                              colorScheme="green"
-                              size="lg"
-                              borderRadius="2xl"
-                              onClick={handleSave}
-                              boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
-                            >
-                              Save All Changes
-                            </Button>
-                          </Box>
-                        </Stack>
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Mobile
+                                </FormLabel>
+                                <Input
+                                  value={form.mobile}
+                                  onChange={(e) =>
+                                    setForm({ ...form, mobile: e.target.value })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
+
+                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Address
+                                  </FormLabel>
+                                  <Input
+                                    value={form.address}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        address: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+                              </GridItem>
+
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  City
+                                </FormLabel>
+                                <Input
+                                  value={form.city}
+                                  onChange={(e) =>
+                                    setForm({ ...form, city: e.target.value })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  State
+                                </FormLabel>
+                                <Input
+                                  value={form.state}
+                                  onChange={(e) =>
+                                    setForm({ ...form, state: e.target.value })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Country
+                                </FormLabel>
+                                <Input
+                                  value={form.country}
+                                  onChange={(e) =>
+                                    setForm({
+                                      ...form,
+                                      country: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
+
+                              <FormControl>
+                                <FormLabel fontSize="sm" color="gray.600">
+                                  Zip Code
+                                </FormLabel>
+                                <Input
+                                  value={form.zipCode}
+                                  onChange={(e) =>
+                                    setForm({
+                                      ...form,
+                                      zipCode: e.target.value,
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                  focusBorderColor="green.400"
+                                />
+                              </FormControl>
+                            </Grid>
+
+                            <Box pt={6}>
+                              <Button
+                                w="full"
+                                colorScheme="green"
+                                size="lg"
+                                borderRadius="2xl"
+                                type="submit"
+                                boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
+                              >
+                                Save All Changes
+                              </Button>
+                            </Box>
+                          </Stack>
+                        </form>
                       )}
                     </AnimatePresence>
                   </Box>
@@ -1085,327 +1102,338 @@ export default function ProfilePage() {
                     border="1px solid"
                     borderColor="gray.100"
                   >
-                    <Flex justify="space-between" align="center" mb={6}>
-                      <HStack>
-                        <Icon as={FiBriefcase} color="green.500" boxSize={6} />
-                        <Heading size="md" color="gray.700">
-                          Provider Application Details
-                        </Heading>
-                      </HStack>
-                      <HStack>
-                        {isEditing && (
-                          <Button
-                            colorScheme="green"
-                            onClick={handleProviderSave}
-                            size="sm"
-                            borderRadius="lg"
-                          >
-                            Save Provider Changes
-                          </Button>
-                        )}
-                        <Badge
-                          colorScheme={
-                            providerRequest.status === "APPROVED"
-                              ? "green"
-                              : providerRequest.status === "REJECTED"
-                                ? "red"
-                                : "orange"
-                          }
-                          px={3}
-                          py={1}
-                          borderRadius="full"
-                          fontSize="sm"
-                        >
-                          {providerRequest.status}
-                        </Badge>
-                      </HStack>
-                    </Flex>
-
-                    <Stack>
-                      {/* Identity Section */}
-                      <CollapsibleSection
-                        title={
-                          providerRequest.userType === "business"
-                            ? "Business Details"
-                            : "Personal Details"
-                        }
-                        icon={FiUser}
-                      >
-                        <Grid
-                          templateColumns={{
-                            base: "1fr",
-                            md: "repeat(2, 1fr)",
-                          }}
-                          gap={6}
-                        >
-                          <DisplayField
-                            label="Provider Type"
-                            value={
-                              providerRequest.userType === "business"
-                                ? "Business Entity"
-                                : "Individual Provider"
-                            }
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleProviderSave();
+                      }}
+                      style={{ width: "100%" }}
+                    >
+                      <Flex justify="space-between" align="center" mb={6}>
+                        <HStack>
+                          <Icon
+                            as={FiBriefcase}
+                            color="green.500"
+                            boxSize={6}
                           />
+                          <Heading size="md" color="gray.700">
+                            Provider Application Details
+                          </Heading>
+                        </HStack>
+                        <HStack>
+                          {isEditing && (
+                            <Button
+                              colorScheme="green"
+                              type="submit"
+                              size="sm"
+                              borderRadius="lg"
+                            >
+                              Save Provider Changes
+                            </Button>
+                          )}
+                          <Badge
+                            colorScheme={
+                              providerRequest.status === "APPROVED"
+                                ? "green"
+                                : providerRequest.status === "REJECTED"
+                                  ? "red"
+                                  : "orange"
+                            }
+                            px={3}
+                            py={1}
+                            borderRadius="full"
+                            fontSize="sm"
+                          >
+                            {providerRequest.status}
+                          </Badge>
+                        </HStack>
+                      </Flex>
 
-                          {providerRequest.userType === "business" ? (
-                            <>
-                              {isEditing ? (
-                                <>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Business Name
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.businessName}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          businessName: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Business Type
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.businessType}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          businessType: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Registration Number
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.registrationNumber}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          registrationNumber: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      TRN Number
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.trnNumber}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          trnNumber: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Establishment Year
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.establishmentYear}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          establishmentYear: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Expiry Date
-                                    </FormLabel>
-                                    <Input
-                                      type="date"
-                                      value={providerForm.businessExpiryDate}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          businessExpiryDate: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                </>
-                              ) : (
-                                <>
-                                  <DisplayField
-                                    label="Business Name"
-                                    value={providerRequest.businessName}
-                                  />
-                                  <DisplayField
-                                    label="Business Type"
-                                    value={providerRequest.businessType}
-                                  />
-                                  <DisplayField
-                                    label="Registration Number"
-                                    value={providerRequest.registrationNumber}
-                                  />
-                                  <DisplayField
-                                    label="TRN Number"
-                                    value={providerRequest.trnNumber}
-                                  />
-                                  <DisplayField
-                                    label="Establishment Year"
-                                    value={providerRequest.establishmentYear}
-                                  />
-                                  <DisplayField
-                                    label="Expiry Date"
-                                    value={providerRequest.businessExpiryDate}
-                                  />
-                                </>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {isEditing ? (
-                                <>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      First Name
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.firstName}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          firstName: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <FormControl>
-                                    <FormLabel
-                                      fontSize="xs"
-                                      fontWeight="bold"
-                                      color="gray.500"
-                                    >
-                                      Last Name
-                                    </FormLabel>
-                                    <Input
-                                      value={providerForm.lastName}
-                                      onChange={(e) =>
-                                        setProviderForm({
-                                          ...providerForm,
-                                          lastName: e.target.value,
-                                        })
-                                      }
-                                      borderRadius="xl"
-                                    />
-                                  </FormControl>
-                                  <GridItem colSpan={{ base: 1, md: 2 }}>
+                      <Stack>
+                        {/* Identity Section */}
+                        <CollapsibleSection
+                          title={
+                            providerRequest.userType === "business"
+                              ? "Business Details"
+                              : "Personal Details"
+                          }
+                          icon={FiUser}
+                        >
+                          <Grid
+                            templateColumns={{
+                              base: "1fr",
+                              md: "repeat(2, 1fr)",
+                            }}
+                            gap={6}
+                          >
+                            <DisplayField
+                              label="Provider Type"
+                              value={
+                                providerRequest.userType === "business"
+                                  ? "Business Entity"
+                                  : "Individual Provider"
+                              }
+                            />
+
+                            {providerRequest.userType === "business" ? (
+                              <>
+                                {isEditing ? (
+                                  <>
                                     <FormControl>
                                       <FormLabel
                                         fontSize="xs"
                                         fontWeight="bold"
                                         color="gray.500"
                                       >
-                                        ID Type
-                                      </FormLabel>
-                                      <Select
-                                        value={providerForm.idType}
-                                        onChange={(e) =>
-                                          setProviderForm({
-                                            ...providerForm,
-                                            idType: e.target.value,
-                                          })
-                                        }
-                                        borderRadius="xl"
-                                      >
-                                        <option value="Passport">
-                                          Passport
-                                        </option>
-                                        <option value="Driving License">
-                                          Driving License
-                                        </option>
-                                        <option value="National ID">
-                                          National ID
-                                        </option>
-                                      </Select>
-                                    </FormControl>
-                                  </GridItem>
-                                  <GridItem colSpan={{ base: 1, md: 2 }}>
-                                    <FormControl>
-                                      <FormLabel
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="gray.500"
-                                      >
-                                        ID Number
+                                        Business Name
                                       </FormLabel>
                                       <Input
-                                        value={providerForm.idNumber}
+                                        value={providerForm.businessName}
                                         onChange={(e) =>
                                           setProviderForm({
                                             ...providerForm,
-                                            idNumber: e.target.value,
+                                            businessName: e.target.value,
                                           })
                                         }
                                         borderRadius="xl"
                                       />
                                     </FormControl>
-                                  </GridItem>
-                                </>
-                              ) : (
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        Business Type
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.businessType}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            businessType: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        Registration Number
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.registrationNumber}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            registrationNumber: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        TRN Number
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.trnNumber}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            trnNumber: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        Establishment Year
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.establishmentYear}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            establishmentYear: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        Expiry Date
+                                      </FormLabel>
+                                      <Input
+                                        type="date"
+                                        value={providerForm.businessExpiryDate}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            businessExpiryDate: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                  </>
+                                ) : (
+                                  <>
+                                    <DisplayField
+                                      label="Business Name"
+                                      value={providerRequest.businessName}
+                                    />
+                                    <DisplayField
+                                      label="Business Type"
+                                      value={providerRequest.businessType}
+                                    />
+                                    <DisplayField
+                                      label="Registration Number"
+                                      value={providerRequest.registrationNumber}
+                                    />
+                                    <DisplayField
+                                      label="TRN Number"
+                                      value={providerRequest.trnNumber}
+                                    />
+                                    <DisplayField
+                                      label="Establishment Year"
+                                      value={providerRequest.establishmentYear}
+                                    />
+                                    <DisplayField
+                                      label="Expiry Date"
+                                      value={providerRequest.businessExpiryDate}
+                                    />
+                                  </>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {isEditing ? (
+                                  <>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        First Name
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.firstName}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            firstName: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <FormControl>
+                                      <FormLabel
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                        color="gray.500"
+                                      >
+                                        Last Name
+                                      </FormLabel>
+                                      <Input
+                                        value={providerForm.lastName}
+                                        onChange={(e) =>
+                                          setProviderForm({
+                                            ...providerForm,
+                                            lastName: e.target.value,
+                                          })
+                                        }
+                                        borderRadius="xl"
+                                      />
+                                    </FormControl>
+                                    <GridItem colSpan={{ base: 1, md: 2 }}>
+                                      <FormControl>
+                                        <FormLabel
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.500"
+                                        >
+                                          ID Type
+                                        </FormLabel>
+                                        <Select
+                                          value={providerForm.idType}
+                                          onChange={(e) =>
+                                            setProviderForm({
+                                              ...providerForm,
+                                              idType: e.target.value,
+                                            })
+                                          }
+                                          borderRadius="xl"
+                                        >
+                                          <option value="Passport">
+                                            Passport
+                                          </option>
+                                          <option value="Driving License">
+                                            Driving License
+                                          </option>
+                                          <option value="National ID">
+                                            National ID
+                                          </option>
+                                        </Select>
+                                      </FormControl>
+                                    </GridItem>
+                                    <GridItem colSpan={{ base: 1, md: 2 }}>
+                                      <FormControl>
+                                        <FormLabel
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.500"
+                                        >
+                                          ID Number
+                                        </FormLabel>
+                                        <Input
+                                          value={providerForm.idNumber}
+                                          onChange={(e) =>
+                                            setProviderForm({
+                                              ...providerForm,
+                                              idNumber: e.target.value,
+                                            })
+                                          }
+                                          borderRadius="xl"
+                                        />
+                                      </FormControl>
+                                    </GridItem>
+                                  </>
+                                ) : (
+                                  <DisplayField
+                                    label="Full Name"
+                                    value={`${providerRequest.firstName || ""} ${providerRequest.lastName || ""}`}
+                                  />
+                                )}
                                 <DisplayField
-                                  label="Full Name"
-                                  value={`${providerRequest.firstName || ""} ${providerRequest.lastName || ""}`}
+                                  label="Date of Birth"
+                                  value={providerRequest.dateOfBirth}
                                 />
-                              )}
-                              <DisplayField
-                                label="Date of Birth"
-                                value={providerRequest.dateOfBirth}
-                              />
-                              <DisplayField
-                                label="Gender"
-                                value={providerRequest.gender}
-                              />
-                              {/* {!isEditing && (
+                                <DisplayField
+                                  label="Gender"
+                                  value={providerRequest.gender}
+                                />
+                                {/* {!isEditing && (
                                 <>
                                   <DisplayField
                                     label="ID Type"
@@ -1417,1070 +1445,1110 @@ export default function ProfilePage() {
                                   />
                                 </>
                               )} */}
-                            </>
-                          )}
-                        </Grid>
-                      </CollapsibleSection>
-                      {/* Service Details */}
-                      <CollapsibleSection
-                        title="Service Details"
-                        icon={FiBriefcase}
-                      >
-                        <Stack spacing={6}>
-                          {(function () {
-                            // Construct the unified list of services based on mode
-                            const rootService = isEditing
-                              ? {
-                                  categoryId: providerForm.categoryId,
-                                  subCategoryId: providerForm.subCategoryId,
-                                  yearsExperience: providerForm.yearsExperience,
-                                  description: providerForm.description,
-                                  serviceRadius: providerForm.serviceRadius,
-                                  extraSkills: providerForm.skills || [],
-                                  isRoot: true,
-                                }
-                              : {
-                                  categoryId: providerRequest.categoryId,
-                                  subCategoryId: providerRequest.subCategoryId,
-                                  yearsExperience:
-                                    providerRequest.yearsExperience,
-                                  description: providerRequest.description,
-                                  serviceRadius: providerRequest.serviceRadius,
-                                  extraSkills: providerRequest.skills || [],
-                                  isRoot: true,
-                                };
+                              </>
+                            )}
+                          </Grid>
+                        </CollapsibleSection>
+                        {/* Service Details */}
+                        <CollapsibleSection
+                          title="Service Details"
+                          icon={FiBriefcase}
+                        >
+                          <Stack spacing={6}>
+                            {(function () {
+                              // Construct the unified list of services based on mode
+                              const rootService = isEditing
+                                ? {
+                                    categoryId: providerForm.categoryId,
+                                    subCategoryId: providerForm.subCategoryId,
+                                    yearsExperience:
+                                      providerForm.yearsExperience,
+                                    description: providerForm.description,
+                                    serviceRadius: providerForm.serviceRadius,
+                                    extraSkills: providerForm.skills || [],
+                                    isRoot: true,
+                                  }
+                                : {
+                                    categoryId: providerRequest.categoryId,
+                                    subCategoryId:
+                                      providerRequest.subCategoryId,
+                                    yearsExperience:
+                                      providerRequest.yearsExperience,
+                                    description: providerRequest.description,
+                                    serviceRadius:
+                                      providerRequest.serviceRadius,
+                                    extraSkills: providerRequest.skills || [],
+                                    isRoot: true,
+                                  };
 
-                            const otherServicesRaw = isEditing
-                              ? providerForm.servicesOffered || []
-                              : providerRequest.servicesOffered || [];
+                              const otherServicesRaw = isEditing
+                                ? providerForm.servicesOffered || []
+                                : providerRequest.servicesOffered || [];
 
-                            const globalRadius = isEditing
-                              ? providerForm.serviceRadius
-                              : providerRequest.serviceRadius;
+                              const globalRadius = isEditing
+                                ? providerForm.serviceRadius
+                                : providerRequest.serviceRadius;
 
-                            // Filter out the "root" service and inject global serviceRadius
-                            const otherServices = otherServicesRaw
-                              .filter((s) => {
-                                const isSameCategory =
-                                  Number(s.categoryId) ===
-                                  Number(rootService.categoryId);
-                                const isSameSubCategory =
-                                  Number(s.subCategoryId) ===
-                                  Number(rootService.subCategoryId);
-                                return !(isSameCategory && isSameSubCategory);
-                              })
-                              .map((s) => ({
-                                ...s,
-                                serviceRadius: globalRadius,
-                              }));
+                              // Filter out the "root" service and inject global serviceRadius
+                              const otherServices = otherServicesRaw
+                                .filter((s) => {
+                                  const isSameCategory =
+                                    Number(s.categoryId) ===
+                                    Number(rootService.categoryId);
+                                  const isSameSubCategory =
+                                    Number(s.subCategoryId) ===
+                                    Number(rootService.subCategoryId);
+                                  return !(isSameCategory && isSameSubCategory);
+                                })
+                                .map((s) => ({
+                                  ...s,
+                                  serviceRadius: globalRadius,
+                                }));
 
-                            const allServices = [rootService, ...otherServices];
+                              const allServices = [
+                                rootService,
+                                ...otherServices,
+                              ];
 
-                            return allServices.map((service, index) => {
-                              // Helper to find category/subcategory usage
-                              const catId = service.categoryId;
-                              const subCatId = service.subCategoryId;
+                              return allServices.map((service, index) => {
+                                // Helper to find category/subcategory usage
+                                const catId = service.categoryId;
+                                const subCatId = service.subCategoryId;
 
-                              const category = categories.find(
-                                (c) => c.id === Number(catId),
-                              );
-                              const subCategory = category?.subCategories?.find(
-                                (s) => s.id === Number(subCatId),
-                              );
-                              const isRoot = index === 0;
+                                const category = categories.find(
+                                  (c) => c.id === Number(catId),
+                                );
+                                const subCategory =
+                                  category?.subCategories?.find(
+                                    (s) => s.id === Number(subCatId),
+                                  );
+                                const isRoot = index === 0;
 
-                              return (
-                                <Box
-                                  key={index}
-                                  p={5}
-                                  bg="gray.50"
-                                  borderRadius="2xl"
-                                  border="1px solid"
-                                  borderColor="gray.100"
-                                >
-                                  <HStack justify="space-between" mb={4}>
-                                    <Text
-                                      fontWeight="bold"
-                                      color="green.600"
-                                      fontSize="sm"
-                                    >
-                                      Service #{index + 1}
-                                    </Text>
-                                    <Badge
-                                      colorScheme="green"
-                                      variant="subtle"
-                                      borderRadius="full"
-                                      px={3}
-                                    >
-                                      {category?.name || "Unknown Category"}
-                                    </Badge>
-                                  </HStack>
-
-                                  <Grid
-                                    templateColumns={{
-                                      base: "1fr",
-                                      md: "repeat(2, 1fr)",
-                                    }}
-                                    gap={5}
-                                  >
-                                    {/* Category - Always Read Only */}
-                                    <Box>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="gray.400"
-                                        textTransform="uppercase"
-                                        mb={1}
-                                      >
-                                        Category
-                                      </Text>
-                                      <Text fontSize="sm" fontWeight="bold">
-                                        {category?.name ||
-                                          service.categoryId ||
-                                          "-"}
-                                      </Text>
-                                    </Box>
-
-                                    {/* Sub-Category - Always Read Only */}
-                                    <Box>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="gray.400"
-                                        textTransform="uppercase"
-                                        mb={1}
-                                      >
-                                        Sub-Category
-                                      </Text>
-                                      <Text fontSize="sm" fontWeight="bold">
-                                        {subCategory?.name ||
-                                          service.subCategoryId ||
-                                          "-"}
-                                      </Text>
-                                    </Box>
-
-                                    {/* Service Radius - For All Services */}
-                                    <Box>
-                                      {isEditing ? (
-                                        <FormControl>
-                                          <FormLabel
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.500"
-                                          >
-                                            Service Radius (KM)
-                                          </FormLabel>
-                                          <Input
-                                            type="number"
-                                            value={
-                                              service.serviceRadius ||
-                                              providerForm.serviceRadius
-                                            } // Use service prop or fallback to global form
-                                            onChange={(e) =>
-                                              setProviderForm({
-                                                ...providerForm,
-                                                serviceRadius: e.target.value,
-                                              })
-                                            }
-                                            borderRadius="xl"
-                                            bg="white"
-                                          />
-                                        </FormControl>
-                                      ) : (
-                                        <>
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.400"
-                                            textTransform="uppercase"
-                                            mb={1}
-                                          >
-                                            Service Radius
-                                          </Text>
-                                          <Text fontSize="sm" fontWeight="bold">
-                                            {service.serviceRadius
-                                              ? `${service.serviceRadius} km`
-                                              : "N/A"}
-                                          </Text>
-                                        </>
-                                      )}
-                                    </Box>
-
-                                    {/* Years of Experience */}
-                                    <Box>
-                                      {isEditing ? (
-                                        <FormControl>
-                                          <FormLabel
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.500"
-                                          >
-                                            Years of Experience
-                                          </FormLabel>
-                                          <Input
-                                            value={service.yearsExperience}
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              if (isRoot) {
-                                                setProviderForm({
-                                                  ...providerForm,
-                                                  yearsExperience: val,
-                                                });
-                                              } else {
-                                                const newServices = [
-                                                  ...(providerForm.servicesOffered ||
-                                                    []),
-                                                ];
-                                                // Ensure object exists
-                                                newServices[index - 1] = {
-                                                  ...(newServices[index - 1] ||
-                                                    {}),
-                                                  yearsExperience: val,
-                                                };
-                                                setProviderForm({
-                                                  ...providerForm,
-                                                  servicesOffered: newServices,
-                                                });
-                                              }
-                                            }}
-                                            borderRadius="xl"
-                                            bg="white"
-                                          />
-                                        </FormControl>
-                                      ) : (
-                                        <>
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.400"
-                                            textTransform="uppercase"
-                                            mb={1}
-                                          >
-                                            Years of Experience
-                                          </Text>
-                                          <Text fontSize="sm" fontWeight="bold">
-                                            {service.yearsExperience
-                                              ? `${service.yearsExperience} Years`
-                                              : "-"}
-                                          </Text>
-                                        </>
-                                      )}
-                                    </Box>
-
-                                    {/* Description */}
-                                    <Box gridColumn={{ md: "span 2" }}>
-                                      {isEditing ? (
-                                        <FormControl>
-                                          <FormLabel
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.500"
-                                          >
-                                            Description
-                                          </FormLabel>
-                                          <Textarea
-                                            value={service.description}
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              if (isRoot) {
-                                                setProviderForm({
-                                                  ...providerForm,
-                                                  description: val,
-                                                });
-                                              } else {
-                                                const newServices = [
-                                                  ...(providerForm.servicesOffered ||
-                                                    []),
-                                                ];
-                                                newServices[index - 1] = {
-                                                  ...(newServices[index - 1] ||
-                                                    {}),
-                                                  description: val,
-                                                };
-                                                setProviderForm({
-                                                  ...providerForm,
-                                                  servicesOffered: newServices,
-                                                });
-                                              }
-                                            }}
-                                            borderRadius="xl"
-                                            bg="white"
-                                          />
-                                        </FormControl>
-                                      ) : (
-                                        <>
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.400"
-                                            textTransform="uppercase"
-                                            mb={1}
-                                          >
-                                            Description
-                                          </Text>
-                                          <Text fontSize="sm" color="gray.700">
-                                            {service.description ||
-                                              "No description provided."}
-                                          </Text>
-                                        </>
-                                      )}
-                                    </Box>
-
-                                    {/* Extra Skills */}
-                                    {service.extraSkills &&
-                                      service.extraSkills.length > 0 && (
-                                        <Box gridColumn="1 / -1">
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color="gray.400"
-                                            textTransform="uppercase"
-                                            mb={2}
-                                          >
-                                            Additional Skills
-                                          </Text>
-                                          <HStack wrap="wrap" spacing={2}>
-                                            {service.extraSkills.map(
-                                              (skill, si) => (
-                                                <Tag
-                                                  key={si}
-                                                  size="sm"
-                                                  variant="outline"
-                                                  colorScheme="green"
-                                                  borderRadius="full"
-                                                >
-                                                  {skill}
-                                                </Tag>
-                                              ),
-                                            )}
-                                          </HStack>
-                                        </Box>
-                                      )}
-                                  </Grid>
-                                </Box>
-                              );
-                            });
-                          })()}
-                        </Stack>
-                      </CollapsibleSection>
-                      {/* Qualifications (New Section) */}
-                      {providerRequest.userType === "individual" &&
-                        !isEditing && (
-                          <CollapsibleSection
-                            title="Qualifications"
-                            icon={FiBriefcase}
-                          >
-                            <VStack align="stretch" w="full" spacing={4}>
-                              {providerRequest.qualifications?.length > 0 ? (
-                                providerRequest.qualifications.map((q, i) => (
+                                return (
                                   <Box
-                                    display="grid"
-                                    gridTemplateColumns={{
-                                      base: "1fr",
-                                      md: "repeat(2, 1fr)",
-                                    }}
-                                    key={i}
-                                    borderRadius="lg"
-                                    gap="10px"
-                                    p={4}
+                                    key={index}
+                                    p={5}
                                     bg="gray.50"
+                                    borderRadius="2xl"
+                                    border="1px solid"
+                                    borderColor="gray.100"
                                   >
-                                    <Box>
+                                    <HStack justify="space-between" mb={4}>
                                       <Text
-                                        fontSize="xs"
                                         fontWeight="bold"
-                                        color="gray.400"
-                                        textTransform="uppercase"
+                                        color="green.600"
+                                        fontSize="sm"
                                       >
-                                        Degree/Certification
+                                        Service #{index + 1}
                                       </Text>
-                                      <Text color="green.600" fontWeight="bold">
-                                        {q.degree}
-                                      </Text>
-                                    </Box>
-                                    <Box>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="gray.400"
-                                        textTransform="uppercase"
+                                      <Badge
+                                        colorScheme="green"
+                                        variant="subtle"
+                                        borderRadius="full"
+                                        px={3}
                                       >
-                                        Institution
-                                      </Text>
-                                      <Text color="gray.700">
-                                        {q.institution}
-                                      </Text>
-                                    </Box>
-                                    <Box>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                        color="gray.400"
-                                        textTransform="uppercase"
-                                      >
-                                        Year of Completion
-                                      </Text>
-                                      <Text color="gray.700">{q.year}</Text>
-                                    </Box>
-                                  </Box>
-                                ))
-                              ) : (
-                                <Text color="gray.500" fontSize="sm">
-                                  No qualifications listed.
-                                </Text>
-                              )}
-                            </VStack>
-                          </CollapsibleSection>
-                        )}
-                      {/* Availability (New Section) */}
-                      {!isEditing && (
-                        <>
-                          <CollapsibleSection
-                            title="Availability"
-                            icon={TimeIcon}
-                          >
-                            <Grid
-                              templateColumns={{
-                                base: "1fr",
-                                md: "repeat(2, 1fr)",
-                              }}
-                              gap={6}
-                            >
-                              <DisplayField
-                                label="Days"
-                                value={providerRequest.availability?.days?.join(
-                                  ", ",
-                                )}
-                              />
-                              <DisplayField
-                                label="Hours"
-                                value={
-                                  providerRequest.availability?.hours?.start &&
-                                  providerRequest.availability?.hours?.end
-                                    ? `${providerRequest.availability?.hours?.start} - ${providerRequest.availability?.hours?.end}`
-                                    : "Not provided"
-                                }
-                              />
-                              <Box>
-                                <Text
-                                  fontSize="xs"
-                                  color="gray.400"
-                                  fontWeight="bold"
-                                  textTransform="uppercase"
-                                  mb={1}
-                                >
-                                  Emergency Services
-                                </Text>
-                                <Tag
-                                  colorScheme={
-                                    providerRequest.availability?.emergency
-                                      ? "green"
-                                      : "gray"
-                                  }
-                                  size="md"
-                                  borderRadius="full"
-                                >
-                                  {providerRequest.availability?.emergency
-                                    ? "Available for Emergency"
-                                    : "Not Available for Emergency"}
-                                </Tag>
-                              </Box>
-                            </Grid>
-                          </CollapsibleSection>
-                        </>
-                      )}
-                      {/* Pricing */}
-                      <CollapsibleSection title="Pricing" icon={AtSignIcon}>
-                        <Grid
-                          templateColumns={{
-                            base: "1fr",
-                            md: "repeat(3, 1fr)",
-                          }}
-                          gap={6}
-                        >
-                          {isEditing ? (
-                            <>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Pricing Model
-                                </FormLabel>
-                                <Select
-                                  value={providerForm.pricingType}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      pricingType: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                >
-                                  <option value="Hourly">Hourly</option>
-                                  <option value="Fixed">Fixed</option>
-                                  <option value="Quote">Quote</option>
-                                </Select>
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Base Rate
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.baseRate}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      baseRate: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  On-Site Charges
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.onSiteCharges}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      onSiteCharges: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                            </>
-                          ) : (
-                            <>
-                              <DisplayField
-                                label="Pricing Model"
-                                value={providerRequest.pricingType}
-                              />
-                              <DisplayField
-                                label="Base Rate"
-                                value={providerRequest.baseRate}
-                              />
-                              <DisplayField
-                                label="On-Site Charges"
-                                value={providerRequest.onSiteCharges}
-                              />
-                              {/* Payment Methods */}
-                              <Box
-                                gridColumn={{ base: "span 1", md: "span 3" }}
-                              >
-                                <Text
-                                  fontSize="xs"
-                                  color="gray.400"
-                                  fontWeight="bold"
-                                  textTransform="uppercase"
-                                  mb={2}
-                                >
-                                  Payment Methods
-                                </Text>
-                                <HStack wrap="wrap" spacing={2}>
-                                  {providerRequest.paymentMethods &&
-                                  providerRequest.paymentMethods.length > 0 ? (
-                                    providerRequest.paymentMethods.map(
-                                      (p, i) => (
-                                        <Tag
-                                          key={i}
-                                          size="sm"
-                                          colorScheme="green"
-                                          variant="outline"
-                                          borderRadius="full"
-                                        >
-                                          {p}
-                                        </Tag>
-                                      ),
-                                    )
-                                  ) : (
-                                    <Text
-                                      fontSize="md"
-                                      color="gray.700"
-                                      fontWeight="medium"
+                                        {category?.name || "Unknown Category"}
+                                      </Badge>
+                                    </HStack>
+
+                                    <Grid
+                                      templateColumns={{
+                                        base: "1fr",
+                                        md: "repeat(2, 1fr)",
+                                      }}
+                                      gap={5}
                                     >
-                                      Not provided
-                                    </Text>
-                                  )}
-                                </HStack>
-                              </Box>
-                            </>
+                                      {/* Category - Always Read Only */}
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                          mb={1}
+                                        >
+                                          Category
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          {category?.name ||
+                                            service.categoryId ||
+                                            "-"}
+                                        </Text>
+                                      </Box>
+
+                                      {/* Sub-Category - Always Read Only */}
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                          mb={1}
+                                        >
+                                          Sub-Category
+                                        </Text>
+                                        <Text fontSize="sm" fontWeight="bold">
+                                          {subCategory?.name ||
+                                            service.subCategoryId ||
+                                            "-"}
+                                        </Text>
+                                      </Box>
+
+                                      {/* Service Radius - For All Services */}
+                                      <Box>
+                                        {isEditing ? (
+                                          <FormControl>
+                                            <FormLabel
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.500"
+                                            >
+                                              Service Radius (KM)
+                                            </FormLabel>
+                                            <Input
+                                              type="number"
+                                              value={
+                                                service.serviceRadius ||
+                                                providerForm.serviceRadius
+                                              } // Use service prop or fallback to global form
+                                              onChange={(e) =>
+                                                setProviderForm({
+                                                  ...providerForm,
+                                                  serviceRadius: e.target.value,
+                                                })
+                                              }
+                                              borderRadius="xl"
+                                              bg="white"
+                                            />
+                                          </FormControl>
+                                        ) : (
+                                          <>
+                                            <Text
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.400"
+                                              textTransform="uppercase"
+                                              mb={1}
+                                            >
+                                              Service Radius
+                                            </Text>
+                                            <Text
+                                              fontSize="sm"
+                                              fontWeight="bold"
+                                            >
+                                              {service.serviceRadius
+                                                ? `${service.serviceRadius} km`
+                                                : "N/A"}
+                                            </Text>
+                                          </>
+                                        )}
+                                      </Box>
+
+                                      {/* Years of Experience */}
+                                      <Box>
+                                        {isEditing ? (
+                                          <FormControl>
+                                            <FormLabel
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.500"
+                                            >
+                                              Years of Experience
+                                            </FormLabel>
+                                            <Input
+                                              value={service.yearsExperience}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (isRoot) {
+                                                  setProviderForm({
+                                                    ...providerForm,
+                                                    yearsExperience: val,
+                                                  });
+                                                } else {
+                                                  const newServices = [
+                                                    ...(providerForm.servicesOffered ||
+                                                      []),
+                                                  ];
+                                                  // Ensure object exists
+                                                  newServices[index - 1] = {
+                                                    ...(newServices[
+                                                      index - 1
+                                                    ] || {}),
+                                                    yearsExperience: val,
+                                                  };
+                                                  setProviderForm({
+                                                    ...providerForm,
+                                                    servicesOffered:
+                                                      newServices,
+                                                  });
+                                                }
+                                              }}
+                                              borderRadius="xl"
+                                              bg="white"
+                                            />
+                                          </FormControl>
+                                        ) : (
+                                          <>
+                                            <Text
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.400"
+                                              textTransform="uppercase"
+                                              mb={1}
+                                            >
+                                              Years of Experience
+                                            </Text>
+                                            <Text
+                                              fontSize="sm"
+                                              fontWeight="bold"
+                                            >
+                                              {service.yearsExperience
+                                                ? `${service.yearsExperience} Years`
+                                                : "-"}
+                                            </Text>
+                                          </>
+                                        )}
+                                      </Box>
+
+                                      {/* Description */}
+                                      <Box gridColumn={{ md: "span 2" }}>
+                                        {isEditing ? (
+                                          <FormControl>
+                                            <FormLabel
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.500"
+                                            >
+                                              Description
+                                            </FormLabel>
+                                            <Textarea
+                                              value={service.description}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (isRoot) {
+                                                  setProviderForm({
+                                                    ...providerForm,
+                                                    description: val,
+                                                  });
+                                                } else {
+                                                  const newServices = [
+                                                    ...(providerForm.servicesOffered ||
+                                                      []),
+                                                  ];
+                                                  newServices[index - 1] = {
+                                                    ...(newServices[
+                                                      index - 1
+                                                    ] || {}),
+                                                    description: val,
+                                                  };
+                                                  setProviderForm({
+                                                    ...providerForm,
+                                                    servicesOffered:
+                                                      newServices,
+                                                  });
+                                                }
+                                              }}
+                                              borderRadius="xl"
+                                              bg="white"
+                                            />
+                                          </FormControl>
+                                        ) : (
+                                          <>
+                                            <Text
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.400"
+                                              textTransform="uppercase"
+                                              mb={1}
+                                            >
+                                              Description
+                                            </Text>
+                                            <Text
+                                              fontSize="sm"
+                                              color="gray.700"
+                                            >
+                                              {service.description ||
+                                                "No description provided."}
+                                            </Text>
+                                          </>
+                                        )}
+                                      </Box>
+
+                                      {/* Extra Skills */}
+                                      {service.extraSkills &&
+                                        service.extraSkills.length > 0 && (
+                                          <Box gridColumn="1 / -1">
+                                            <Text
+                                              fontSize="xs"
+                                              fontWeight="bold"
+                                              color="gray.400"
+                                              textTransform="uppercase"
+                                              mb={2}
+                                            >
+                                              Additional Skills
+                                            </Text>
+                                            <HStack wrap="wrap" spacing={2}>
+                                              {service.extraSkills.map(
+                                                (skill, si) => (
+                                                  <Tag
+                                                    key={si}
+                                                    size="sm"
+                                                    variant="outline"
+                                                    colorScheme="green"
+                                                    borderRadius="full"
+                                                  >
+                                                    {skill}
+                                                  </Tag>
+                                                ),
+                                              )}
+                                            </HStack>
+                                          </Box>
+                                        )}
+                                    </Grid>
+                                  </Box>
+                                );
+                              });
+                            })()}
+                          </Stack>
+                        </CollapsibleSection>
+                        {/* Qualifications (New Section) */}
+                        {providerRequest.userType === "individual" &&
+                          !isEditing && (
+                            <CollapsibleSection
+                              title="Qualifications"
+                              icon={FiBriefcase}
+                            >
+                              <VStack align="stretch" w="full" spacing={4}>
+                                {providerRequest.qualifications?.length > 0 ? (
+                                  providerRequest.qualifications.map((q, i) => (
+                                    <Box
+                                      display="grid"
+                                      gridTemplateColumns={{
+                                        base: "1fr",
+                                        md: "repeat(2, 1fr)",
+                                      }}
+                                      key={i}
+                                      borderRadius="lg"
+                                      gap="10px"
+                                      p={4}
+                                      bg="gray.50"
+                                    >
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Degree/Certification
+                                        </Text>
+                                        <Text
+                                          color="green.600"
+                                          fontWeight="bold"
+                                        >
+                                          {q.degree}
+                                        </Text>
+                                      </Box>
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Institution
+                                        </Text>
+                                        <Text color="gray.700">
+                                          {q.institution}
+                                        </Text>
+                                      </Box>
+                                      <Box>
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="bold"
+                                          color="gray.400"
+                                          textTransform="uppercase"
+                                        >
+                                          Year of Completion
+                                        </Text>
+                                        <Text color="gray.700">{q.year}</Text>
+                                      </Box>
+                                    </Box>
+                                  ))
+                                ) : (
+                                  <Text color="gray.500" fontSize="sm">
+                                    No qualifications listed.
+                                  </Text>
+                                )}
+                              </VStack>
+                            </CollapsibleSection>
                           )}
-                        </Grid>
-                      </CollapsibleSection>
-                      {/* Location */}
-                      <CollapsibleSection
-                        title="Location & Contact"
-                        icon={FiMapPin}
-                      >
-                        <Grid
-                          templateColumns={{
-                            base: "1fr",
-                            md: "repeat(2, 1fr)",
-                          }}
-                          gap={6}
-                        >
-                          {isEditing ? (
-                            <>
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
-                                <FormControl>
-                                  <GoogleMap
-                                    formData={providerForm}
-                                    setFormData={setProviderForm}
-                                    viewOnly={false}
-                                  />
-                                </FormControl>
-                              </GridItem>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  City
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.city}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      city: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  State
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.state}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      state: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Country
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.country}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      country: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color="gray.500"
-                                >
-                                  Zip Code
-                                </FormLabel>
-                                <Input
-                                  value={providerForm.zipCode}
-                                  onChange={(e) =>
-                                    setProviderForm({
-                                      ...providerForm,
-                                      zipCode: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                />
-                              </FormControl>
-                            </>
-                          ) : (
-                            <>
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                        {/* Availability (New Section) */}
+                        {!isEditing && (
+                          <>
+                            <CollapsibleSection
+                              title="Availability"
+                              icon={TimeIcon}
+                            >
+                              <Grid
+                                templateColumns={{
+                                  base: "1fr",
+                                  md: "repeat(2, 1fr)",
+                                }}
+                                gap={6}
+                              >
                                 <DisplayField
-                                  label="Address"
-                                  value={providerRequest.address}
+                                  label="Days"
+                                  value={providerRequest.availability?.days?.join(
+                                    ", ",
+                                  )}
                                 />
-                              </GridItem>
-                              <DisplayField
-                                label="City"
-                                value={providerRequest.city}
-                              />
-                              <DisplayField
-                                label="State"
-                                value={providerRequest.state}
-                              />
-                              <DisplayField
-                                label="Country"
-                                value={providerRequest.country}
-                              />
-                              <DisplayField
-                                label="Zip Code"
-                                value={providerRequest.zipCode}
-                              />
-                            </>
-                          )}
-                        </Grid>
-                      </CollapsibleSection>
-                      {/* Documents / Verification Status */}
-                      <CollapsibleSection
-                        title="Verification Documents"
-                        icon={CheckIcon}
-                      >
-                        <HStack spacing={4} wrap="wrap">
-                          {providerRequest.idProofUrl && (
-                            <Tag
-                              size="lg"
-                              colorScheme="green"
-                              borderRadius="full"
-                            >
-                              <TagLabel>ID Proof Uploaded</TagLabel>
-                            </Tag>
-                          )}
-                          {providerRequest.companyLogo && (
-                            <Tag
-                              size="lg"
-                              colorScheme="blue"
-                              borderRadius="full"
-                            >
-                              <TagLabel>Company Logo Uploaded</TagLabel>
-                            </Tag>
-                          )}
-                          {providerRequest.profilePhoto && (
-                            <Tag
-                              size="lg"
-                              colorScheme="purple"
-                              borderRadius="full"
-                            >
-                              <TagLabel>Profile Photo Uploaded</TagLabel>
-                            </Tag>
-                          )}
-                          {providerRequest.backgroundCheck && (
-                            <Tag
-                              size="lg"
-                              colorScheme="teal"
-                              borderRadius="full"
-                            >
-                              <TagLabel>Background Check Consented</TagLabel>
-                            </Tag>
-                          )}
-                        </HStack>
-                      </CollapsibleSection>
-                      {/* Rejection Notification (if any) */}
-                      {providerRequest.status === "REJECTED" && (
-                        <Box
-                          bg="red.50"
-                          p={4}
-                          borderRadius="xl"
-                          border="1px solid"
-                          borderColor="red.200"
-                        >
-                          <HStack mb={2}>
-                            <Icon as={CloseIcon} color="red.500" />
-                            <Text fontWeight="bold" color="red.700">
-                              Rejection Reason
-                            </Text>
-                          </HStack>
-                          <Text color="red.600">
-                            {providerRequest.rejectionReason ||
-                              "No reason provided."}
-                          </Text>
-                        </Box>
-                      )}
-                      {/* Licenses Section */}
-                      <CollapsibleSection
-                        title="Professional Licenses"
-                        icon={CheckIcon}
-                      >
-                        {providerRequest.licenses &&
-                        Array.isArray(providerRequest.licenses) &&
-                        providerRequest.licenses.length > 0 ? (
+                                <DisplayField
+                                  label="Hours"
+                                  value={
+                                    providerRequest.availability?.hours
+                                      ?.start &&
+                                    providerRequest.availability?.hours?.end
+                                      ? `${providerRequest.availability?.hours?.start} - ${providerRequest.availability?.hours?.end}`
+                                      : "Not provided"
+                                  }
+                                />
+                                <Box>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.400"
+                                    fontWeight="bold"
+                                    textTransform="uppercase"
+                                    mb={1}
+                                  >
+                                    Emergency Services
+                                  </Text>
+                                  <Tag
+                                    colorScheme={
+                                      providerRequest.availability?.emergency
+                                        ? "green"
+                                        : "gray"
+                                    }
+                                    size="md"
+                                    borderRadius="full"
+                                  >
+                                    {providerRequest.availability?.emergency
+                                      ? "Available for Emergency"
+                                      : "Not Available for Emergency"}
+                                  </Tag>
+                                </Box>
+                              </Grid>
+                            </CollapsibleSection>
+                          </>
+                        )}
+                        {/* Pricing */}
+                        <CollapsibleSection title="Pricing" icon={AtSignIcon}>
                           <Grid
                             templateColumns={{
                               base: "1fr",
-                              md: "repeat(1, 1fr)",
+                              md: "repeat(3, 1fr)",
                             }}
-                            gap={4}
+                            gap={6}
                           >
-                            {providerRequest.licenses.map((license, index) => (
-                              <Box
-                                key={index}
-                                p={4}
-                                borderWidth="1px"
-                                borderRadius="xl"
-                                bg="gray.50"
-                              >
-                                <Flex justify="space-between" align="start">
-                                  <Stack spacing={1}>
-                                    <HStack>
-                                      <Text fontWeight="bold" fontSize="lg">
-                                        {license.name} (v{license.version || 1})
-                                      </Text>
-                                      {license.status === "EXPIRED" && (
-                                        <Badge colorScheme="red">EXPIRED</Badge>
-                                      )}
-                                      {license.status === "PENDING" && (
-                                        <Badge colorScheme="orange">
-                                          PENDING
-                                        </Badge>
-                                      )}
-                                    </HStack>
-                                    <Text fontSize="sm" color="gray.600">
-                                      Authority: {license.authority}
-                                    </Text>
-                                    <Text fontSize="sm" color="gray.600">
-                                      License #: {license.number}
-                                    </Text>
-                                    <Text
-                                      fontSize="sm"
-                                      color={
-                                        new Date(license.expiry) < new Date()
-                                          ? "red.500"
-                                          : "green.500"
-                                      }
-                                    >
-                                      Expires: {license.expiry}{" "}
-                                      {new Date(license.expiry) < new Date() &&
-                                        "(Expired)"}
-                                    </Text>
-                                  </Stack>
-                                  <HStack>
-                                    {license.document?.secureUrl && (
-                                      <Button
-                                        size="sm"
-                                        as="a"
-                                        href={license.document.secureUrl}
-                                        target="_blank"
-                                        variant="ghost"
-                                        colorScheme="blue"
-                                        leftIcon={<Icon as={FiBriefcase} />}
-                                      >
-                                        View
-                                      </Button>
-                                    )}
-                                    <LicenseUpdateModal
-                                      license={license}
-                                      index={index}
-                                      onUpdate={() => fetchProfile()}
-                                      allLicenses={providerRequest.licenses}
-                                    />
-                                  </HStack>
-                                </Flex>
-
-                                {license.history &&
-                                  license.history.length > 0 && (
-                                    <Accordion
-                                      allowToggle
-                                      mt={4}
-                                      borderTop="1px solid"
-                                      borderColor="gray.200"
-                                      pt={2}
-                                    >
-                                      <AccordionItem border="none">
-                                        <h2>
-                                          <AccordionButton
-                                            px={0}
-                                            _hover={{ bg: "transparent" }}
-                                          >
-                                            <Box
-                                              flex="1"
-                                              textAlign="left"
-                                              fontSize="sm"
-                                              fontWeight="bold"
-                                              color="gray.600"
-                                            >
-                                              View Previous Versions (
-                                              {license.history.length})
-                                            </Box>
-                                            <AccordionIcon color="gray.500" />
-                                          </AccordionButton>
-                                        </h2>
-                                        <AccordionPanel pb={2} px={0}>
-                                          <Stack spacing={3}>
-                                            {license.history.map((h, hIdx) => (
-                                              <Box
-                                                key={hIdx}
-                                                p={3}
-                                                bg="white"
-                                                borderRadius="md"
-                                                border="1px solid"
-                                                borderColor="gray.200"
-                                                fontSize="sm"
-                                              >
-                                                <Flex
-                                                  justify="space-between"
-                                                  mb={1}
-                                                >
-                                                  <Badge
-                                                    colorScheme={
-                                                      h.status === "EXPIRED"
-                                                        ? "red"
-                                                        : "gray"
-                                                    }
-                                                  >
-                                                    v{h.version}
-                                                  </Badge>
-                                                  <Text
-                                                    color="gray.500"
-                                                    fontSize="xs"
-                                                  >
-                                                    {h.updatedAt
-                                                      ? new Date(
-                                                          h.updatedAt,
-                                                        ).toLocaleDateString()
-                                                      : "Unknown Date"}
-                                                  </Text>
-                                                </Flex>
-                                                <Text>
-                                                  <strong>Expiry:</strong>{" "}
-                                                  {h.expiry}
-                                                </Text>
-                                                <Text mb={1}>
-                                                  <strong>Status:</strong>{" "}
-                                                  {h.status || "N/A"}
-                                                </Text>
-                                                {h.document?.secureUrl && (
-                                                  <Link
-                                                    href={h.document.secureUrl}
-                                                    isExternal
-                                                    color="blue.500"
-                                                    fontSize="xs"
-                                                  >
-                                                    View Document
-                                                  </Link>
-                                                )}
-                                              </Box>
-                                            ))}
-                                          </Stack>
-                                        </AccordionPanel>
-                                      </AccordionItem>
-                                    </Accordion>
-                                  )}
-                              </Box>
-                            ))}
-                          </Grid>
-                        ) : (
-                          <Text color="gray.500" fontSize="sm">
-                            No licenses provided.
-                          </Text>
-                        )}
-                      </CollapsibleSection>{" "}
-                      {/* Project Gallery */}
-                      <CollapsibleSection
-                        title="Project Gallery"
-                        icon={FiImage}
-                      >
-                        <Grid
-                          templateColumns="repeat(auto-fill, minmax(150px, 1fr))"
-                          gap={4}
-                          mt={6}
-                        >
-                          {(providerForm.gallery || []).map((img, i) => (
-                            <Box
-                              key={i}
-                              position="relative"
-                              borderRadius="xl"
-                              overflow="hidden"
-                              h="150px"
-                              boxShadow="sm"
-                              group
-                            >
-                              <Image
-                                src={img}
-                                alt={`Gallery ${i}`}
-                                w="full"
-                                h="full"
-                                objectFit="cover"
-                              />
-                              <IconButton
-                                icon={<FiTrash2 />}
-                                size="sm"
-                                colorScheme="red"
-                                position="absolute"
-                                top={2}
-                                right={2}
-                                onClick={() => handleRemoveGalleryImage(i)}
-                                aria-label="Remove image"
-                                opacity={0.8}
-                                _hover={{ opacity: 1 }}
-                              />
-                            </Box>
-                          ))}
-
-                          <Box
-                            as="label"
-                            htmlFor="galleryInput"
-                            cursor="pointer"
-                            h="150px"
-                            borderRadius="xl"
-                            border="2px dashed"
-                            borderColor="gray.300"
-                            display="flex"
-                            flexDirection="column"
-                            alignItems="center"
-                            justifyContent="center"
-                            _hover={{
-                              borderColor: "green.400",
-                              bg: "green.50",
-                            }}
-                            transition="all 0.2s"
-                          >
-                            {uploading ? (
-                              <Spinner color="green.500" />
+                            {isEditing ? (
+                              <>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    Pricing Model
+                                  </FormLabel>
+                                  <Select
+                                    value={providerForm.pricingType}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        pricingType: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  >
+                                    <option value="Hourly">Hourly</option>
+                                    <option value="Fixed">Fixed</option>
+                                    <option value="Quote">Quote</option>
+                                  </Select>
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    Base Rate
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.baseRate}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        baseRate: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    On-Site Charges
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.onSiteCharges}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        onSiteCharges: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                              </>
                             ) : (
                               <>
-                                <Icon
-                                  as={FiPlus}
-                                  boxSize={8}
-                                  color="gray.400"
-                                  mb={2}
+                                <DisplayField
+                                  label="Pricing Model"
+                                  value={providerRequest.pricingType}
                                 />
-                                <Text
-                                  fontSize="sm"
-                                  color="gray.500"
-                                  fontWeight="bold"
+                                <DisplayField
+                                  label="Base Rate"
+                                  value={providerRequest.baseRate}
+                                />
+                                <DisplayField
+                                  label="On-Site Charges"
+                                  value={providerRequest.onSiteCharges}
+                                />
+                                {/* Payment Methods */}
+                                <Box
+                                  gridColumn={{ base: "span 1", md: "span 3" }}
                                 >
-                                  Add Photo
-                                </Text>
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.400"
+                                    fontWeight="bold"
+                                    textTransform="uppercase"
+                                    mb={2}
+                                  >
+                                    Payment Methods
+                                  </Text>
+                                  <HStack wrap="wrap" spacing={2}>
+                                    {providerRequest.paymentMethods &&
+                                    providerRequest.paymentMethods.length >
+                                      0 ? (
+                                      providerRequest.paymentMethods.map(
+                                        (p, i) => (
+                                          <Tag
+                                            key={i}
+                                            size="sm"
+                                            colorScheme="green"
+                                            variant="outline"
+                                            borderRadius="full"
+                                          >
+                                            {p}
+                                          </Tag>
+                                        ),
+                                      )
+                                    ) : (
+                                      <Text
+                                        fontSize="md"
+                                        color="gray.700"
+                                        fontWeight="medium"
+                                      >
+                                        Not provided
+                                      </Text>
+                                    )}
+                                  </HStack>
+                                </Box>
                               </>
                             )}
-                            <Input
-                              id="galleryInput"
-                              type="file"
-                              accept="image/*"
-                              display="none"
-                              onChange={(e) => handleImageUpload(e, "gallery")}
-                            />
+                          </Grid>
+                        </CollapsibleSection>
+                        {/* Location */}
+                        <CollapsibleSection
+                          title="Location & Contact"
+                          icon={FiMapPin}
+                        >
+                          <Grid
+                            templateColumns={{
+                              base: "1fr",
+                              md: "repeat(2, 1fr)",
+                            }}
+                            gap={6}
+                          >
+                            {isEditing ? (
+                              <>
+                                <GridItem colSpan={{ base: 1, md: 2 }}>
+                                  <FormControl>
+                                    <GoogleMap
+                                      formData={providerForm}
+                                      setFormData={setProviderForm}
+                                      viewOnly={false}
+                                    />
+                                  </FormControl>
+                                </GridItem>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    City
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.city}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        city: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    State
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.state}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        state: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    Country
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.country}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        country: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    Zip Code
+                                  </FormLabel>
+                                  <Input
+                                    value={providerForm.zipCode}
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        zipCode: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                              </>
+                            ) : (
+                              <>
+                                <GridItem colSpan={{ base: 1, md: 2 }}>
+                                  <DisplayField
+                                    label="Address"
+                                    value={providerRequest.address}
+                                  />
+                                </GridItem>
+                                <DisplayField
+                                  label="City"
+                                  value={providerRequest.city}
+                                />
+                                <DisplayField
+                                  label="State"
+                                  value={providerRequest.state}
+                                />
+                                <DisplayField
+                                  label="Country"
+                                  value={providerRequest.country}
+                                />
+                                <DisplayField
+                                  label="Zip Code"
+                                  value={providerRequest.zipCode}
+                                />
+                              </>
+                            )}
+                          </Grid>
+                        </CollapsibleSection>
+                        {/* Documents / Verification Status */}
+                        <CollapsibleSection
+                          title="Verification Documents"
+                          icon={CheckIcon}
+                        >
+                          <HStack spacing={4} wrap="wrap">
+                            {providerRequest.idProofUrl && (
+                              <Tag
+                                size="lg"
+                                colorScheme="green"
+                                borderRadius="full"
+                              >
+                                <TagLabel>ID Proof Uploaded</TagLabel>
+                              </Tag>
+                            )}
+                            {providerRequest.companyLogo && (
+                              <Tag
+                                size="lg"
+                                colorScheme="blue"
+                                borderRadius="full"
+                              >
+                                <TagLabel>Company Logo Uploaded</TagLabel>
+                              </Tag>
+                            )}
+                            {providerRequest.profilePhoto && (
+                              <Tag
+                                size="lg"
+                                colorScheme="purple"
+                                borderRadius="full"
+                              >
+                                <TagLabel>Profile Photo Uploaded</TagLabel>
+                              </Tag>
+                            )}
+                            {providerRequest.backgroundCheck && (
+                              <Tag
+                                size="lg"
+                                colorScheme="teal"
+                                borderRadius="full"
+                              >
+                                <TagLabel>Background Check Consented</TagLabel>
+                              </Tag>
+                            )}
+                          </HStack>
+                        </CollapsibleSection>
+                        {/* Rejection Notification (if any) */}
+                        {providerRequest.status === "REJECTED" && (
+                          <Box
+                            bg="red.50"
+                            p={4}
+                            borderRadius="xl"
+                            border="1px solid"
+                            borderColor="red.200"
+                          >
+                            <HStack mb={2}>
+                              <Icon as={CloseIcon} color="red.500" />
+                              <Text fontWeight="bold" color="red.700">
+                                Rejection Reason
+                              </Text>
+                            </HStack>
+                            <Text color="red.600">
+                              {providerRequest.rejectionReason ||
+                                "No reason provided."}
+                            </Text>
                           </Box>
-                        </Grid>
-                      </CollapsibleSection>
-                    </Stack>
+                        )}
+                        {/* Licenses Section */}
+                        <CollapsibleSection
+                          title="Professional Licenses"
+                          icon={CheckIcon}
+                        >
+                          {providerRequest.licenses &&
+                          Array.isArray(providerRequest.licenses) &&
+                          providerRequest.licenses.length > 0 ? (
+                            <Grid
+                              templateColumns={{
+                                base: "1fr",
+                                md: "repeat(1, 1fr)",
+                              }}
+                              gap={4}
+                            >
+                              {providerRequest.licenses.map(
+                                (license, index) => (
+                                  <Box
+                                    key={index}
+                                    p={4}
+                                    borderWidth="1px"
+                                    borderRadius="xl"
+                                    bg="gray.50"
+                                  >
+                                    <Flex justify="space-between" align="start">
+                                      <Stack spacing={1}>
+                                        <HStack>
+                                          <Text fontWeight="bold" fontSize="lg">
+                                            {license.name} (v
+                                            {license.version || 1})
+                                          </Text>
+                                          {license.status === "EXPIRED" && (
+                                            <Badge colorScheme="red">
+                                              EXPIRED
+                                            </Badge>
+                                          )}
+                                          {license.status === "PENDING" && (
+                                            <Badge colorScheme="orange">
+                                              PENDING
+                                            </Badge>
+                                          )}
+                                        </HStack>
+                                        <Text fontSize="sm" color="gray.600">
+                                          Authority: {license.authority}
+                                        </Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                          License #: {license.number}
+                                        </Text>
+                                        <Text
+                                          fontSize="sm"
+                                          color={
+                                            new Date(license.expiry) <
+                                            new Date()
+                                              ? "red.500"
+                                              : "green.500"
+                                          }
+                                        >
+                                          Expires: {license.expiry}{" "}
+                                          {new Date(license.expiry) <
+                                            new Date() && "(Expired)"}
+                                        </Text>
+                                      </Stack>
+                                      <HStack>
+                                        {license.document?.secureUrl && (
+                                          <Button
+                                            size="sm"
+                                            as="a"
+                                            href={license.document.secureUrl}
+                                            target="_blank"
+                                            variant="ghost"
+                                            colorScheme="blue"
+                                            leftIcon={<Icon as={FiBriefcase} />}
+                                          >
+                                            View
+                                          </Button>
+                                        )}
+                                        <LicenseUpdateModal
+                                          license={license}
+                                          index={index}
+                                          onUpdate={() => fetchProfile()}
+                                          allLicenses={providerRequest.licenses}
+                                        />
+                                      </HStack>
+                                    </Flex>
+
+                                    {license.history &&
+                                      license.history.length > 0 && (
+                                        <Accordion
+                                          allowToggle
+                                          mt={4}
+                                          borderTop="1px solid"
+                                          borderColor="gray.200"
+                                          pt={2}
+                                        >
+                                          <AccordionItem border="none">
+                                            <h2>
+                                              <AccordionButton
+                                                px={0}
+                                                _hover={{ bg: "transparent" }}
+                                              >
+                                                <Box
+                                                  flex="1"
+                                                  textAlign="left"
+                                                  fontSize="sm"
+                                                  fontWeight="bold"
+                                                  color="gray.600"
+                                                >
+                                                  View Previous Versions (
+                                                  {license.history.length})
+                                                </Box>
+                                                <AccordionIcon color="gray.500" />
+                                              </AccordionButton>
+                                            </h2>
+                                            <AccordionPanel pb={2} px={0}>
+                                              <Stack spacing={3}>
+                                                {license.history.map(
+                                                  (h, hIdx) => (
+                                                    <Box
+                                                      key={hIdx}
+                                                      p={3}
+                                                      bg="white"
+                                                      borderRadius="md"
+                                                      border="1px solid"
+                                                      borderColor="gray.200"
+                                                      fontSize="sm"
+                                                    >
+                                                      <Flex
+                                                        justify="space-between"
+                                                        mb={1}
+                                                      >
+                                                        <Badge
+                                                          colorScheme={
+                                                            h.status ===
+                                                            "EXPIRED"
+                                                              ? "red"
+                                                              : "gray"
+                                                          }
+                                                        >
+                                                          v{h.version}
+                                                        </Badge>
+                                                        <Text
+                                                          color="gray.500"
+                                                          fontSize="xs"
+                                                        >
+                                                          {h.updatedAt
+                                                            ? new Date(
+                                                                h.updatedAt,
+                                                              ).toLocaleDateString()
+                                                            : "Unknown Date"}
+                                                        </Text>
+                                                      </Flex>
+                                                      <Text>
+                                                        <strong>Expiry:</strong>{" "}
+                                                        {h.expiry}
+                                                      </Text>
+                                                      <Text mb={1}>
+                                                        <strong>Status:</strong>{" "}
+                                                        {h.status || "N/A"}
+                                                      </Text>
+                                                      {h.document
+                                                        ?.secureUrl && (
+                                                        <Link
+                                                          href={
+                                                            h.document.secureUrl
+                                                          }
+                                                          isExternal
+                                                          color="blue.500"
+                                                          fontSize="xs"
+                                                        >
+                                                          View Document
+                                                        </Link>
+                                                      )}
+                                                    </Box>
+                                                  ),
+                                                )}
+                                              </Stack>
+                                            </AccordionPanel>
+                                          </AccordionItem>
+                                        </Accordion>
+                                      )}
+                                  </Box>
+                                ),
+                              )}
+                            </Grid>
+                          ) : (
+                            <Text color="gray.500" fontSize="sm">
+                              No licenses provided.
+                            </Text>
+                          )}
+                        </CollapsibleSection>{" "}
+                        {/* Project Gallery */}
+                        <CollapsibleSection
+                          title="Project Gallery"
+                          icon={FiImage}
+                        >
+                          <Grid
+                            templateColumns="repeat(auto-fill, minmax(150px, 1fr))"
+                            gap={4}
+                            mt={6}
+                          >
+                            {(providerForm.gallery || []).map((img, i) => (
+                              <Box
+                                key={i}
+                                position="relative"
+                                borderRadius="xl"
+                                overflow="hidden"
+                                h="150px"
+                                boxShadow="sm"
+                                group
+                              >
+                                <Image
+                                  src={img}
+                                  alt={`Gallery ${i}`}
+                                  w="full"
+                                  h="full"
+                                  objectFit="cover"
+                                />
+                                <IconButton
+                                  icon={<FiTrash2 />}
+                                  size="sm"
+                                  colorScheme="red"
+                                  position="absolute"
+                                  top={2}
+                                  right={2}
+                                  onClick={() => handleRemoveGalleryImage(i)}
+                                  aria-label="Remove image"
+                                  opacity={0.8}
+                                  _hover={{ opacity: 1 }}
+                                />
+                              </Box>
+                            ))}
+
+                            <Box
+                              as="label"
+                              htmlFor="galleryInput"
+                              cursor="pointer"
+                              h="150px"
+                              borderRadius="xl"
+                              border="2px dashed"
+                              borderColor="gray.300"
+                              display="flex"
+                              flexDirection="column"
+                              alignItems="center"
+                              justifyContent="center"
+                              _hover={{
+                                borderColor: "green.400",
+                                bg: "green.50",
+                              }}
+                              transition="all 0.2s"
+                            >
+                              {uploading ? (
+                                <Spinner color="green.500" />
+                              ) : (
+                                <>
+                                  <Icon
+                                    as={FiPlus}
+                                    boxSize={8}
+                                    color="gray.400"
+                                    mb={2}
+                                  />
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.500"
+                                    fontWeight="bold"
+                                  >
+                                    Add Photo
+                                  </Text>
+                                </>
+                              )}
+                              <Input
+                                id="galleryInput"
+                                type="file"
+                                accept="image/*"
+                                display="none"
+                                onChange={(e) =>
+                                  handleImageUpload(e, "gallery")
+                                }
+                              />
+                            </Box>
+                          </Grid>
+                        </CollapsibleSection>
+                      </Stack>
+                    </form>
                   </Box>
                 </TabPanel>
               )}

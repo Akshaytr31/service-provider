@@ -98,10 +98,7 @@ export default function CategoryManager() {
   const [activeView, setActiveView] = useState("category"); // 'category' | 'subcategory'
 
   return (
-    <Box
-      maxW="800px"
-      mx="auto"
-    >
+    <Box maxW="800px" mx="auto">
       <VStack spacing={{ base: 4, md: 5 }} align="stretch">
         <Flex direction="column" align="center" textAlign="center">
           <Heading
@@ -200,51 +197,65 @@ export default function CategoryManager() {
               </CardHeader>
 
               <CardBody p={8}>
-                <VStack spacing={6}>
-                  <Input
-                    placeholder="Category name *"
-                    size="lg"
-                    borderRadius="xl"
-                    focusBorderColor="green.500"
-                    borderColor="green.200"
-                    _hover={{ borderColor: "green.300" }}
-                    value={categoryForm.name}
-                    onChange={(e) =>
-                      setCategoryForm({ ...categoryForm, name: e.target.value })
-                    }
-                  />
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addCategory();
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <VStack spacing={6}>
+                    <Input
+                      placeholder="Category name *"
+                      size="lg"
+                      borderRadius="xl"
+                      focusBorderColor="green.500"
+                      borderColor="green.200"
+                      _hover={{ borderColor: "green.300" }}
+                      value={categoryForm.name}
+                      onChange={(e) =>
+                        setCategoryForm({
+                          ...categoryForm,
+                          name: e.target.value,
+                        })
+                      }
+                    />
 
-                  <Input
-                    placeholder="Image URL (optional)"
-                    size="lg"
-                    borderRadius="xl"
-                    focusBorderColor="green.500"
-                    borderColor="green.200"
-                    _hover={{ borderColor: "green.300" }}
-                    value={categoryForm.image}
-                    onChange={(e) =>
-                      setCategoryForm({
-                        ...categoryForm,
-                        image: e.target.value,
-                      })
-                    }
-                  />
+                    <Input
+                      placeholder="Image URL (optional)"
+                      size="lg"
+                      borderRadius="xl"
+                      focusBorderColor="green.500"
+                      borderColor="green.200"
+                      _hover={{ borderColor: "green.300" }}
+                      value={categoryForm.image}
+                      onChange={(e) =>
+                        setCategoryForm({
+                          ...categoryForm,
+                          image: e.target.value,
+                        })
+                      }
+                    />
 
-                  <Button
-                    colorScheme="green"
-                    size="lg"
-                    w="full"
-                    borderRadius="xl"
-                    mt={4}
-                    leftIcon={<AddIcon />}
-                    onClick={addCategory}
-                    boxShadow="lg"
-                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-                    transition="all 0.2s"
-                  >
-                    Create Category
-                  </Button>
-                </VStack>
+                    <Button
+                      colorScheme="green"
+                      size="lg"
+                      w="full"
+                      borderRadius="xl"
+                      mt={4}
+                      leftIcon={<AddIcon />}
+                      type="submit"
+                      boxShadow="lg"
+                      _hover={{
+                        transform: "translateY(-2px)",
+                        boxShadow: "xl",
+                      }}
+                      transition="all 0.2s"
+                    >
+                      Create Category
+                    </Button>
+                  </VStack>
+                </form>
               </CardBody>
             </Card>
           ) : (
@@ -284,60 +295,71 @@ export default function CategoryManager() {
               </CardHeader>
 
               <CardBody p={8}>
-                <VStack spacing={6}>
-                  <Input
-                    placeholder="Sub-category name *"
-                    size="lg"
-                    borderRadius="xl"
-                    focusBorderColor="green.500"
-                    borderColor="green.200"
-                    _hover={{ borderColor: "green.300" }}
-                    value={subCategoryForm.name}
-                    onChange={(e) =>
-                      setSubCategoryForm({
-                        ...subCategoryForm,
-                        name: e.target.value,
-                      })
-                    }
-                  />
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addSubCategory();
+                  }}
+                  style={{ width: "100%" }}
+                >
+                  <VStack spacing={6}>
+                    <Input
+                      placeholder="Sub-category name *"
+                      size="lg"
+                      borderRadius="xl"
+                      focusBorderColor="green.500"
+                      borderColor="green.200"
+                      _hover={{ borderColor: "green.300" }}
+                      value={subCategoryForm.name}
+                      onChange={(e) =>
+                        setSubCategoryForm({
+                          ...subCategoryForm,
+                          name: e.target.value,
+                        })
+                      }
+                    />
 
-                  <Select
-                    placeholder="Select parent category *"
-                    size="lg"
-                    borderRadius="xl"
-                    focusBorderColor="green.500"
-                    borderColor="green.200"
-                    _hover={{ borderColor: "green.300" }}
-                    value={subCategoryForm.categoryId}
-                    onChange={(e) =>
-                      setSubCategoryForm({
-                        ...subCategoryForm,
-                        categoryId: e.target.value,
-                      })
-                    }
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </Select>
+                    <Select
+                      placeholder="Select parent category *"
+                      size="lg"
+                      borderRadius="xl"
+                      focusBorderColor="green.500"
+                      borderColor="green.200"
+                      _hover={{ borderColor: "green.300" }}
+                      value={subCategoryForm.categoryId}
+                      onChange={(e) =>
+                        setSubCategoryForm({
+                          ...subCategoryForm,
+                          categoryId: e.target.value,
+                        })
+                      }
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </Select>
 
-                  <Button
-                    colorScheme="green"
-                    size="lg"
-                    w="full"
-                    borderRadius="xl"
-                    mt={4}
-                    leftIcon={<AddIcon />}
-                    onClick={addSubCategory}
-                    boxShadow="lg"
-                    _hover={{ transform: "translateY(-2px)", boxShadow: "xl" }}
-                    transition="all 0.2s"
-                  >
-                    Create Sub-Category
-                  </Button>
-                </VStack>
+                    <Button
+                      colorScheme="green"
+                      size="lg"
+                      w="full"
+                      borderRadius="xl"
+                      mt={4}
+                      leftIcon={<AddIcon />}
+                      type="submit"
+                      boxShadow="lg"
+                      _hover={{
+                        transform: "translateY(-2px)",
+                        boxShadow: "xl",
+                      }}
+                      transition="all 0.2s"
+                    >
+                      Create Sub-Category
+                    </Button>
+                  </VStack>
+                </form>
               </CardBody>
             </Card>
           )}

@@ -537,150 +537,158 @@ export default function ApprovedServices({ onBack }) {
                 maxH={{ base: "auto", md: "85vh" }}
               >
                 {isEditing ? (
-                  <VStack align="stretch" spacing={8}>
-                    <Box>
-                      <Heading size="lg" mb={2} color="gray.800">
-                        Edit Service
-                      </Heading>
-                      <Text color="gray.500">
-                        Update your service details below.
-                      </Text>
-                    </Box>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveChanges();
+                    }}
+                    style={{ width: "100%" }}
+                  >
+                    <VStack align="stretch" spacing={8}>
+                      <Box>
+                        <Heading size="lg" mb={2} color="gray.800">
+                          Edit Service
+                        </Heading>
+                        <Text color="gray.500">
+                          Update your service details below.
+                        </Text>
+                      </Box>
 
-                    <VStack spacing={5}>
-                      <FormControl>
-                        <FormLabel
-                          fontSize="xs"
-                          fontWeight="bold"
-                          textTransform="uppercase"
-                          color="gray.400"
-                          mb={2}
-                        >
-                          Title
-                        </FormLabel>
-                        <Input
-                          name="title"
-                          value={editFormData.title}
-                          onChange={handleInputChange}
-                          variant="filled"
-                          bg="gray.50"
-                          _hover={{ bg: "gray.100" }}
-                          _focus={{ bg: "white", borderColor: "green.500" }}
+                      <VStack spacing={5}>
+                        <FormControl>
+                          <FormLabel
+                            fontSize="xs"
+                            fontWeight="bold"
+                            textTransform="uppercase"
+                            color="gray.400"
+                            mb={2}
+                          >
+                            Title
+                          </FormLabel>
+                          <Input
+                            name="title"
+                            value={editFormData.title}
+                            onChange={handleInputChange}
+                            variant="filled"
+                            bg="gray.50"
+                            _hover={{ bg: "gray.100" }}
+                            _focus={{ bg: "white", borderColor: "green.500" }}
+                            size="lg"
+                            fontSize="xl"
+                            fontWeight="bold"
+                            borderRadius="xl"
+                            h="60px"
+                          />
+                        </FormControl>
+
+                        <HStack spacing={4}>
+                          <FormControl>
+                            <FormLabel
+                              fontSize="xs"
+                              fontWeight="bold"
+                              textTransform="uppercase"
+                              color="gray.400"
+                              mb={2}
+                            >
+                              Price (AED/hr)
+                            </FormLabel>
+                            <Input
+                              name="price"
+                              type="number"
+                              value={editFormData.price}
+                              onChange={handleInputChange}
+                              variant="filled"
+                              bg="gray.50"
+                              _hover={{ bg: "gray.100" }}
+                              _focus={{ bg: "white", borderColor: "green.500" }}
+                              size="lg"
+                              borderRadius="xl"
+                              h="50px"
+                              fontWeight="medium"
+                            />
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel
+                              fontSize="xs"
+                              fontWeight="bold"
+                              textTransform="uppercase"
+                              color="gray.400"
+                              mb={2}
+                            >
+                              Location
+                            </FormLabel>
+                            <Input
+                              name="location"
+                              value={editFormData.location}
+                              onChange={handleInputChange}
+                              variant="filled"
+                              bg="gray.50"
+                              _hover={{ bg: "gray.100" }}
+                              _focus={{ bg: "white", borderColor: "green.500" }}
+                              size="lg"
+                              borderRadius="xl"
+                              h="50px"
+                            />
+                          </FormControl>
+                        </HStack>
+
+                        <FormControl>
+                          <FormLabel
+                            fontSize="xs"
+                            fontWeight="bold"
+                            textTransform="uppercase"
+                            color="gray.400"
+                            mb={2}
+                          >
+                            Description
+                          </FormLabel>
+                          <Textarea
+                            name="description"
+                            value={editFormData.description}
+                            onChange={handleInputChange}
+                            variant="filled"
+                            bg="gray.50"
+                            _hover={{ bg: "gray.100" }}
+                            _focus={{ bg: "white", borderColor: "green.500" }}
+                            size="lg"
+                            borderRadius="xl"
+                            minH="200px"
+                            lineHeight="tall"
+                            p={4}
+                          />
+                        </FormControl>
+                      </VStack>
+
+                      <HStack pt={4} spacing={4} justify="flex-end">
+                        <Button
+                          variant="ghost"
                           size="lg"
-                          fontSize="xl"
-                          fontWeight="bold"
-                          borderRadius="xl"
-                          h="60px"
-                        />
-                      </FormControl>
-
-                      <HStack spacing={4}>
-                        <FormControl>
-                          <FormLabel
-                            fontSize="xs"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                            color="gray.400"
-                            mb={2}
-                          >
-                            Price (AED/hr)
-                          </FormLabel>
-                          <Input
-                            name="price"
-                            type="number"
-                            value={editFormData.price}
-                            onChange={handleInputChange}
-                            variant="filled"
-                            bg="gray.50"
-                            _hover={{ bg: "gray.100" }}
-                            _focus={{ bg: "white", borderColor: "green.500" }}
-                            size="lg"
-                            borderRadius="xl"
-                            h="50px"
-                            fontWeight="medium"
-                          />
-                        </FormControl>
-                        <FormControl>
-                          <FormLabel
-                            fontSize="xs"
-                            fontWeight="bold"
-                            textTransform="uppercase"
-                            color="gray.400"
-                            mb={2}
-                          >
-                            Location
-                          </FormLabel>
-                          <Input
-                            name="location"
-                            value={editFormData.location}
-                            onChange={handleInputChange}
-                            variant="filled"
-                            bg="gray.50"
-                            _hover={{ bg: "gray.100" }}
-                            _focus={{ bg: "white", borderColor: "green.500" }}
-                            size="lg"
-                            borderRadius="xl"
-                            h="50px"
-                          />
-                        </FormControl>
+                          borderRadius="full"
+                          onClick={() => setIsEditing(false)}
+                          color="gray.500"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          colorScheme="green"
+                          size="lg"
+                          borderRadius="full"
+                          px={10}
+                          bgGradient="linear(to-r, green.400, green.600)"
+                          _hover={{
+                            bgGradient: "linear(to-r, green.500, green.700)",
+                            boxShadow: "xl",
+                            transform: "translateY(-1px)",
+                          }}
+                          type="submit"
+                          isLoading={isSaving}
+                          boxShadow="lg"
+                        >
+                          Save Updates
+                        </Button>
                       </HStack>
-
-                      <FormControl>
-                        <FormLabel
-                          fontSize="xs"
-                          fontWeight="bold"
-                          textTransform="uppercase"
-                          color="gray.400"
-                          mb={2}
-                        >
-                          Description
-                        </FormLabel>
-                        <Textarea
-                          name="description"
-                          value={editFormData.description}
-                          onChange={handleInputChange}
-                          variant="filled"
-                          bg="gray.50"
-                          _hover={{ bg: "gray.100" }}
-                          _focus={{ bg: "white", borderColor: "green.500" }}
-                          size="lg"
-                          borderRadius="xl"
-                          minH="200px"
-                          lineHeight="tall"
-                          p={4}
-                        />
-                      </FormControl>
                     </VStack>
-
-                    <HStack pt={4} spacing={4} justify="flex-end">
-                      <Button
-                        variant="ghost"
-                        size="lg"
-                        borderRadius="full"
-                        onClick={() => setIsEditing(false)}
-                        color="gray.500"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        colorScheme="green"
-                        size="lg"
-                        borderRadius="full"
-                        px={10}
-                        bgGradient="linear(to-r, green.400, green.600)"
-                        _hover={{
-                          bgGradient: "linear(to-r, green.500, green.700)",
-                          boxShadow: "xl",
-                          transform: "translateY(-1px)",
-                        }}
-                        onClick={handleSaveChanges}
-                        isLoading={isSaving}
-                        boxShadow="lg"
-                      >
-                        Save Updates
-                      </Button>
-                    </HStack>
-                  </VStack>
+                  </form>
                 ) : (
                   <VStack align="stretch" spacing={8}>
                     {/* Header Section */}

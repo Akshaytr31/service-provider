@@ -169,11 +169,7 @@ export default function SeekerOnboarding() {
 
       // STEP 2 – Address fields
       case 2:
-        if (
-          !form.city ||
-          !form.state ||
-          !form.country
-        ) {
+        if (!form.city || !form.state || !form.country) {
           return "Please complete all address fields";
         }
         return null;
@@ -383,73 +379,86 @@ export default function SeekerOnboarding() {
           borderRadius="md"
         />
       </Box>
-      {step === 0 && (
-        <Box
-          p="20px"
-          border="1px solid"
-          borderColor="gray.300"
-          borderRadius="md"
-          bg={"gray.50"}
-        >
-          <AccountStep
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleNext();
+        }}
+        style={{ width: "100%" }}
+      >
+        {step === 0 && (
+          <Box
+            p="20px"
+            border="1px solid"
+            borderColor="gray.300"
+            borderRadius="md"
+            bg={"gray.50"}
+          >
+            <AccountStep
+              form={form}
+              setForm={setForm}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              showConfirmPassword={showConfirmPassword}
+              setShowConfirmPassword={setShowConfirmPassword}
+              otpSent={otpSent}
+              handleSendOtp={handleSendOtp}
+              otpLoading={otpLoading}
+              handleChange={handleChange}
+              resendTimer={resendTimer}
+              handleResendOtp={handleResendOtp}
+              handleNext={handleNext}
+              loading={loading}
+            />
+          </Box>
+        )}
+
+        {step === 1 && (
+          <BasicInfoStep
             form={form}
             setForm={setForm}
-            showPassword={showPassword}
-            setShowPassword={setShowPassword}
-            showConfirmPassword={showConfirmPassword}
-            setShowConfirmPassword={setShowConfirmPassword}
-            otpSent={otpSent}
-            handleSendOtp={handleSendOtp}
-            otpLoading={otpLoading}
             handleChange={handleChange}
-            resendTimer={resendTimer}
-            handleResendOtp={handleResendOtp}
-            handleNext={handleNext}
-            loading={loading}
           />
-        </Box>
-      )}
+        )}
 
-      {step === 1 && (
-        <BasicInfoStep
-          form={form}
-          setForm={setForm}
-          handleChange={handleChange}
-        />
-      )}
+        {step === 2 && (
+          <AddressStep
+            form={form}
+            setForm={setForm}
+            handleChange={handleChange}
+          />
+        )}
 
-      {step === 2 && (
-        <AddressStep
-          form={form}
-          setForm={setForm}
-          handleChange={handleChange}
-        />
-      )}
+        {step === 3 && <EducationStep form={form} setForm={setForm} />}
 
-      {step === 3 && <EducationStep form={form} setForm={setForm} />}
+        {step === 4 && (
+          <LegalStep
+            form={form}
+            setForm={setForm}
+            privacyPolicy={privacyPolicy}
+          />
+        )}
 
-      {step === 4 && (
-        <LegalStep
-          form={form}
-          setForm={setForm}
-          privacyPolicy={privacyPolicy}
-        />
-      )}
-
-      <HStack mt={6} justify="space-between">
-        <Button variant="outline" onClick={handleBack} isDisabled={step === 0}>
-          Back
-        </Button>
-        <Button colorScheme="green" onClick={handleNext} isLoading={loading}>
-          {step === 0
-            ? otpSent
-              ? "Verify & Next"
-              : "Next"
-            : step === TOTAL_STEPS - 1
-              ? "Finish"
-              : "Next"}
-        </Button>
-      </HStack>
+        <HStack mt={6} justify="space-between">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            isDisabled={step === 0}
+            type="button"
+          >
+            Back
+          </Button>
+          <Button colorScheme="green" type="submit" isLoading={loading}>
+            {step === 0
+              ? otpSent
+                ? "Verify & Next"
+                : "Next"
+              : step === TOTAL_STEPS - 1
+                ? "Finish"
+                : "Next"}
+          </Button>
+        </HStack>
+      </form>
     </Container>
   );
 }
