@@ -258,7 +258,7 @@ export default function SeekerDashboard() {
             <AnimatePresence mode="wait">
               {loading ? (
                 <SimpleGrid
-                  columns={{ base: 1, md: 2, lg: 3, xl: 3, "2xl": 4 }} // Adjusted columns for wider container
+                  columns={{ base: 1, md: 2, lg: 3, xl: 3, "2xl": 4 }} 
                   spacing={6}
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -284,7 +284,7 @@ export default function SeekerDashboard() {
                   </Flex>
 
                   <MotionGrid
-                    templateColumns="repeat(auto-fill, minmax(300px, 1fr))" // Slightly wider cards if needed
+                    templateColumns="repeat(auto-fill, minmax(270px, 1fr))" 
                     gap={6}
                     initial="hidden"
                     animate="visible"

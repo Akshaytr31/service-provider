@@ -7,9 +7,11 @@ export async function GET(req, props) {
     const { id } = params;
 
     const [rows] = await db.query(
-      `SELECT s.*, u.id as providerUserId 
+      `SELECT s.*, u.id as providerUserId, u.name as providerName, 
+       COALESCE(pr.profile_photo, u.image) as providerAvatar
        FROM services s 
        LEFT JOIN users u ON s.providerEmail = u.email 
+       LEFT JOIN provider_requests pr ON u.id = pr.user_id AND pr.status = 'APPROVED'
        WHERE s.id = ?`,
       [id],
     );
