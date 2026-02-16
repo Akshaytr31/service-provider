@@ -47,3 +47,36 @@ export async function GET(req, props) {
     );
   }
 }
+
+export async function PATCH(req, props) {
+  const params = await props.params;
+  try {
+    const { id } = params;
+    const body = await req.json();
+    const { title, description, price, location, coverPhoto } = body;
+
+    // Simple validation
+    if (!title || !description || !price) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
+
+    // Update service
+    await db.query(
+      `UPDATE services 
+       SET title = ?, description = ?, price = ?, location = ?, coverPhoto = ?
+       WHERE id = ?`,
+      [title, description, price, location, coverPhoto, id],
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating service:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
