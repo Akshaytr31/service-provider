@@ -33,6 +33,17 @@ function getDisplayName(user) {
   return "Unknown User";
 }
 
+// Helper to resolve profile image
+function getProfileImage(user) {
+  // 1. Try Provider Request (take the first one)
+  if (user.providerRequests && user.providerRequests.length > 0) {
+    const req = user.providerRequests[0];
+    if (req.profilePhoto) return req.profilePhoto;
+  }
+  // 2. Default to user image
+  return user.image;
+}
+
 // GET: Fetch messages for the current user
 export async function GET(req) {
   const session = await getServerSession(authOptions);
@@ -89,10 +100,12 @@ export async function GET(req) {
         sender: {
           ...msg.sender,
           name: getDisplayName(msg.sender),
+          image: getProfileImage(msg.sender),
         },
         receiver: {
           ...msg.receiver,
           name: getDisplayName(msg.receiver),
+          image: getProfileImage(msg.receiver),
         },
       }));
 
@@ -121,6 +134,7 @@ export async function GET(req) {
           const resolvedPartner = {
             ...partnerUser,
             name: getDisplayName(partnerUser),
+            image: getProfileImage(partnerUser),
           };
 
           partners.set(partnerId, {
@@ -225,6 +239,7 @@ export async function POST(req) {
       sender: {
         ...newMessage.sender,
         name: getDisplayName(newMessage.sender),
+        image: getProfileImage(newMessage.sender),
       },
     };
 
