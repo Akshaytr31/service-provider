@@ -13,19 +13,42 @@ export async function GET(req) {
   const date = searchParams.get("date");
   const time = searchParams.get("time");
 
-  let query = "SELECT * FROM services WHERE status = 'ACTIVE'";
+  let query = `
+    SELECT 
+      s.*, 
+      params_sub.name AS subCategoryName,
+      params_cat.name AS categoryName,
+      COUNT(r.id) AS reviewCount,
+      COALESCE(AVG(r.rating), 0) AS rating
+    FROM services s
+    LEFT JOIN sub_categories params_sub ON s.sub_category_id = params_sub.id
+    LEFT JOIN categories params_cat ON params_sub.category_id = params_cat.id
+    LEFT JOIN bookings b ON s.id = b.service_id
+    LEFT JOIN reviews r ON b.id = r.booking_id
+    WHERE s.status = 'ACTIVE'
+  `;
+
   let params = [];
+  let groupBy = " GROUP BY s.id";
 
   if (mine === "true") {
     if (!session || !session.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    query =
-      "SELECT * FROM services WHERE providerEmail = ? ORDER BY createdAt DESC";
+    query = `
+      SELECT s.*, 
+        COUNT(r.id) AS reviewCount,
+        COALESCE(AVG(r.rating), 0) AS rating
+      FROM services s
+      LEFT JOIN bookings b ON s.id = b.service_id
+      LEFT JOIN reviews r ON b.id = r.booking_id
+      WHERE s.providerEmail = ? 
+    `;
     params = [session.user.email];
+    groupBy = " GROUP BY s.id ORDER BY s.createdAt DESC";
   }
 
-  const [services] = await db.query(query, params);
+  const [services] = await db.query(query + groupBy, params);
 
   return NextResponse.json(services);
 }

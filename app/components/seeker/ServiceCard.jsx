@@ -61,7 +61,7 @@ function ServiceCard({ service }) {
           position="absolute"
           top={2}
           left={2}
-          bg="white"
+          bg="whiteAlpha.500"
           px={2}
           py={1}
           borderRadius="md"
@@ -73,8 +73,18 @@ function ServiceCard({ service }) {
         >
           {hasRating ? (
             <>
-              <StarIcon color="green.400" boxSize={3} />
-              {service.rating}
+              <Text color="gray.700">{Number(service.rating).toFixed(1)}</Text>
+              <Flex gap="1px">
+                {[...Array(5)].map((_, i) => (
+                  <StarIcon
+                    key={i}
+                    color={
+                      i < Math.round(service.rating) ? "yellow.300" : "gray.300"
+                    }
+                    boxSize={3}
+                  />
+                ))}
+              </Flex>
               {service.reviewCount && (
                 <Text color="gray.500">({service.reviewCount})</Text>
               )}
@@ -103,7 +113,7 @@ function ServiceCard({ service }) {
           <Button
             w="full"
             size="sm"
-            colorScheme="pink"
+            colorScheme="green"
             borderRadius="md"
             onClick={(e) => {
               e.stopPropagation();
