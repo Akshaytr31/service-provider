@@ -153,7 +153,7 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
           b.status === "COMPLETED" ||
           b.status === "CANCELLED";
       } else {
-        statusMatch = true; // All
+        statusMatch = true;
       }
 
       // 2. Search Filter (Service Title or Seeker Name)
@@ -191,23 +191,23 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
         <AnimatePresence>
           {filtered.map((booking, index) => {
             const statusColor =
-              booking.status === "CONFIRMED"
+              booking.status === "CONFIRMED" || booking.status === "COMPLETED"
                 ? "green.400"
-                : booking.status === "REJECTED"
+                : booking.status === "CANCELLED"
                   ? "red.400"
                   : "orange.400";
 
             const statusBg =
-              booking.status === "CONFIRMED"
+              booking.status === "CONFIRMED" || booking.status === "COMPLETED"
                 ? "green.50"
-                : booking.status === "REJECTED"
+                : booking.status === "CANCELLED"
                   ? "red.50"
                   : "orange.50";
 
             const statusBadgeColor =
-              booking.status === "CONFIRMED"
+              booking.status === "CONFIRMED" || booking.status === "COMPLETED"
                 ? "green"
-                : booking.status === "REJECTED"
+                : booking.status === "CANCELLED"
                   ? "red"
                   : "orange";
 
@@ -446,6 +446,8 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                       bg="gray.50"
                       borderTop="1px solid"
                       borderColor="gray.100"
+                      alignItems={"flex-end"}
+                      gap={2}
                     >
                       <Button
                         w="full"
@@ -479,6 +481,31 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                       </Button>
                     </CardFooter>
                   )}
+
+                  {booking.status === "CANCELLED" &&
+                    booking.cancellationReason && (
+                      <CardFooter
+                        p={4}
+                        bg="red.50"
+                        borderTop="1px solid"
+                        borderColor="red.100"
+                      >
+                        <VStack align="start" spacing={1} w="full">
+                          <Text
+                            fontSize="xs"
+                            fontWeight="bold"
+                            color="red.600"
+                            letterSpacing="wide"
+                            textTransform="uppercase"
+                          >
+                            Cancellation Reason
+                          </Text>
+                          <Text fontSize="sm" color="gray.700">
+                            {booking.cancellationReason}
+                          </Text>
+                        </VStack>
+                      </CardFooter>
+                    )}
                 </Card>
               </MotionBox>
             );
