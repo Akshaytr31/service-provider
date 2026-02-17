@@ -189,6 +189,7 @@ export default function ProfilePage() {
     slug: "",
     businessName: "",
     businessType: "",
+    image: "", // Added image state
   });
 
   const fetchProfile = async () => {
@@ -202,8 +203,15 @@ export default function ProfilePage() {
       const requestData = data.providerRequest || null;
 
       setProfile(profileData);
+      setProfile(profileData);
       setProviderRequest(requestData);
-      setIsProviderAtFirst(userData.isProviderAtFirst || false);
+      // Force provider view if user is a provider or if explicitly set
+      setIsProviderAtFirst(
+        userData.isProviderAtFirst ||
+          userData.role === "provider" ||
+          user?.role === "provider" ||
+          false,
+      );
 
       // Helper to split name if profile name is missing
       const splitName = (fullName) => {
@@ -235,6 +243,7 @@ export default function ProfilePage() {
         slug: userData.slug || "",
         businessName: profileData.businessName || "",
         businessType: profileData.businessType || "",
+        image: userData.image || user?.image || "", // Populate image
       });
 
       // Initialize provider form if request exists
@@ -271,6 +280,12 @@ export default function ProfilePage() {
           idType: requestData.idType || "",
           idNumber: requestData.idNumber || "",
           servicesOffered: requestData.servicesOffered || [],
+          availability: requestData.availability || {
+            days: [],
+            hours: { start: "", end: "" },
+            emergency: false,
+          },
+          qualifications: requestData.qualifications || [],
         });
       }
     } catch (err) {
@@ -454,6 +469,61 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSeekerImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "seeker-assets");
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const imageUrl = data.secureUrl;
+
+      // Update local state
+      setForm({ ...form, image: imageUrl });
+
+      // Save immediately
+      const saveRes = await fetch("/api/seeker/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, image: imageUrl }),
+      });
+
+      if (!saveRes.ok) throw new Error("Failed to save image");
+
+      toast({
+        title: "Success",
+        description: "Profile photo updated.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      // Refresh profile to ensure sync
+      fetchProfile();
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleCancel = () => {
     setIsEditing(false);
     if (profile) {
@@ -528,61 +598,142 @@ export default function ProfilePage() {
                 <TabPanel p={0}>
                   <Box
                     bg="white"
-                    p={8}
+                    p={0}
                     borderRadius="3xl"
                     boxShadow="0 10px 30px rgba(0,0,0,0.05)"
                     border="1px solid"
                     borderColor="gray.100"
+                    overflow="hidden"
                   >
-                    <AnimatePresence mode="wait">
-                      {!isEditing ? (
-                        <Stack spacing={8}>
-                          {/* Basic Information */}
-                          <CollapsibleSection
-                            title="Basic Information"
-                            icon={InfoIcon}
-                          >
-                            <Grid
-                              templateColumns={{
-                                base: "1fr",
-                                md: "repeat(2, 1fr)",
-                              }}
-                              gap={6}
+                    {/* Seeker Header Area (Mimicking Provider) */}
+                    <Box position="relative" mb={0}>
+                      <Box
+                        h="200px"
+                        w="full"
+                        bgGradient="linear(to-r, green.400, teal.500)"
+                        overflow="hidden"
+                        position="relative"
+                      >
+                        {/* Optional: Add a default pattern or leave as gradient */}
+                      </Box>
+
+                      <Box position="relative" mt="-60px" px={8} pb={4}>
+                        <Flex
+                          direction={{ base: "column", md: "row" }}
+                          align="flex-end"
+                          gap={6}
+                        >
+                          <Box position="relative">
+                            <Avatar
+                              size="2xl"
+                              src={form.image}
+                              border="4px solid white"
+                              bg="white"
+                              name={`${form.firstName} ${form.lastName}`}
+                            />
+                            <Box
+                              position="absolute"
+                              bottom={0}
+                              right={0}
+                              zIndex={2}
                             >
-                              <DisplayField
-                                label="First Name"
-                                value={form.firstName}
+                              <Box
+                                as="label"
+                                htmlFor="seekerProfileInput"
+                                cursor="pointer"
+                                bg="white"
+                                color="gray.700"
+                                p={2}
+                                borderRadius="full"
+                                boxShadow="md"
+                                border="1px solid"
+                                borderColor="gray.200"
+                                _hover={{ bg: "gray.50" }}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                              >
+                                {uploading ? (
+                                  <Spinner size="xs" />
+                                ) : (
+                                  <Icon as={FiCamera} boxSize={4} />
+                                )}
+                              </Box>
+                              <Input
+                                id="seekerProfileInput"
+                                type="file"
+                                accept="image/*"
+                                display="none"
+                                onChange={handleSeekerImageUpload}
                               />
-                              <DisplayField
-                                label="Last Name"
-                                value={form.lastName}
-                              />
-                              <DisplayField
-                                label="Public Profile Slug"
-                                value={form.slug}
-                              />
-                              <DisplayField
-                                label="Gender"
-                                value={form.gender}
-                              />
-                              <DisplayField
-                                label="Date of Birth"
-                                value={form.dob}
-                              />
-                              <DisplayField
-                                label="Mobile"
-                                value={form.mobile}
-                              />
-                            </Grid>
-                          </CollapsibleSection>
+                            </Box>
+                          </Box>
 
-                          <Divider borderColor="gray.100" />
+                          <Box pb={2} flex={1}>
+                            <Flex
+                              justify="space-between"
+                              align="center"
+                              wrap="wrap"
+                              gap={4}
+                            >
+                              <Box>
+                                <Heading size="lg" color="gray.800">
+                                  {form.firstName || form.lastName
+                                    ? `${form.firstName} ${form.lastName}`
+                                    : user?.name || "User"}
+                                </Heading>
+                                <Text color="gray.500" fontWeight="medium">
+                                  {form.city && form.country
+                                    ? `${form.city}, ${form.country}`
+                                    : "Location not set"}
+                                </Text>
+                              </Box>
 
-                          {/* Business Details (If applicable) */}
-                          {form.userType === "business" && (
+                              <HStack spacing={3}>
+                                {!isEditing ? (
+                                  <Button
+                                    leftIcon={<EditIcon />}
+                                    colorScheme="green"
+                                    onClick={() => setIsEditing(true)}
+                                    size="sm"
+                                    borderRadius="xl"
+                                    boxShadow="md"
+                                  >
+                                    Edit Profile
+                                  </Button>
+                                ) : (
+                                  <HStack>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={handleCancel}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      colorScheme="green"
+                                      onClick={handleSave}
+                                    >
+                                      Save
+                                    </Button>
+                                  </HStack>
+                                )}
+                              </HStack>
+                            </Flex>
+                          </Box>
+                        </Flex>
+                      </Box>
+                    </Box>
+
+                    <Box p={8}>
+                      <AnimatePresence mode="wait">
+                        {!isEditing ? (
+                          <Stack spacing={8}>
+                            {/* Basic Information */}
                             <CollapsibleSection
-                              title="Business Details"
-                              icon={AtSignIcon}
+                              title="Basic Information"
+                              icon={InfoIcon}
                             >
                               <Grid
                                 templateColumns={{
@@ -592,274 +743,329 @@ export default function ProfilePage() {
                                 gap={6}
                               >
                                 <DisplayField
-                                  label="Business Name"
-                                  value={form.businessName}
+                                  label="First Name"
+                                  value={form.firstName}
                                 />
                                 <DisplayField
-                                  label="Business Type"
-                                  value={form.businessType}
+                                  label="Last Name"
+                                  value={form.lastName}
+                                />
+                                <DisplayField
+                                  label="Public Profile Slug"
+                                  value={form.slug}
+                                />
+                                <DisplayField
+                                  label="Gender"
+                                  value={form.gender}
+                                />
+                                <DisplayField
+                                  label="Date of Birth"
+                                  value={form.dob}
+                                />
+                                <DisplayField
+                                  label="Mobile"
+                                  value={form.mobile}
                                 />
                               </Grid>
                             </CollapsibleSection>
-                          )}
 
-                          {/* Contact & Location */}
-                          <CollapsibleSection
-                            title="Location Details"
-                            icon={PhoneIcon}
-                          >
-                            <Grid
-                              templateColumns={{
-                                base: "1fr",
-                                md: "repeat(2, 1fr)",
-                              }}
-                              gap={6}
-                            >
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
-                                <DisplayField
-                                  label="Address"
-                                  value={form.address}
-                                />
-                              </GridItem>
-                              <DisplayField label="City" value={form.city} />
-                              <DisplayField label="State" value={form.state} />
-                              <DisplayField
-                                label="Country"
-                                value={form.country}
-                              />
-                              <DisplayField
-                                label="Zip Code"
-                                value={form.zipCode}
-                              />
-                            </Grid>
-                          </CollapsibleSection>
-                        </Stack>
-                      ) : (
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSave();
-                          }}
-                          style={{ width: "100%" }}
-                        >
-                          <Stack spacing={6}>
-                            <SectionHeader
-                              title="Edit Profile Details"
-                              icon={EditIcon}
-                            />
+                            <Divider borderColor="gray.100" />
 
-                            <Grid
-                              templateColumns={{
-                                base: "1fr",
-                                md: "repeat(2, 1fr)",
-                              }}
-                              gap={6}
-                            >
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  First Name
-                                </FormLabel>
-                                <Input
-                                  value={form.firstName}
-                                  onChange={(e) =>
-                                    setForm({
-                                      ...form,
-                                      firstName: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
-
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Last Name
-                                </FormLabel>
-                                <Input
-                                  value={form.lastName}
-                                  onChange={(e) =>
-                                    setForm({
-                                      ...form,
-                                      lastName: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
-
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Public Profile Slug
-                                </FormLabel>
-                                <Input
-                                  value={form.slug}
-                                  placeholder="e.g. john-doe-123"
-                                  onChange={(e) =>
-                                    setForm({
-                                      ...form,
-                                      slug: e.target.value
-                                        .toLowerCase()
-                                        .replace(/[^a-z0-9-]/g, ""),
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                                <Text fontSize="xs" color="gray.400" mt={1}>
-                                  Your profile will be available at:{" "}
-                                  {window.location.host}/profile/
-                                  {form.slug || user?.id}
-                                </Text>
-                              </FormControl>
-
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Gender
-                                </FormLabel>
-                                <Select
-                                  value={form.gender}
-                                  onChange={(e) =>
-                                    setForm({ ...form, gender: e.target.value })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
+                            {/* Business Details (If applicable) */}
+                            {form.userType === "business" && (
+                              <CollapsibleSection
+                                title="Business Details"
+                                icon={AtSignIcon}
+                              >
+                                <Grid
+                                  templateColumns={{
+                                    base: "1fr",
+                                    md: "repeat(2, 1fr)",
+                                  }}
+                                  gap={6}
                                 >
-                                  <option value="">Select Gender</option>
-                                  <option value="Male">Male</option>
-                                  <option value="Female">Female</option>
-                                  <option value="Other">Other</option>
-                                </Select>
-                              </FormControl>
+                                  <DisplayField
+                                    label="Business Name"
+                                    value={form.businessName}
+                                  />
+                                  <DisplayField
+                                    label="Business Type"
+                                    value={form.businessType}
+                                  />
+                                </Grid>
+                              </CollapsibleSection>
+                            )}
 
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Date of Birth
-                                </FormLabel>
-                                <Input
-                                  type="date"
-                                  value={form.dob}
-                                  onChange={(e) =>
-                                    setForm({ ...form, dob: e.target.value })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
+                            {/* Contact & Location */}
+                            <CollapsibleSection
+                              title="Location Details"
+                              icon={PhoneIcon}
+                            >
+                              <Grid
+                                templateColumns={{
+                                  base: "1fr",
+                                  md: "repeat(2, 1fr)",
+                                }}
+                                gap={6}
+                              >
+                                <GridItem colSpan={{ base: 1, md: 2 }}>
+                                  <DisplayField
+                                    label="Address"
+                                    value={form.address}
+                                  />
+                                </GridItem>
+                                <DisplayField label="City" value={form.city} />
+                                <DisplayField
+                                  label="State"
+                                  value={form.state}
                                 />
-                              </FormControl>
-
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Mobile
-                                </FormLabel>
-                                <Input
-                                  value={form.mobile}
-                                  onChange={(e) =>
-                                    setForm({ ...form, mobile: e.target.value })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
+                                <DisplayField
+                                  label="Country"
+                                  value={form.country}
                                 />
-                              </FormControl>
+                                <DisplayField
+                                  label="Zip Code"
+                                  value={form.zipCode}
+                                />
+                              </Grid>
+                            </CollapsibleSection>
+                          </Stack>
+                        ) : (
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              handleSave();
+                            }}
+                            style={{ width: "100%" }}
+                          >
+                            <Stack spacing={6}>
+                              <SectionHeader
+                                title="Edit Profile Details"
+                                icon={EditIcon}
+                              />
 
-                              <GridItem colSpan={{ base: 1, md: 2 }}>
+                              <Grid
+                                templateColumns={{
+                                  base: "1fr",
+                                  md: "repeat(2, 1fr)",
+                                }}
+                                gap={6}
+                              >
                                 <FormControl>
                                   <FormLabel fontSize="sm" color="gray.600">
-                                    Address
+                                    First Name
                                   </FormLabel>
                                   <Input
-                                    value={form.address}
+                                    value={form.firstName}
                                     onChange={(e) =>
                                       setForm({
                                         ...form,
-                                        address: e.target.value,
+                                        firstName: e.target.value,
                                       })
                                     }
                                     borderRadius="xl"
                                     focusBorderColor="green.400"
                                   />
                                 </FormControl>
-                              </GridItem>
 
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  City
-                                </FormLabel>
-                                <Input
-                                  value={form.city}
-                                  onChange={(e) =>
-                                    setForm({ ...form, city: e.target.value })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Last Name
+                                  </FormLabel>
+                                  <Input
+                                    value={form.lastName}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        lastName: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
 
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  State
-                                </FormLabel>
-                                <Input
-                                  value={form.state}
-                                  onChange={(e) =>
-                                    setForm({ ...form, state: e.target.value })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Public Profile Slug
+                                  </FormLabel>
+                                  <Input
+                                    value={form.slug}
+                                    placeholder="e.g. john-doe-123"
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        slug: e.target.value
+                                          .toLowerCase()
+                                          .replace(/[^a-z0-9-]/g, ""),
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                  <Text fontSize="xs" color="gray.400" mt={1}>
+                                    Your profile will be available at:{" "}
+                                    {window.location.host}/profile/
+                                    {form.slug || user?.id}
+                                  </Text>
+                                </FormControl>
 
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Country
-                                </FormLabel>
-                                <Input
-                                  value={form.country}
-                                  onChange={(e) =>
-                                    setForm({
-                                      ...form,
-                                      country: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Gender
+                                  </FormLabel>
+                                  <Select
+                                    value={form.gender}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        gender: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  >
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                  </Select>
+                                </FormControl>
 
-                              <FormControl>
-                                <FormLabel fontSize="sm" color="gray.600">
-                                  Zip Code
-                                </FormLabel>
-                                <Input
-                                  value={form.zipCode}
-                                  onChange={(e) =>
-                                    setForm({
-                                      ...form,
-                                      zipCode: e.target.value,
-                                    })
-                                  }
-                                  borderRadius="xl"
-                                  focusBorderColor="green.400"
-                                />
-                              </FormControl>
-                            </Grid>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Date of Birth
+                                  </FormLabel>
+                                  <Input
+                                    type="date"
+                                    value={form.dob}
+                                    onChange={(e) =>
+                                      setForm({ ...form, dob: e.target.value })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
 
-                            <Box pt={6}>
-                              <Button
-                                w="full"
-                                colorScheme="green"
-                                size="lg"
-                                borderRadius="2xl"
-                                type="submit"
-                                boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
-                              >
-                                Save All Changes
-                              </Button>
-                            </Box>
-                          </Stack>
-                        </form>
-                      )}
-                    </AnimatePresence>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Mobile
+                                  </FormLabel>
+                                  <Input
+                                    value={form.mobile}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        mobile: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+
+                                <GridItem colSpan={{ base: 1, md: 2 }}>
+                                  <FormControl>
+                                    <FormLabel fontSize="sm" color="gray.600">
+                                      Address
+                                    </FormLabel>
+                                    <Input
+                                      value={form.address}
+                                      onChange={(e) =>
+                                        setForm({
+                                          ...form,
+                                          address: e.target.value,
+                                        })
+                                      }
+                                      borderRadius="xl"
+                                      focusBorderColor="green.400"
+                                    />
+                                  </FormControl>
+                                </GridItem>
+
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    City
+                                  </FormLabel>
+                                  <Input
+                                    value={form.city}
+                                    onChange={(e) =>
+                                      setForm({ ...form, city: e.target.value })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    State
+                                  </FormLabel>
+                                  <Input
+                                    value={form.state}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        state: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Country
+                                  </FormLabel>
+                                  <Input
+                                    value={form.country}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        country: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+
+                                <FormControl>
+                                  <FormLabel fontSize="sm" color="gray.600">
+                                    Zip Code
+                                  </FormLabel>
+                                  <Input
+                                    value={form.zipCode}
+                                    onChange={(e) =>
+                                      setForm({
+                                        ...form,
+                                        zipCode: e.target.value,
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                    focusBorderColor="green.400"
+                                  />
+                                </FormControl>
+                              </Grid>
+
+                              <Box pt={6}>
+                                <Button
+                                  w="full"
+                                  colorScheme="green"
+                                  size="lg"
+                                  borderRadius="2xl"
+                                  type="submit"
+                                  boxShadow="0 10px 20px rgba(72, 187, 120, 0.2)"
+                                >
+                                  Save All Changes
+                                </Button>
+                              </Box>
+                            </Stack>
+                          </form>
+                        )}
+                      </AnimatePresence>
+                    </Box>
                   </Box>
                 </TabPanel>
               )}
@@ -913,10 +1119,15 @@ export default function ProfilePage() {
                       </Box>
                     </Box>
 
-                    <Box position="absolute" bottom="-40px" left={8}>
+                    <Box
+                      position="absolute"
+                      bottom="-40px"
+                      left={{ base: "50%", md: 8 }}
+                      transform={{ base: "translateX(-50%)", md: "none" }}
+                    >
                       <Box position="relative">
                         <Avatar
-                          size="2xl"
+                          size={{ base: "xl", md: "2xl" }}
                           src={providerForm.profilePhoto}
                           border="4px solid white"
                           bg="white"
@@ -963,21 +1174,39 @@ export default function ProfilePage() {
                       </Box>
                     </Box>
                     {/* Header Card */}
-                    <Box mt={3} pl={{ base: 4, md: "170px" }} pr={4}>
+                    <Box
+                      mt={{ base: 16, md: 3 }}
+                      pl={{ base: 0, md: "170px" }}
+                      pr={4}
+                      pb={4}
+                    >
                       <Flex
                         direction={{ base: "column", md: "row" }}
                         justify="space-between"
-                        align={{ base: "start", md: "center" }}
+                        align={{ base: "center", md: "center" }}
                         gap={4}
                         marginTop={"-0.5rem"}
+                        textAlign={{ base: "center", md: "left" }}
                       >
-                        <Stack spacing={1}>
-                          <Heading size="2xl" fontWeight="800" color="gray.800">
+                        <Stack
+                          spacing={1}
+                          align={{ base: "center", md: "flex-start" }}
+                          w="full"
+                        >
+                          <Heading
+                            size={{ base: "xl", md: "2xl" }}
+                            fontWeight="800"
+                            color="gray.800"
+                          >
                             {providerForm.firstName || providerForm.lastName
                               ? `${providerForm.firstName} ${providerForm.lastName}`
                               : user.name || "User"}
                           </Heading>
-                          <HStack spacing={2} wrap="wrap">
+                          <HStack
+                            spacing={2}
+                            wrap="wrap"
+                            justify={{ base: "center", md: "flex-start" }}
+                          >
                             <Tag
                               size="md"
                               colorScheme="green"
@@ -1007,6 +1236,7 @@ export default function ProfilePage() {
                           spacing={3}
                           mt={{ base: 4, md: 0 }}
                           width={{ base: "full", md: "auto" }}
+                          justify={{ base: "center", md: "flex-end" }}
                         >
                           {!isEditing && (
                             <Button
@@ -1017,6 +1247,7 @@ export default function ProfilePage() {
                               size="md"
                               borderRadius="xl"
                               _hover={{ bg: "blue.50" }}
+                              flex={{ base: 1, md: "initial" }}
                             >
                               Share
                             </Button>
@@ -1036,6 +1267,7 @@ export default function ProfilePage() {
                                 boxShadow: "lg",
                               }}
                               transition="all 0.2s"
+                              flex={{ base: 1, md: "initial" }}
                             >
                               Edit Profile
                             </Button>
@@ -1045,7 +1277,7 @@ export default function ProfilePage() {
                             <HStack
                               spacing={2}
                               width="full"
-                              justify={{ base: "flex-end", md: "flex-start" }}
+                              justify={{ base: "center", md: "flex-start" }}
                             >
                               <Button
                                 leftIcon={<CloseIcon />}
@@ -1053,6 +1285,7 @@ export default function ProfilePage() {
                                 onClick={handleCancel}
                                 borderRadius="xl"
                                 colorScheme="gray"
+                                flex={1}
                               >
                                 Cancel
                               </Button>
@@ -1062,6 +1295,7 @@ export default function ProfilePage() {
                                 onClick={handleProviderSave}
                                 borderRadius="xl"
                                 boxShadow="lg"
+                                flex={1}
                               >
                                 Save Changes
                               </Button>
@@ -1884,63 +2118,206 @@ export default function ProfilePage() {
                             </CollapsibleSection>
                           )}
                         {/* Availability (New Section) */}
-                        {!isEditing && (
-                          <>
-                            <CollapsibleSection
-                              title="Availability"
-                              icon={TimeIcon}
-                            >
-                              <Grid
-                                templateColumns={{
-                                  base: "1fr",
-                                  md: "repeat(2, 1fr)",
-                                }}
-                                gap={6}
-                              >
-                                <DisplayField
-                                  label="Days"
-                                  value={providerRequest.availability?.days?.join(
-                                    ", ",
-                                  )}
-                                />
-                                <DisplayField
-                                  label="Hours"
-                                  value={
-                                    providerRequest.availability?.hours
-                                      ?.start &&
-                                    providerRequest.availability?.hours?.end
-                                      ? `${providerRequest.availability?.hours?.start} - ${providerRequest.availability?.hours?.end}`
-                                      : "Not provided"
-                                  }
-                                />
-                                <Box>
-                                  <Text
+                        {/* Availability (New Section - Editable) */}
+                        <CollapsibleSection
+                          title="Availability"
+                          icon={TimeIcon}
+                        >
+                          {isEditing ? (
+                            <Stack spacing={4}>
+                              <FormControl>
+                                <FormLabel
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                >
+                                  Working Days
+                                </FormLabel>
+                                <HStack wrap="wrap" spacing={2}>
+                                  {[
+                                    "Mon",
+                                    "Tue",
+                                    "Wed",
+                                    "Thu",
+                                    "Fri",
+                                    "Sat",
+                                    "Sun",
+                                  ].map((day) => {
+                                    const days =
+                                      providerForm.availability?.days || [];
+                                    const isSelected = days.includes(day);
+                                    return (
+                                      <Tag
+                                        key={day}
+                                        size="lg"
+                                        variant={
+                                          isSelected ? "solid" : "outline"
+                                        }
+                                        colorScheme="green"
+                                        cursor="pointer"
+                                        onClick={() => {
+                                          const newDays = isSelected
+                                            ? days.filter((d) => d !== day)
+                                            : [...days, day];
+                                          setProviderForm({
+                                            ...providerForm,
+                                            availability: {
+                                              ...providerForm.availability,
+                                              days: newDays,
+                                            },
+                                          });
+                                        }}
+                                      >
+                                        {day}
+                                      </Tag>
+                                    );
+                                  })}
+                                </HStack>
+                              </FormControl>
+                              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                                <FormControl>
+                                  <FormLabel
                                     fontSize="xs"
-                                    color="gray.400"
                                     fontWeight="bold"
-                                    textTransform="uppercase"
-                                    mb={1}
+                                    color="gray.500"
                                   >
-                                    Emergency Services
-                                  </Text>
-                                  <Tag
-                                    colorScheme={
-                                      providerRequest.availability?.emergency
-                                        ? "green"
-                                        : "gray"
+                                    Start Time
+                                  </FormLabel>
+                                  <Input
+                                    type="time"
+                                    value={
+                                      providerForm.availability?.hours?.start ||
+                                      ""
                                     }
-                                    size="md"
-                                    borderRadius="full"
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        availability: {
+                                          ...providerForm.availability,
+                                          hours: {
+                                            ...providerForm.availability?.hours,
+                                            start: e.target.value,
+                                          },
+                                        },
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
                                   >
-                                    {providerRequest.availability?.emergency
-                                      ? "Available for Emergency"
-                                      : "Not Available for Emergency"}
-                                  </Tag>
-                                </Box>
+                                    End Time
+                                  </FormLabel>
+                                  <Input
+                                    type="time"
+                                    value={
+                                      providerForm.availability?.hours?.end ||
+                                      ""
+                                    }
+                                    onChange={(e) =>
+                                      setProviderForm({
+                                        ...providerForm,
+                                        availability: {
+                                          ...providerForm.availability,
+                                          hours: {
+                                            ...providerForm.availability?.hours,
+                                            end: e.target.value,
+                                          },
+                                        },
+                                      })
+                                    }
+                                    borderRadius="xl"
+                                  />
+                                </FormControl>
                               </Grid>
-                            </CollapsibleSection>
-                          </>
-                        )}
+                              <FormControl display="flex" alignItems="center">
+                                <FormLabel
+                                  htmlFor="emergency-switch"
+                                  mb="0"
+                                  fontSize="sm"
+                                  color="gray.600"
+                                >
+                                  Available for Emergency Services?
+                                </FormLabel>
+                                <Select
+                                  id="emergency-switch"
+                                  width="auto"
+                                  value={
+                                    providerForm.availability?.emergency
+                                      ? "yes"
+                                      : "no"
+                                  }
+                                  onChange={(e) =>
+                                    setProviderForm({
+                                      ...providerForm,
+                                      availability: {
+                                        ...providerForm.availability,
+                                        emergency: e.target.value === "yes",
+                                      },
+                                    })
+                                  }
+                                  borderRadius="xl"
+                                  size="sm"
+                                >
+                                  <option value="no">No</option>
+                                  <option value="yes">Yes</option>
+                                </Select>
+                              </FormControl>
+                            </Stack>
+                          ) : (
+                            <Grid
+                              templateColumns={{
+                                base: "1fr",
+                                md: "repeat(2, 1fr)",
+                              }}
+                              gap={6}
+                            >
+                              <DisplayField
+                                label="Days"
+                                value={providerRequest.availability?.days?.join(
+                                  ", ",
+                                )}
+                              />
+                              <DisplayField
+                                label="Hours"
+                                value={
+                                  providerRequest.availability?.hours?.start &&
+                                  providerRequest.availability?.hours?.end
+                                    ? `${providerRequest.availability.hours.start} - ${providerRequest.availability.hours.end}`
+                                    : "Not provided"
+                                }
+                              />
+                              <Box>
+                                <Text
+                                  fontSize="xs"
+                                  color="gray.400"
+                                  fontWeight="bold"
+                                  textTransform="uppercase"
+                                  mb={1}
+                                >
+                                  Emergency Services
+                                </Text>
+                                <Tag
+                                  colorScheme={
+                                    providerRequest.availability?.emergency
+                                      ? "green"
+                                      : "gray"
+                                  }
+                                  size="md"
+                                  borderRadius="full"
+                                >
+                                  {providerRequest.availability?.emergency
+                                    ? "Available for Emergency"
+                                    : "Not Available for Emergency"}
+                                </Tag>
+                              </Box>
+                            </Grid>
+                          )}
+                        </CollapsibleSection>
                         {/* Pricing */}
                         <CollapsibleSection title="Pricing" icon={AtSignIcon}>
                           <Grid
@@ -2200,6 +2577,128 @@ export default function ProfilePage() {
                               </>
                             )}
                           </Grid>
+                        </CollapsibleSection>
+                        {/* Gallery Section */}
+                        <CollapsibleSection title="Gallery" icon={FiImage}>
+                          <Grid
+                            templateColumns="repeat(auto-fill, minmax(100px, 1fr))"
+                            gap={4}
+                          >
+                            {providerForm.gallery &&
+                              providerForm.gallery.map((img, idx) => (
+                                <Box
+                                  key={idx}
+                                  position="relative"
+                                  borderRadius="xl"
+                                  overflow="hidden"
+                                  aspectRatio={1}
+                                >
+                                  <Image
+                                    src={img}
+                                    alt={`Gallery ${idx}`}
+                                    w="full"
+                                    h="full"
+                                    objectFit="cover"
+                                  />
+                                  {isEditing && (
+                                    <IconButton
+                                      icon={<FiTrash2 />}
+                                      size="xs"
+                                      colorScheme="red"
+                                      position="absolute"
+                                      top={1}
+                                      right={1}
+                                      onClick={() =>
+                                        handleRemoveGalleryImage(idx)
+                                      }
+                                      aria-label="Remove image"
+                                    />
+                                  )}
+                                </Box>
+                              ))}
+                            {isEditing && (
+                              <Box
+                                border="2px dashed"
+                                borderColor="gray.200"
+                                borderRadius="xl"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                cursor="pointer"
+                                _hover={{
+                                  bg: "gray.50",
+                                  borderColor: "green.400",
+                                }}
+                                aspectRatio={1}
+                                position="relative"
+                              >
+                                <Input
+                                  type="file"
+                                  height="100%"
+                                  width="100%"
+                                  opacity={0}
+                                  position="absolute"
+                                  top={0}
+                                  left={0}
+                                  cursor="pointer"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    handleImageUpload(e, "gallery")
+                                  }
+                                />
+                                <VStack spacing={1}>
+                                  {uploading ? (
+                                    <Spinner size="sm" />
+                                  ) : (
+                                    <Icon
+                                      as={FiPlus}
+                                      color="gray.400"
+                                      boxSize={6}
+                                    />
+                                  )}
+                                  <Text
+                                    fontSize="xs"
+                                    color="gray.500"
+                                    fontWeight="bold"
+                                  >
+                                    Add Photo
+                                  </Text>
+                                </VStack>
+                              </Box>
+                            )}
+                          </Grid>
+                        </CollapsibleSection>
+                        {/* About / Description Section */}
+                        <CollapsibleSection title="About" icon={InfoIcon}>
+                          {isEditing ? (
+                            <FormControl>
+                              <FormLabel
+                                fontSize="xs"
+                                fontWeight="bold"
+                                color="gray.500"
+                              >
+                                Description / Bio
+                              </FormLabel>
+                              <Textarea
+                                value={providerForm.description}
+                                onChange={(e) =>
+                                  setProviderForm({
+                                    ...providerForm,
+                                    description: e.target.value,
+                                  })
+                                }
+                                placeholder="Tell us about yourself and your business..."
+                                rows={4}
+                                borderRadius="xl"
+                              />
+                            </FormControl>
+                          ) : (
+                            <Text color="gray.700" whiteSpace="pre-wrap">
+                              {providerForm.description ||
+                                providerRequest.description ||
+                                "No description provided."}
+                            </Text>
+                          )}
                         </CollapsibleSection>
                         {/* Documents / Verification Status */}
                         <CollapsibleSection

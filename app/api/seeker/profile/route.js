@@ -89,6 +89,7 @@ export async function POST(req) {
       // Education
       education,
       acceptedTermsandconditions,
+      image, // Add image/profile photo support
     } = body;
 
     const userEmail = session.user.email;
@@ -129,6 +130,14 @@ export async function POST(req) {
         await tx.users.update({
           where: { email: userEmail },
           data: { slug: newSlug },
+        });
+      }
+
+      // 2.6 Update Image if provided
+      if (image) {
+        await tx.users.update({
+          where: { email: userEmail },
+          data: { image },
         });
       }
 

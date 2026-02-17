@@ -142,6 +142,24 @@ export default function SeekerBookings() {
           </HStack>
         </HStack>
 
+        {booking.status === "CANCELLED" && booking.cancellationReason && (
+          <Box
+            mb={6}
+            p={3}
+            bg="red.50"
+            border="1px dashed"
+            borderColor="red.200"
+            borderRadius="md"
+          >
+            <Text fontSize="sm" color="red.800">
+              <Text as="span" fontWeight="bold">
+                Cancellation Reason:
+              </Text>{" "}
+              {booking.cancellationReason}
+            </Text>
+          </Box>
+        )}
+
         <Flex justify="flex-end">
           {isCompleted && !booking.review && (
             <Button
@@ -164,6 +182,19 @@ export default function SeekerBookings() {
               }
             >
               Complete Service
+            </Button>
+          )}
+          {(booking.status === "PENDING" || booking.status === "CONFIRMED") && (
+            <Button
+              colorScheme="red"
+              variant="ghost"
+              size="sm"
+              ml={2}
+              onClick={() =>
+                handleOpenReview({ ...booking, isCancelling: true })
+              }
+            >
+              Cancel Service
             </Button>
           )}
           {booking.review && (

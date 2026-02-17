@@ -11,7 +11,7 @@ export async function PATCH(req, props) {
 
   try {
     const { id } = params;
-    const { status } = await req.json();
+    const { status, cancellationReason } = await req.json();
 
     const user = await prisma.users.findUnique({
       where: { email: session.user.email },
@@ -29,8 +29,11 @@ export async function PATCH(req, props) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
     if (booking.providerId !== user.id) {
-      // Allow Seeker to mark as COMPLETED
-      if (booking.seekerId === user.id && status === "COMPLETED") {
+      // Allow Seeker to mark as COMPLETED or CANCELLED
+      if (
+        booking.seekerId === user.id &&
+        (status === "COMPLETED" || status === "CANCELLED")
+      ) {
         // Allowed
       } else {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -39,29 +42,55 @@ export async function PATCH(req, props) {
 
     const updated = await prisma.booking.update({
       where: { id: parseInt(id) },
-      data: { status },
+      data: {
+        status,
+        cancellationReason:
+          status === "CANCELLED" ? cancellationReason : undefined,
+      },
+      include: { service: true },
     });
 
-    // Notify Seeker
-    if (
-      status === "CONFIRMED" ||
-      status === "REJECTED" ||
-      status === "COMPLETED"
-    ) {
-      const message =
-        status === "CONFIRMED"
-          ? `Good news! Your booking for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`
-          : status === "COMPLETED"
-            ? `Your booking for "${booking.service.title}" has been marked as completed. Please leave a review!`
-            : `Your booking request for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been rejected.`;
+    // Notify Logic
+    let message = "";
+    let recipientId = null;
+    let link = "";
 
+    if (status === "CONFIRMED") {
+      message = `Good news! Your booking for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`;
+      recipientId = booking.seekerId;
+      link = "/seeker/bookings";
+    } else if (status === "REJECTED") {
+      message = `Your booking request for "${booking.service.title}" has been rejected.`;
+      recipientId = booking.seekerId;
+      link = "/seeker/bookings";
+    } else if (status === "COMPLETED") {
+      // If Provider marks completed (rare if flow is Seeker focused, but supported)
+      message = `Your booking for "${booking.service.title}" has been marked as completed. Please leave a review!`;
+      recipientId = booking.seekerId;
+      link = "/seeker/bookings";
+    } else if (status === "CANCELLED") {
+      // Determine who cancelled to notify the other party
+      if (user.id === booking.seekerId) {
+        // Seeker cancelled -> Notify Provider
+        recipientId = booking.providerId;
+        message = `Booking for "${booking.service.title}" was cancelled by the seeker. Reason: ${cancellationReason || "No reason provided"}`;
+        link = "/providerDashboard?view=requests&status=ALL";
+      } else {
+        // Provider cancelled -> Notify Seeker
+        recipientId = booking.seekerId;
+        message = `Your booking for "${booking.service.title}" was cancelled by the provider. Reason: ${cancellationReason || "No reason provided"}`;
+        link = "/seeker/bookings";
+      }
+    }
+
+    if (recipientId && message) {
       await prisma.notification.create({
         data: {
-          userId: booking.seekerId,
+          userId: recipientId,
           message,
           type: "BOOKING_UPDATE",
           isRead: false,
-          link: "/seeker/bookings",
+          link,
         },
       });
     }

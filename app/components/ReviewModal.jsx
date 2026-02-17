@@ -55,6 +55,22 @@ export default function ReviewModal({
         }
       }
 
+      // If cancelling, update status to CANCELLED
+      if (booking?.isCancelling) {
+        const cancelRes = await fetch(`/api/bookings/${booking.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "CANCELLED",
+            cancellationReason: comment, // Pass comment as reason
+          }),
+        });
+
+        if (!cancelRes.ok) {
+          throw new Error("Failed to cancel booking");
+        }
+      }
+
       const res = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,10 +82,12 @@ export default function ReviewModal({
       });
 
       if (res.ok) {
+        let title = "Review submitted";
+        if (booking?.isCompleting) title = "Service Completed & Reviewed";
+        if (booking?.isCancelling) title = "Service Cancelled & Reviewed";
+
         toast({
-          title: booking?.isCompleting
-            ? "Service Completed & Reviewed"
-            : "Review submitted",
+          title,
           status: "success",
           duration: 3000,
         });
@@ -95,12 +113,17 @@ export default function ReviewModal({
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
       <ModalOverlay backdropFilter="blur(5px)" bg="blackAlpha.300" />
       <ModalContent borderRadius="2xl">
-        <ModalHeader>Rate Your Experience</ModalHeader>
+        <ModalHeader>
+          {booking?.isCancelling ? "Cancel Booking" : "Rate Your Experience"}
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={6}>
             <Text color="gray.600" textAlign="center">
-              How was your service with <b>{booking?.service?.title}</b>?
+              {booking?.isCancelling
+                ? "Please tell us why you are cancelling. Your feedback helps us improve."
+                : `How was your service with `}
+              {!booking?.isCancelling && <b>{booking?.service?.title}</b>}
             </Text>
 
             {/* Star Rating */}
@@ -144,13 +167,13 @@ export default function ReviewModal({
             Cancel
           </Button>
           <Button
-            colorScheme="green"
+            colorScheme={booking?.isCancelling ? "red" : "green"}
             onClick={handleSubmit}
             isLoading={isSubmitting}
             borderRadius="xl"
             isDisabled={rating === 0}
           >
-            Submit Review
+            {booking?.isCancelling ? "Cancel Booking" : "Submit Review"}
           </Button>
         </ModalFooter>
       </ModalContent>

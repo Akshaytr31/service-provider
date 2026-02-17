@@ -229,6 +229,7 @@ model Booking {
   provider users    @relation("ProviderBookings", fields: [providerId], references: [id])
   service  services @relation(fields: [serviceId], references: [id])
   review   Review?
+  cancellationReason String? @db.Text
 
   @@map("bookings")
 }

@@ -159,6 +159,8 @@ export async function PATCH(req) {
 
         servicesOffered: body.servicesOffered,
         gallery: body.gallery,
+        availability: body.availability,
+        qualifications: body.qualifications,
       },
     });
 

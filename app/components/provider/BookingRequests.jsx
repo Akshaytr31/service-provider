@@ -44,6 +44,7 @@ import {
   FiFilter,
   FiMessageSquare,
 } from "react-icons/fi";
+import CancelModal from "./CancelModal";
 
 const MotionBox = motion(Box);
 
@@ -107,12 +108,18 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
     fetchBookings();
   }, []);
 
-  const onUpdateStatus = async (id, status) => {
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+
+  const onUpdateStatus = async (id, status, cancellationReason = null) => {
     try {
+      const body = { status };
+      if (cancellationReason) body.cancellationReason = cancellationReason;
+
       const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         toast({ title: `Booking ${status}`, status: "success" });
@@ -123,6 +130,11 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
     } catch (error) {
       toast({ title: "Error updating booking", status: "error" });
     }
+  };
+
+  const openCancelModal = (booking) => {
+    setSelectedBooking(booking);
+    setIsCancelOpen(true);
   };
 
   // Filter bookings based on Tabs and Search
@@ -452,6 +464,19 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                       >
                         Mark as Completed
                       </Button>
+                      <Button
+                        w="full"
+                        variant="outline"
+                        colorScheme="red"
+                        size="md"
+                        fontSize="sm"
+                        fontWeight="600"
+                        mt={3}
+                        _hover={{ bg: "red.50", borderColor: "red.300" }}
+                        onClick={() => openCancelModal(booking)}
+                      >
+                        Cancel Booking
+                      </Button>
                     </CardFooter>
                   )}
                 </Card>
@@ -562,6 +587,12 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
           </TabPanels>
         </Tabs>
       )}
+      <CancelModal
+        isOpen={isCancelOpen}
+        onClose={() => setIsCancelOpen(false)}
+        booking={selectedBooking}
+        onCancel={onUpdateStatus}
+      />
     </Container>
   );
 }
