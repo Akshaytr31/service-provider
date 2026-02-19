@@ -1,11 +1,24 @@
 import { Stack, HStack, FormControl, FormLabel, Input } from "@chakra-ui/react";
 import dynamic from "next/dynamic";
+import CityAutocomplete from "./CityAutocomplete";
 
 const GoogleMap = dynamic(() => import("../../googleMap/GoogleMap"), {
   ssr: false,
 });
 
 export default function AddressStep({ form, handleChange, setForm }) {
+  const handleCitySelect = (locationData) => {
+    setForm((prev) => ({
+      ...prev,
+      city: locationData.city || prev.city,
+      state: locationData.state || prev.state,
+      country: locationData.country || prev.country,
+      zipCode: locationData.zipCode || prev.zipCode,
+      latitude: locationData.lat,
+      longitude: locationData.lon,
+    }));
+  };
+
   return (
     <Stack
       spacing={6}
@@ -21,14 +34,11 @@ export default function AddressStep({ form, handleChange, setForm }) {
           <FormLabel fontSize="xs" fontWeight="bold" color="gray.600">
             City
           </FormLabel>
-          <Input
-            name="city"
-            placeholder="City"
-            size="sm"
-            borderRadius="lg"
-            focusBorderColor="green.400"
+          <CityAutocomplete
             value={form.city}
-            onChange={handleChange}
+            onChange={(val) => setForm((prev) => ({ ...prev, city: val }))}
+            onSelect={handleCitySelect}
+            placeholder="Search City"
           />
         </FormControl>
 
