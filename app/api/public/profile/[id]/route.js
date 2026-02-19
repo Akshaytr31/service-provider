@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
   try {
     const { id: idParam } = await params;
-    const id = parseInt(idParam);
-    const isId = !isNaN(id);
+    const isId = /^\d+$/.test(idParam);
+    const id = isId ? parseInt(idParam) : null;
 
     let whereClause = {};
     if (isId) {

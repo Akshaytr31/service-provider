@@ -26,6 +26,21 @@ export async function GET() {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
+    // Auto-generate slug if missing (Lazy Migration)
+    if (!user.slug) {
+      const nameSource =
+        user.providerRequests?.[0]?.businessName || user.name || "user";
+      const newSlug = await generateUniqueSlug(nameSource, prisma.users);
+
+      if (newSlug) {
+        await prisma.users.update({
+          where: { id: user.id },
+          data: { slug: newSlug },
+        });
+        user.slug = newSlug; // Update local variable for response
+      }
+    }
+
     const userData = {
       name: user.name,
       email: user.email,

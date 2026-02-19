@@ -21,7 +21,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { generateUniqueSlug } from "@/lib/slug";
 
 export async function POST(req) {
   try {
@@ -159,10 +159,33 @@ export async function PATCH(req) {
 
         servicesOffered: body.servicesOffered,
         gallery: body.gallery,
+        gallery: body.gallery,
         availability: body.availability,
         qualifications: body.qualifications,
       },
     });
+
+    // Generate and update slug if name/business name changes
+    const nameSource =
+      updatedRequest.businessName ||
+      `${updatedRequest.firstName || ""} ${updatedRequest.lastName || ""}`.trim() ||
+      user.name;
+
+    if (nameSource) {
+      // Generate and update slug if name/business name changes
+      const newSlug = await generateUniqueSlug(
+        nameSource,
+        prisma.users,
+        user.slug,
+      );
+
+      if (newSlug && newSlug !== user.slug) {
+        await prisma.users.update({
+          where: { id: user.id },
+          data: { slug: newSlug },
+        });
+      }
+    }
 
     return NextResponse.json(updatedRequest, { status: 200 });
   } catch (error) {
