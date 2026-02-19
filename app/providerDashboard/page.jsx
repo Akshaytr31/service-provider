@@ -917,9 +917,9 @@ function MessagesView({ onBack, onSelectChat }) {
           const formatted = Array.isArray(data)
             ? data.map((item) => ({
                 id: item.id,
-                user: { id: item.id, name: item.name, image: item.image },
+                user: item.user,
                 lastMessage: item.lastMessage,
-                timestamp: item.timestamp, // Assuming API returns this, or fallback
+                timestamp: item.timestamp,
               }))
             : [];
           setConversations(formatted);
