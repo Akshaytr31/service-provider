@@ -598,18 +598,20 @@ function DashboardOverview({ user, onNavigate }) {
             </Card>
 
             {/* Services Card */}
-            <Card borderRadius="xl" boxShadow="sm">
+            <Card
+              borderRadius="xl"
+              boxShadow="sm"
+              cursor="pointer"
+              onClick={() => onNavigate("services")}
+              transition="all 0.2s"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+            >
               <CardHeader pb={0}>
                 <Flex justify="space-between" align="center">
                   <Heading size="md" color="gray.700">
                     Your Services
                   </Heading>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="green"
-                    onClick={() => onNavigate("services")}
-                  >
+                  <Button size="sm" variant="ghost" colorScheme="green">
                     Manage All
                   </Button>
                 </Flex>

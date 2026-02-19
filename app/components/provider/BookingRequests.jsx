@@ -187,7 +187,7 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
     }
 
     return (
-      <SimpleGrid columns={{ base: 1, lg: 2, xl: 3 }} spacing={6}>
+      <SimpleGrid columns={{ base: 1, lg: 2, xl: 2 }} spacing={6}>
         <AnimatePresence>
           {filtered.map((booking, index) => {
             const statusColor =
@@ -223,48 +223,129 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                   delay: index * 0.05,
                   ease: "easeOut",
                 }}
-                whileHover={{ y: -8 }}
+                whileHover={{ y: -5 }}
               >
                 <Card
-                  h="full"
+                  direction={{ base: "column", sm: "row" }}
+                  overflow="hidden"
                   variant="outline"
                   borderRadius="2xl"
-                  overflow="hidden"
                   border="1px solid"
-                  borderColor="gray.100"
-                  boxShadow="sm"
-                  _hover={{ boxShadow: "2xl", borderColor: "transparent" }}
-                  transition="all 0.3s ease"
+                  borderColor="gray.200"
+                  boxShadow="md"
                   bg="white"
-                  position="relative"
+                  h="full"
+                  transition="all 0.3s ease"
+                  _hover={{ boxShadow: "xl", borderColor: "green.200" }}
+                  w="full"
                 >
-                  {/* Status Indicator Bar */}
+                  {/* Service Image Section */}
                   <Box
-                    h="6px"
-                    bgGradient={`linear(to-r, ${statusColor}, ${statusColor})`}
-                    w="full"
-                    position="absolute"
-                    top={0}
-                    left={0}
-                  />
+                    w={{ base: "100%", sm: "120px", md: "200px" }}
+                    bg="gray.100"
+                    position="relative"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    flexShrink={0}
+                  >
+                    {booking.service?.coverPhoto ? (
+                      <Box
+                        as="img"
+                        src={booking.service.coverPhoto}
+                        alt={booking.service.title}
+                        objectFit="cover"
+                        w="full"
+                        h="full"
+                        minH={{ base: "150px", sm: "auto" }}
+                      />
+                    ) : (
+                      <Flex
+                        direction="column"
+                        align="center"
+                        justify="center"
+                        w="full"
+                        h="full"
+                        bg={statusBg}
+                        color={statusColor}
+                        p={4}
+                        textAlign="center"
+                      >
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          letterSpacing="widest"
+                          textTransform="uppercase"
+                          mb={1}
+                        >
+                          {new Date(booking.date).toLocaleDateString(
+                            undefined,
+                            { month: "short" },
+                          )}
+                        </Text>
+                        <Text fontSize="3xl" fontWeight="800" lineHeight="1">
+                          {new Date(booking.date).getDate()}
+                        </Text>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="medium"
+                          mt={2}
+                          opacity={0.8}
+                        >
+                          {booking.time}
+                        </Text>
+                      </Flex>
+                    )}
 
-                  <CardBody p={6} pt={8}>
-                    {/* Header */}
-                    <Flex justify="space-between" align="start" mb={4}>
+                    {/* Status Badge Over Image on Mobile */}
+                    <Box
+                      position="absolute"
+                      top={3}
+                      left={3}
+                      display={{ base: "block", sm: "none" }}
+                    >
                       <Badge
                         colorScheme={statusBadgeColor}
-                        variant="subtle"
-                        px={3}
+                        variant="solid"
+                        px={2}
                         py={1}
-                        borderRadius="full"
+                        borderRadius="md"
                         fontSize="xs"
                         fontWeight="bold"
-                        letterSpacing="wide"
+                        textTransform="uppercase"
+                        boxShadow="md"
                       >
                         {booking.status}
                       </Badge>
+                    </Box>
+                  </Box>
+
+                  <VStack align="stretch" p={0} flex={1} spacing={0}>
+                    {/* Header with Status and Price */}
+                    <Flex
+                      justify="space-between"
+                      align="center"
+                      p={4}
+                      pb={2}
+                      borderBottom="1px solid"
+                      borderColor="gray.50"
+                    >
+                      <Badge
+                        display={{ base: "none", sm: "block" }}
+                        colorScheme={statusBadgeColor}
+                        variant="subtle"
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                        fontSize="xs"
+                        fontWeight="bold"
+                        textTransform="uppercase"
+                      >
+                        {booking.status}
+                      </Badge>
+                      <Spacer display={{ base: "none", sm: "block" }} />
                       <Text
-                        fontSize="xl"
+                        fontSize="lg"
                         fontWeight="800"
                         color="green.600"
                         letterSpacing="tight"
@@ -273,239 +354,196 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
                       </Text>
                     </Flex>
 
-                    {/* Service Title */}
-                    <VStack align="start" spacing={1} mb={6}>
-                      <Heading
-                        size="md"
-                        color="gray.800"
-                        noOfLines={2}
-                        lineHeight="1.4"
-                        fontWeight="700"
-                      >
-                        {booking.service?.title}
-                      </Heading>
-                      <Text
-                        fontSize="xs"
-                        color="gray.400"
-                        fontWeight="bold"
-                        textTransform="uppercase"
-                        letterSpacing="1px"
-                      >
-                        {booking.service?.category?.name || "Service"}
-                      </Text>
-                    </VStack>
-
-                    <Divider borderColor="gray.100" mb={6} />
-
-                    {/* Meta Data Grid */}
-                    <SimpleGrid columns={2} spacing={5} mb={6}>
-                      <Flex direction="column" gap={1}>
-                        <Flex align="center" gap={2} color="gray.400" mb={1}>
-                          <Icon as={FiCalendar} boxSize={4} />
-                          <Text
-                            fontSize="xs"
-                            fontWeight="bold"
-                            letterSpacing="wide"
-                          >
-                            DATE
-                          </Text>
-                        </Flex>
-                        <Text fontSize="sm" fontWeight="600" color="gray.700">
-                          {new Date(booking.date).toLocaleDateString(
-                            undefined,
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )}
-                        </Text>
-                      </Flex>
-
-                      <Flex direction="column" gap={1}>
-                        <Flex align="center" gap={2} color="gray.400" mb={1}>
-                          <Icon as={FiClock} boxSize={4} />
-                          <Text
-                            fontSize="xs"
-                            fontWeight="bold"
-                            letterSpacing="wide"
-                          >
-                            TIME
-                          </Text>
-                        </Flex>
-                        <Text fontSize="sm" fontWeight="600" color="gray.700">
-                          {booking.time}
-                        </Text>
-                      </Flex>
-                    </SimpleGrid>
-
-                    {/* Seeker Profile */}
-                    <HStack
-                      bg="gray.50"
-                      p={3}
-                      borderRadius="xl"
-                      spacing={3}
-                      border="1px dashed"
-                      borderColor="gray.200"
-                    >
-                      <Avatar
-                        size="sm"
-                        name={
-                          booking.seeker?.name ||
-                          booking.seeker?.email ||
-                          "Unknown"
-                        }
-                        src={booking.seeker?.image}
-                        border="2px solid white"
-                        boxShadow="sm"
-                      />
-                      <Box>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.700">
-                          {booking.seeker?.name ||
-                            booking.seeker?.email ||
-                            "Unknown Seeker"}
-                        </Text>
+                    <CardBody p={4} py={3}>
+                      {/* Service Title & Category */}
+                      <VStack align="start" spacing={1} mb={4}>
                         <Text
                           fontSize="xs"
                           color="gray.500"
-                          fontWeight="medium"
+                          fontWeight="bold"
+                          textTransform="uppercase"
+                          letterSpacing="wider"
                         >
-                          {booking.seeker?.mobile || "No mobile"}
+                          {booking.service?.category?.name || "Service"}
                         </Text>
-                      </Box>
-                      <Spacer />
-                      <IconButton
-                        icon={<FiMessageSquare />}
-                        size="sm"
-                        colorScheme="blue"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onMessage(booking.seeker);
-                        }}
-                        aria-label="Message Seeker"
-                        borderRadius="full"
-                        bg="white"
-                        boxShadow="sm"
-                        _hover={{ bg: "blue.50", color: "blue.600" }}
-                      />
-                    </HStack>
-                  </CardBody>
-
-                  {/* Actions Footer */}
-                  {booking.status === "PENDING" && (
-                    <CardFooter
-                      p={4}
-                      bg="gray.50"
-                      borderTop="1px solid"
-                      borderColor="gray.100"
-                    >
-                      <Flex w="full" gap={3}>
-                        <Button
-                          flex={1}
-                          bg="green.500"
-                          color="white"
-                          size="md"
-                          fontSize="sm"
-                          fontWeight="600"
-                          _hover={{
-                            bg: "green.600",
-                            transform: "translateY(-1px)",
-                            boxShadow: "md",
-                          }}
-                          _active={{ transform: "translateY(0)" }}
-                          transition="all 0.2s"
-                          onClick={() =>
-                            onUpdateStatus(booking.id, "CONFIRMED")
-                          }
-                          shadow="sm"
+                        <Heading
+                          size="sm"
+                          color="gray.800"
+                          noOfLines={1}
+                          fontWeight="700"
                         >
-                          Accept Request
-                        </Button>
-                        <Button
-                          flex={1}
-                          variant="outline"
-                          colorScheme="red"
-                          size="md"
-                          fontSize="sm"
-                          fontWeight="600"
-                          border="1px solid"
-                          borderColor="red.200"
-                          _hover={{ bg: "red.50", borderColor: "red.300" }}
-                          onClick={() => onUpdateStatus(booking.id, "REJECTED")}
-                        >
-                          Decline
-                        </Button>
-                      </Flex>
-                    </CardFooter>
-                  )}
+                          {booking.service?.title}
+                        </Heading>
+                      </VStack>
 
-                  {booking.status === "CONFIRMED" && (
-                    <CardFooter
-                      p={4}
-                      bg="gray.50"
-                      borderTop="1px solid"
-                      borderColor="gray.100"
-                      alignItems={"flex-end"}
-                      gap={2}
-                    >
-                      <Button
-                        w="full"
-                        bg="blue.500"
-                        color="white"
-                        size="md"
-                        fontSize="sm"
-                        fontWeight="600"
-                        _hover={{
-                          bg: "blue.600",
-                          transform: "translateY(-1px)",
-                          boxShadow: "md",
-                        }}
-                        onClick={() => onUpdateStatus(booking.id, "COMPLETED")}
-                        leftIcon={<FiCheckCircle />}
-                      >
-                        Mark as Completed
-                      </Button>
-                      <Button
-                        w="full"
-                        variant="outline"
-                        colorScheme="red"
-                        size="md"
-                        fontSize="sm"
-                        fontWeight="600"
-                        mt={3}
-                        _hover={{ bg: "red.50", borderColor: "red.300" }}
-                        onClick={() => openCancelModal(booking)}
-                      >
-                        Cancel Booking
-                      </Button>
-                    </CardFooter>
-                  )}
+                      {/* Date & Time Grid */}
+                      <SimpleGrid columns={2} spacing={4} mb={5}>
+                        <HStack spacing={2} color="gray.600">
+                          <Icon as={FiCalendar} boxSize={4} color="green.500" />
+                          <Text fontSize="sm" fontWeight="600">
+                            {new Date(booking.date).toLocaleDateString(
+                              undefined,
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </Text>
+                        </HStack>
+                        <HStack spacing={2} color="gray.600">
+                          <Icon as={FiClock} boxSize={4} color="green.500" />
+                          <Text fontSize="sm" fontWeight="600">
+                            {booking.time}
+                          </Text>
+                        </HStack>
+                      </SimpleGrid>
 
-                  {booking.status === "CANCELLED" &&
-                    booking.cancellationReason && (
-                      <CardFooter
-                        p={4}
-                        bg="red.50"
-                        borderTop="1px solid"
-                        borderColor="red.100"
+                      {/* Seeker Info - Redesigned */}
+                      <HStack
+                        spacing={3}
+                        p={3}
+                        bg="gray.50"
+                        borderRadius="xl"
+                        border="1px dashed"
+                        borderColor="gray.200"
                       >
-                        <VStack align="start" spacing={1} w="full">
+                        <Avatar
+                          size="sm"
+                          name={booking.seeker?.name || "User"}
+                          src={booking.seeker?.image}
+                          border="2px solid white"
+                          boxShadow="sm"
+                        />
+                        <Box flex={1}>
                           <Text
-                            fontSize="xs"
+                            fontSize="sm"
                             fontWeight="bold"
-                            color="red.600"
-                            letterSpacing="wide"
-                            textTransform="uppercase"
+                            color="gray.800"
                           >
-                            Cancellation Reason
+                            {booking.seeker?.name ||
+                              booking.seeker?.email ||
+                              "Unknown Seeker"}
                           </Text>
-                          <Text fontSize="sm" color="gray.700">
-                            {booking.cancellationReason}
-                          </Text>
-                        </VStack>
-                      </CardFooter>
-                    )}
+                          {(booking.seeker?.mobile ||
+                            booking.seeker?.email) && (
+                            <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                              {booking.seeker?.mobile || booking.seeker?.email}
+                            </Text>
+                          )}
+                        </Box>
+                        <Button
+                          size="sm"
+                          leftIcon={<FiMessageSquare />}
+                          colorScheme="blue"
+                          variant="solid"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMessage(booking.seeker);
+                          }}
+                          fontSize="xs"
+                          borderRadius="lg"
+                          px={4}
+                        >
+                          Chat
+                        </Button>
+                      </HStack>
+                    </CardBody>
+
+                    {/* Footer Actions */}
+                    <CardFooter
+                      p={3}
+                      bg="gray.50"
+                      borderTop="1px solid"
+                      borderColor="gray.100"
+                    >
+                      {booking.status === "PENDING" && (
+                        <Flex gap={2} w="full">
+                          <Button
+                            flex={1}
+                            size="sm"
+                            colorScheme="green"
+                            onClick={() =>
+                              onUpdateStatus(booking.id, "CONFIRMED")
+                            }
+                            shadow="sm"
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            flex={1}
+                            size="sm"
+                            variant="outline"
+                            colorScheme="red"
+                            onClick={() =>
+                              onUpdateStatus(booking.id, "REJECTED")
+                            }
+                          >
+                            Decline
+                          </Button>
+                        </Flex>
+                      )}
+
+                      {booking.status === "CONFIRMED" && (
+                        <Flex gap={2} w="full">
+                          <Button
+                            flex={1}
+                            size="sm"
+                            colorScheme="blue"
+                            leftIcon={<FiCheckCircle />}
+                            onClick={() =>
+                              onUpdateStatus(booking.id, "COMPLETED")
+                            }
+                            shadow="sm"
+                          >
+                            Complete
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => openCancelModal(booking)}
+                          >
+                            Cancel
+                          </Button>
+                        </Flex>
+                      )}
+
+                      {booking.status === "CANCELLED" &&
+                        booking.cancellationReason && (
+                          <Box
+                            w="full"
+                            p={2}
+                            bg="red.50"
+                            borderRadius="md"
+                            border="1px dashed"
+                            borderColor="red.200"
+                          >
+                            <Text fontSize="xs" color="red.700">
+                              <Text as="span" fontWeight="bold">
+                                Reason:{" "}
+                              </Text>
+                              {booking.cancellationReason}
+                            </Text>
+                          </Box>
+                        )}
+
+                      {(booking.status === "COMPLETED" ||
+                        booking.status === "REJECTED" ||
+                        (booking.status === "CANCELLED" &&
+                          !booking.cancellationReason)) && (
+                        <Text
+                          fontSize="xs"
+                          color="gray.400"
+                          w="full"
+                          textAlign="center"
+                          fontStyle="italic"
+                        >
+                          No actions available
+                        </Text>
+                      )}
+                    </CardFooter>
+                  </VStack>
                 </Card>
               </MotionBox>
             );
@@ -570,15 +608,29 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
           index={tabIndex}
           onChange={(index) => setTabIndex(index)}
         >
-          <TabList mb={6} overflowX="auto" py={2}>
+          <TabList
+            mb={6}
+            overflowX="auto"
+            overflowY="hidden"
+            whiteSpace="nowrap"
+            py={2}
+            px={1}
+            css={{
+              "&::-webkit-scrollbar": { display: "none" },
+              scrollbarWidth: "none",
+              "-ms-overflow-style": "none",
+            }}
+          >
             <Tab
               fontWeight="bold"
+              flexShrink={0}
               _selected={{ color: "white", bg: "green.500" }}
             >
               Pending ({bookings.filter((b) => b.status === "PENDING").length})
             </Tab>
             <Tab
               fontWeight="bold"
+              flexShrink={0}
               _selected={{ color: "white", bg: "green.500" }}
             >
               Accepted (
@@ -586,12 +638,14 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
             </Tab>
             <Tab
               fontWeight="bold"
+              flexShrink={0}
               _selected={{ color: "white", bg: "green.500" }}
             >
-              Past/Rejected
+              Past
             </Tab>
             <Tab
               fontWeight="bold"
+              flexShrink={0}
               _selected={{ color: "white", bg: "green.500" }}
             >
               All Bookings

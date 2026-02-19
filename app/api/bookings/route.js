@@ -152,7 +152,20 @@ export async function GET(req) {
         provider: {
           select: { name: true, email: true, id: true, image: true },
         },
-        service: { select: { title: true, price: true } },
+        service: {
+          select: {
+            title: true,
+            price: true,
+            coverPhoto: true,
+            subCategory: {
+              select: {
+                category: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        },
         review: true,
       },
       orderBy: { createdAt: "desc" },
