@@ -23,6 +23,7 @@ import {
   useToast, // Import useToast
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   FiUpload,
   FiMapPin,
@@ -34,6 +35,7 @@ import {
 } from "react-icons/fi";
 
 export default function PostService() {
+  const router = useRouter();
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -304,6 +306,7 @@ export default function PostService() {
         coverPhoto: "",
       });
       // Don't reset selectedCategory as it's fixed
+      router.push("/providerDashboard");
     } else {
       toast({
         title: "Failed",
