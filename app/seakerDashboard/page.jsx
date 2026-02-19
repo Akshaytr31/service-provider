@@ -11,6 +11,7 @@ import {
   Skeleton,
   VStack,
   SimpleGrid,
+  Spinner,
 } from "@chakra-ui/react";
 import ServiceCard from "../components/seeker/ServiceCard";
 import FilterBar from "../components/seeker/FilterBar";
@@ -26,11 +27,15 @@ import {
 import PlatformStatsCard from "../components/seeker/StatusCard";
 import HeaderCard from "../components/seeker/HeaderCard";
 import PrivacyPolicyNotification from "../components/PrivacyPolicyNotification";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
 
 export default function SeekerDashboard() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +54,14 @@ export default function SeekerDashboard() {
   });
 
   const [priceRange, setPriceRange] = useState([0, 1000]); // Visual state for slider
+
+  const handleAuthClick = (e) => {
+    if (status === "unauthenticated") {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push("/login");
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -172,8 +185,21 @@ export default function SeekerDashboard() {
     });
   }, [services, filters, selectedCategory, unavailableIds]);
 
+  if (status === "loading") {
+    return (
+      <Flex justify="center" align="center" minH="100vh">
+        <Spinner size="xl" color="green.500" />
+      </Flex>
+    );
+  }
+
   return (
-    <Box minH="100vh" bg="#FFFFFF" position="relative">
+    <Box
+      minH="100vh"
+      bg="#FFFFFF"
+      position="relative"
+      onClickCapture={handleAuthClick}
+    >
       <PrivacyPolicyNotification />
       {/* HEADER / HERO SECTION */}
       <Box
@@ -258,7 +284,7 @@ export default function SeekerDashboard() {
             <AnimatePresence mode="wait">
               {loading ? (
                 <SimpleGrid
-                  columns={{ base: 1, md: 2, lg: 3, xl: 3, "2xl": 4 }} 
+                  columns={{ base: 1, md: 2, lg: 3, xl: 3, "2xl": 4 }}
                   spacing={6}
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -284,7 +310,7 @@ export default function SeekerDashboard() {
                   </Flex>
 
                   <MotionGrid
-                    templateColumns="repeat(auto-fill, minmax(270px, 1fr))" 
+                    templateColumns="repeat(auto-fill, minmax(270px, 1fr))"
                     gap={6}
                     initial="hidden"
                     animate="visible"
