@@ -53,6 +53,15 @@ const TIME_SLOTS = [
 const MotionBox = motion(Box);
 const MotionButton = motion(Button);
 
+const formatTo12Hour = (time24) => {
+  if (!time24) return "";
+  const [hours, minutes] = time24.split(":");
+  let h = parseInt(hours, 10);
+  const suffix = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h} ${suffix}`;
+};
+
 export default function BookingPage() {
   const params = useParams();
   const router = useRouter();
@@ -328,7 +337,7 @@ export default function BookingPage() {
                       boxShadow={isSelected ? "lg" : "none"}
                     >
                       <Text fontWeight={isSelected ? "bold" : "medium"}>
-                        {time}
+                        {formatTo12Hour(time)}
                       </Text>
                       {isSelected && (
                         <Icon
@@ -440,7 +449,9 @@ export default function BookingPage() {
                         <Text fontSize="sm">Time</Text>
                       </HStack>
                       <Text fontWeight="medium" fontSize="sm">
-                        {selectedTime || "Not chosen"}
+                        {selectedTime
+                          ? formatTo12Hour(selectedTime)
+                          : "Not chosen"}
                       </Text>
                     </HStack>
                   </VStack>
