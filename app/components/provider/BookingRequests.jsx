@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearch } from "@/app/context/SearchContext";
 import {
   Box,
   Heading,
@@ -24,9 +25,6 @@ import {
   TabPanels,
   Tab,
   TabPanel,
-  Input,
-  InputGroup,
-  InputLeftElement,
   useToast,
   Avatar,
   IconButton,
@@ -40,8 +38,6 @@ import {
   FiCheckCircle,
   FiUsers,
   FiList,
-  FiSearch,
-  FiFilter,
   FiMessageSquare,
 } from "react-icons/fi";
 import CancelModal from "./CancelModal";
@@ -51,7 +47,7 @@ const MotionBox = motion(Box);
 export default function BookingRequests({ onBack, onMessage, initialStatus }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { searchQuery } = useSearch(); // ← driven by the Navbar SearchBox
   const bg = useColorModeValue("white", "gray.800");
   const toast = useToast();
 
@@ -580,20 +576,7 @@ export default function BookingRequests({ onBack, onMessage, initialStatus }) {
           <Text color="gray.500">Manage your incoming and scheduled jobs.</Text>
         </VStack>
 
-        {/* Search Bar */}
-        <InputGroup maxW={{ base: "full", md: "300px" }}>
-          <InputLeftElement pointerEvents="none">
-            <Icon as={FiSearch} color="gray.400" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search bookings..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            bg="white"
-            borderRadius="full"
-            focusBorderColor="green.500"
-          />
-        </InputGroup>
+        {/* Search is provided by the Navbar SearchBox via SearchContext */}
       </Flex>
 
       {loading ? (

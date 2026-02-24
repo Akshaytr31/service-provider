@@ -14,12 +14,32 @@ import {
   Badge,
   Button,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FiStar, FiArrowLeft, FiCalendar } from "react-icons/fi";
+import { useSearch } from "@/app/context/SearchContext";
 
 export default function ReviewsView({ onBack }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { searchQuery } = useSearch();
+
+  const filteredReviews = useMemo(() => {
+    if (!searchQuery.trim()) return reviews;
+    const q = searchQuery.toLowerCase();
+    return reviews.filter((r) => {
+      const seeker = r.booking?.seeker;
+      // Match name, seekerProfile first/last name, service title, or comment
+      const seekerName = (
+        seeker?.name ||
+        `${seeker?.seekerProfile?.firstName || ""} ${seeker?.seekerProfile?.lastName || ""}`.trim()
+      ).toLowerCase();
+      return (
+        seekerName.includes(q) ||
+        r.booking?.service?.title?.toLowerCase().includes(q) ||
+        r.comment?.toLowerCase().includes(q)
+      );
+    });
+  }, [reviews, searchQuery]);
 
   useEffect(() => {
     async function fetchReviews() {
@@ -63,7 +83,7 @@ export default function ReviewsView({ onBack }) {
         My Reviews
       </Heading>
 
-      {reviews.length === 0 ? (
+      {filteredReviews.length === 0 ? (
         <Flex
           direction="column"
           align="center"
@@ -76,15 +96,19 @@ export default function ReviewsView({ onBack }) {
         >
           <Icon as={FiStar} boxSize={10} color="gray.300" mb={4} />
           <Text color="gray.500" fontSize="lg">
-            No reviews yet.
+            {searchQuery.trim()
+              ? "No matching reviews found."
+              : "No reviews yet."}
           </Text>
-          <Text color="gray.400" fontSize="sm">
-            Complete jobs to get rated by seekers!
-          </Text>
+          {!searchQuery.trim() && (
+            <Text color="gray.400" fontSize="sm">
+              Complete jobs to get rated by seekers!
+            </Text>
+          )}
         </Flex>
       ) : (
         <VStack spacing={4} align="stretch">
-          {reviews.map((review) => (
+          {filteredReviews.map((review) => (
             <Card key={review.id} borderRadius="xl" boxShadow="sm">
               <CardBody>
                 <Flex gap={4} direction={{ base: "column", sm: "row" }}>

@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import ServiceCard from "../components/seeker/ServiceCard";
 import FilterBar from "../components/seeker/FilterBar";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiFilter,
@@ -28,19 +28,28 @@ import PlatformStatsCard from "../components/seeker/StatusCard";
 import HeaderCard from "../components/seeker/HeaderCard";
 import PrivacyPolicyNotification from "../components/PrivacyPolicyNotification";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSearch } from "../context/SearchContext";
 
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
 
-export default function SeekerDashboard() {
+function SeekerDashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { searchQuery, setSearchQuery } = useSearch();
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unavailableIds, setUnavailableIds] = useState([]);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Pre-populate search from URL ?q= param (when navigated from another page)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setSearchQuery(decodeURIComponent(q));
+  }, []);
 
   // Filter States
   const [filters, setFilters] = useState({
@@ -148,9 +157,16 @@ export default function SeekerDashboard() {
   // Derived filtered services
   const filteredServices = useMemo(() => {
     return services.filter((service) => {
+      // 0. Text Search (Navbar SearchBox)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = service.title?.toLowerCase().includes(q);
+        const providerMatch = service.provider?.name?.toLowerCase().includes(q);
+        if (!titleMatch && !providerMatch) return false;
+      }
+
       // 1. Category
       if (filters.categoryId) {
-        // We need to know if the service's sub_category_id belongs to the selected category
         const categorySubCatIds =
           selectedCategory?.subCategories?.map((sc) => String(sc.id)) || [];
         if (!categorySubCatIds.includes(String(service.sub_category_id))) {
@@ -183,7 +199,7 @@ export default function SeekerDashboard() {
 
       return true;
     });
-  }, [services, filters, selectedCategory, unavailableIds]);
+  }, [services, filters, selectedCategory, unavailableIds, searchQuery]);
 
   if (status === "loading") {
     return (
@@ -364,5 +380,19 @@ export default function SeekerDashboard() {
         </Flex>
       </Container>
     </Box>
+  );
+}
+
+export default function SeekerDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <Flex justify="center" align="center" minH="100vh">
+          <Spinner size="xl" color="green.500" />
+        </Flex>
+      }
+    >
+      <SeekerDashboardContent />
+    </Suspense>
   );
 }

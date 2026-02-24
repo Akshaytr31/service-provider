@@ -32,9 +32,11 @@ import {
 } from "react-icons/fi";
 import { useSession } from "next-auth/react";
 import ReviewModal from "../../components/ReviewModal";
+import { useSearch } from "../../context/SearchContext";
 
 export default function SeekerBookings() {
   const { data: session } = useSession();
+  const { searchQuery } = useSearch();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -65,15 +67,26 @@ export default function SeekerBookings() {
     onOpen();
   };
 
-  // Filter Bookings
+  // Filter Bookings by status, then by search query
+  const matchesSearch = (b) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      b.service?.title?.toLowerCase().includes(q) ||
+      b.provider?.name?.toLowerCase().includes(q)
+    );
+  };
+
   const activeBookings = bookings.filter(
-    (b) => b.status === "PENDING" || b.status === "CONFIRMED",
+    (b) =>
+      (b.status === "PENDING" || b.status === "CONFIRMED") && matchesSearch(b),
   );
   const pastBookings = bookings.filter(
     (b) =>
-      b.status === "COMPLETED" ||
-      b.status === "REJECTED" ||
-      b.status === "CANCELLED",
+      (b.status === "COMPLETED" ||
+        b.status === "REJECTED" ||
+        b.status === "CANCELLED") &&
+      matchesSearch(b),
   );
 
   const BookingCard = ({ booking }) => {

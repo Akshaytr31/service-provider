@@ -38,6 +38,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PostService from "../components/PostServices";
 import { useState, useEffect, useRef } from "react";
+import { useSearch } from "@/app/context/SearchContext";
 import BookingRequests from "../components/provider/BookingRequests";
 import ReviewsView from "../components/provider/ReviewsView";
 import ApprovedServices from "../components/provider/ApprovedServices";
@@ -906,6 +907,7 @@ function ServicesView({ onBack }) {
 function MessagesView({ onBack, onSelectChat }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { searchQuery } = useSearch();
 
   useEffect(() => {
     async function fetchConversations() {
@@ -974,54 +976,63 @@ function MessagesView({ onBack, onSelectChat }) {
         </Flex>
       ) : (
         <VStack align="stretch" spacing={4}>
-          {conversations.map((conv) => (
-            <Flex
-              key={conv.id}
-              onClick={() => onSelectChat(conv.user)}
-              cursor="pointer"
-              bg="white"
-              p={5}
-              borderRadius="xl"
-              boxShadow="sm"
-              border="1px solid"
-              borderColor="gray.100"
-              transition="all 0.2s"
-              _hover={{
-                transform: "translateY(-2px)",
-                boxShadow: "md",
-                borderColor: "green.200",
-              }}
-              align="center"
-            >
-              <Avatar
-                size="md"
-                name={conv.user?.name || "Seeker"}
-                src={conv.user?.image}
-                mr={5}
-              />
+          {conversations
+            .filter((conv) => {
+              if (!searchQuery.trim()) return true;
+              const q = searchQuery.toLowerCase();
+              return (
+                conv.user?.name?.toLowerCase().includes(q) ||
+                conv.lastMessage?.toLowerCase().includes(q)
+              );
+            })
+            .map((conv) => (
+              <Flex
+                key={conv.id}
+                onClick={() => onSelectChat(conv.user)}
+                cursor="pointer"
+                bg="white"
+                p={5}
+                borderRadius="xl"
+                boxShadow="sm"
+                border="1px solid"
+                borderColor="gray.100"
+                transition="all 0.2s"
+                _hover={{
+                  transform: "translateY(-2px)",
+                  boxShadow: "md",
+                  borderColor: "green.200",
+                }}
+                align="center"
+              >
+                <Avatar
+                  size="md"
+                  name={conv.user?.name || "Seeker"}
+                  src={conv.user?.image}
+                  mr={5}
+                />
 
-              <Box flex="1">
-                <Flex justify="space-between" align="center" mb={1}>
-                  <HStack>
-                    <Text fontWeight="bold" fontSize="lg" color="gray.800">
-                      {conv.user?.name || "Unknown Seeker"}
-                    </Text>
-                  </HStack>
-                  {conv.timestamp && (
-                    <Text fontSize="xs" color="gray.400">
-                      {new Date(conv.timestamp).toLocaleDateString()}
-                    </Text>
-                  )}
-                </Flex>
+                <Box flex="1">
+                  <Flex justify="space-between" align="center" mb={1}>
+                    <HStack>
+                      <Text fontWeight="bold" fontSize="lg" color="gray.800">
+                        {conv.user?.name || "Unknown Seeker"}
+                      </Text>
+                    </HStack>
+                    {conv.timestamp && (
+                      <Text fontSize="xs" color="gray.400">
+                        {new Date(conv.timestamp).toLocaleDateString()}
+                      </Text>
+                    )}
+                  </Flex>
 
-                <Text color="gray.600" noOfLines={1} fontSize="md">
-                  {conv.lastMessage || "No messages yet"}
-                </Text>
-              </Box>
+                  <Text color="gray.600" noOfLines={1} fontSize="md">
+                    {conv.lastMessage || "No messages yet"}
+                  </Text>
+                </Box>
 
-              <Icon as={FiArrowRight} color="gray.300" ml={4} />
-            </Flex>
-          ))}
+                <Icon as={FiArrowRight} color="gray.300" ml={4} />
+              </Flex>
+            ))}
         </VStack>
       )}
     </Box>
