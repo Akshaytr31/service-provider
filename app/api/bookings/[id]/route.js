@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function PATCH(req, props) {
   const params = await props.params;
@@ -13,25 +13,29 @@ export async function PATCH(req, props) {
     const { id } = params;
     const { status, cancellationReason } = await req.json();
 
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const user = userRows[0];
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     // Verify ownership (Must be provider of the booking)
-    const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(id) },
-      include: { service: true },
-    });
+    const [bookingRows] = await db.query(
+      `SELECT b.*, s.title AS serviceTitle
+       FROM bookings b
+       LEFT JOIN services s ON b.service_id = s.id
+       WHERE b.id = ?`,
+      [parseInt(id)],
+    );
+    const booking = bookingRows[0];
 
     if (!booking)
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
-    if (booking.providerId !== user.id) {
-      // Allow Seeker to mark as COMPLETED or CANCELLED
+    if (booking.provider_id !== user.id) {
       if (
-        booking.seekerId === user.id &&
+        booking.seeker_id === user.id &&
         (status === "COMPLETED" || status === "CANCELLED")
       ) {
         // Allowed
@@ -40,15 +44,34 @@ export async function PATCH(req, props) {
       }
     }
 
-    const updated = await prisma.booking.update({
-      where: { id: parseInt(id) },
-      data: {
-        status,
-        cancellationReason:
-          status === "CANCELLED" ? cancellationReason : undefined,
-      },
-      include: { service: true },
-    });
+    const updateFields = ["status = ?"];
+    const updateValues = [status];
+
+    if (status === "CANCELLED" && cancellationReason) {
+      updateFields.push("cancellationReason = ?");
+      updateValues.push(cancellationReason);
+    }
+
+    updateValues.push(parseInt(id));
+
+    await db.query(
+      `UPDATE bookings SET ${updateFields.join(", ")} WHERE id = ?`,
+      updateValues,
+    );
+
+    // Fetch updated booking
+    const [updatedRows] = await db.query(
+      `SELECT b.*, s.title AS serviceTitle, s.price AS servicePrice
+       FROM bookings b
+       LEFT JOIN services s ON b.service_id = s.id
+       WHERE b.id = ?`,
+      [parseInt(id)],
+    );
+    const updated = updatedRows[0];
+    updated.service = {
+      title: updated.serviceTitle,
+      price: updated.servicePrice,
+    };
 
     // Notify Logic
     let message = "";
@@ -56,43 +79,35 @@ export async function PATCH(req, props) {
     let link = "";
 
     if (status === "CONFIRMED") {
-      message = `Good news! Your booking for "${booking.service.title}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`;
-      recipientId = booking.seekerId;
+      message = `Good news! Your booking for "${booking.serviceTitle}" on ${new Date(booking.date).toLocaleDateString()} at ${booking.time} has been accepted.`;
+      recipientId = booking.seeker_id;
       link = "/seeker/bookings";
     } else if (status === "REJECTED") {
-      message = `Your booking request for "${booking.service.title}" has been rejected.`;
-      recipientId = booking.seekerId;
+      message = `Your booking request for "${booking.serviceTitle}" has been rejected.`;
+      recipientId = booking.seeker_id;
       link = "/seeker/bookings";
     } else if (status === "COMPLETED") {
-      // If Provider marks completed (rare if flow is Seeker focused, but supported)
-      message = `Your booking for "${booking.service.title}" has been marked as completed. Please leave a review!`;
-      recipientId = booking.seekerId;
+      message = `Your booking for "${booking.serviceTitle}" has been marked as completed. Please leave a review!`;
+      recipientId = booking.seeker_id;
       link = "/seeker/bookings";
     } else if (status === "CANCELLED") {
-      // Determine who cancelled to notify the other party
-      if (user.id === booking.seekerId) {
-        // Seeker cancelled -> Notify Provider
-        recipientId = booking.providerId;
-        message = `Booking for "${booking.service.title}" was cancelled by the seeker. Reason: ${cancellationReason || "No reason provided"}`;
+      if (user.id === booking.seeker_id) {
+        recipientId = booking.provider_id;
+        message = `Booking for "${booking.serviceTitle}" was cancelled by the seeker. Reason: ${cancellationReason || "No reason provided"}`;
         link = "/providerDashboard?view=requests&status=ALL";
       } else {
-        // Provider cancelled -> Notify Seeker
-        recipientId = booking.seekerId;
-        message = `Your booking for "${booking.service.title}" was cancelled by the provider. Reason: ${cancellationReason || "No reason provided"}`;
+        recipientId = booking.seeker_id;
+        message = `Your booking for "${booking.serviceTitle}" was cancelled by the provider. Reason: ${cancellationReason || "No reason provided"}`;
         link = "/seeker/bookings";
       }
     }
 
     if (recipientId && message) {
-      await prisma.notification.create({
-        data: {
-          userId: recipientId,
-          message,
-          type: "BOOKING_UPDATE",
-          isRead: false,
-          link,
-        },
-      });
+      await db.query(
+        `INSERT INTO notifications (user_id, message, type, is_read, link, created_at)
+         VALUES (?, ?, 'BOOKING_UPDATE', 0, ?, NOW())`,
+        [recipientId, message, link],
+      );
     }
 
     return NextResponse.json(updated);

@@ -1,39 +1,44 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 // GET: Fetch all notifications for the current user
 export async function GET(req) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+
+    const user = userRows[0];
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 50, // Limit to last 50
-    });
+    const [[notifications], [countRows]] = await Promise.all([
+      db.query(
+        "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+        [user.id],
+      ),
+      db.query(
+        "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+        [user.id],
+      ),
+    ]);
 
-    const unreadCount = await prisma.notification.count({
-      where: { userId: user.id, isRead: false },
+    return NextResponse.json({
+      notifications,
+      unreadCount: countRows[0].count,
     });
-
-    return NextResponse.json({ notifications, unreadCount });
   } catch (error) {
     console.error("Fetch Notifications Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: error.message },
       { status: 500 },
     );
   }
@@ -41,41 +46,40 @@ export async function GET(req) {
 
 // PATCH: Mark notifications as read
 export async function PATCH(req) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const { ids, all } = await req.json(); // ids: number[], or all: boolean
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
+    const { ids, all } = await req.json();
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+
+    const user = userRows[0];
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     if (all) {
-      await prisma.notification.updateMany({
-        where: { userId: user.id, isRead: false },
-        data: { isRead: true },
-      });
+      await db.query(
+        "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0",
+        [user.id],
+      );
     } else if (ids && Array.isArray(ids) && ids.length > 0) {
-      await prisma.notification.updateMany({
-        where: {
-          id: { in: ids },
-          userId: user.id, // Ensure ownership
-        },
-        data: { isRead: true },
-      });
+      const placeholders = ids.map(() => "?").join(",");
+      await db.query(
+        `UPDATE notifications SET is_read = 1 WHERE id IN (${placeholders}) AND user_id = ?`,
+        [...ids, user.id],
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update Notification Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: error.message },
       { status: 500 },
     );
   }

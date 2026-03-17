@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
@@ -11,21 +11,41 @@ export async function GET(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const providerRequest = await prisma.providerRequest.findFirst({
-      where: { userId: Number(session.user.id) },
-      orderBy: { createdAt: "desc" }, // Get the latest one if multiple
-    });
+    const [rows] = await db.query(
+      "SELECT * FROM provider_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+      [Number(session.user.id)],
+    );
 
-    if (!providerRequest) {
+    if (!rows[0]) {
       return NextResponse.json({ error: "No request found" }, { status: 404 });
     }
 
-    return NextResponse.json(providerRequest);
+    const request = rows[0];
+
+    // Parse JSON columns
+    const jsonCols = [
+      "licenses",
+      "qualifications",
+      "availability",
+      "payment_methods",
+      "service_areas",
+      "services_offered",
+      "gallery",
+    ];
+    for (const col of jsonCols) {
+      if (request[col] && typeof request[col] === "string") {
+        try {
+          request[col] = JSON.parse(request[col]);
+        } catch {}
+      }
+    }
+
+    return NextResponse.json(request);
   } catch (error) {
     console.error("GET Current Request Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

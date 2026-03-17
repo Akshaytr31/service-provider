@@ -1,8 +1,9 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
+  let connection;
   try {
     const body = await req.json();
     console.log("Signup Payload Received:", JSON.stringify(body, null, 2));
@@ -56,11 +57,12 @@ export async function POST(req) {
       );
     }
 
-    const existingUser = await prisma.users.findUnique({
-      where: { email },
-    });
+    const [existingUsers] = await db.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email],
+    );
 
-    if (existingUser) {
+    if (existingUsers.length > 0) {
       return NextResponse.json(
         { message: "User already exists" },
         { status: 409 },
@@ -70,85 +72,80 @@ export async function POST(req) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     /* ================= TRANSACTION ================= */
+    connection = await db.getConnection();
+    await connection.beginTransaction();
 
-    await prisma.$transaction(async (tx) => {
-      // 0️⃣ Construct Display Name
-      let displayName = "";
-      if (userType === "business") {
-        displayName = businessName;
-      } else {
-        displayName = `${firstName} ${lastName}`;
-      }
+    // 0️⃣ Construct Display Name
+    let displayName = "";
+    if (userType === "business") {
+      displayName = businessName;
+    } else {
+      displayName = `${firstName} ${lastName}`;
+    }
 
-      // 1️⃣ Create user
-      const user = await tx.users.create({
-        data: {
-          email,
-          password: hashedPassword,
-          role: "seeker",
-          email_verified: true,
-          name: displayName,
-        },
-      });
+    // 1️⃣ Create user
+    const [userResult] = await connection.query(
+      `INSERT INTO users (email, password, role, email_verified, name) 
+       VALUES (?, ?, 'seeker', true, ?)`,
+      [email, hashedPassword, displayName],
+    );
 
-      console.log("User created with ID:", user.id);
+    const userId = userResult.insertId;
+    console.log("User created with ID:", userId);
 
-      // 2️⃣ Construct profile data explicitly
-      const profileData = {
-        userId: user.id,
+    // 2️⃣ Construct profile data
+    const qualifications = education ? JSON.stringify([education]) : null;
+
+    // 3️⃣ Create seeker profile
+    await connection.query(
+      `INSERT INTO SeekerProfile (
+        userId, userType, gender, address, city, zipCode, state, country, 
+        acceptedTermsandconditions, firstName, lastName, idType, idNumber, 
+        backgroundCheck, qualifications, fieldOfStudy, institution, year,
+        businessName, businessType, registrationNumber, establishmentYear, trnNumber, businessExpiryDate
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
         userType,
-        gender: gender || null,
-        address: address || null,
-        city: city || null,
-        zipCode: zipCode || null,
-        state: state || null,
-        country: country || null,
-        acceptedTermsandconditions: acceptedTermsandconditions || false,
-      };
+        gender || null,
+        address || null,
+        city || null,
+        zipCode || null,
+        state || null,
+        country || null,
+        acceptedTermsandconditions || false,
+        userType === "individual" ? firstName : null,
+        userType === "individual" ? lastName : null,
+        userType === "individual" ? idType : null,
+        userType === "individual" ? idNumber : null,
+        userType === "individual" ? backgroundCheckConsent || false : false,
+        qualifications,
+        userType === "individual" ? education?.field || null : null,
+        userType === "individual" ? education?.institution || null : null,
+        userType === "individual" ? education?.year || null : null,
+        userType === "business" ? businessName : null,
+        userType === "business" ? businessType : null,
+        userType === "business" ? registrationNumber : null,
+        userType === "business" ? establishmentYear : null,
+        userType === "business" ? trnNumber : null,
+        userType === "business" ? businessExpiryDate : null,
+      ],
+    );
 
-      if (userType === "individual") {
-        Object.assign(profileData, {
-          firstName: firstName || null,
-          lastName: lastName || null,
-          idType: idType || null,
-          idNumber: idNumber || null,
-          backgroundCheck: backgroundCheckConsent || false,
-          qualifications: education ? [education] : null,
-          fieldOfStudy: education?.field || null,
-          institution: education?.institution || null,
-          year: education?.year || null,
-        });
-      } else if (userType === "business") {
-        Object.assign(profileData, {
-          businessName: businessName || null,
-          businessType: businessType || null,
-          registrationNumber: registrationNumber || null,
-          establishmentYear: establishmentYear || null,
-          trnNumber: trnNumber || null,
-          businessExpiryDate: businessExpiryDate || null,
-        });
-      }
-
-      console.log(
-        "Inserting Seeker Profile Data:",
-        JSON.stringify(profileData, null, 2),
-      );
-
-      // 3️⃣ Create seeker profile
-      await tx.seekerProfile.create({
-        data: profileData,
-      });
-    });
+    await connection.commit();
 
     return NextResponse.json(
       { message: "Seeker account created successfully" },
       { status: 201 },
     );
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error("Signup error details:", error);
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }

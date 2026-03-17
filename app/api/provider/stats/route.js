@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req) {
   const session = await getServerSession(authOptions);
@@ -10,54 +10,45 @@ export async function GET(req) {
   }
 
   try {
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const user = userRows[0];
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Parallelize queries for better performance
-    const [ratingAgg, totalReviews, activeJobsCount] = await Promise.all([
-      prisma.review.aggregate({
-        where: {
-          booking: {
-            provider: {
-              id: user.id,
-            },
-          },
-        },
-        _avg: {
-          rating: true,
-        },
-      }),
-      prisma.review.count({
-        where: {
-          booking: {
-            provider: {
-              id: user.id,
-            },
-          },
-        },
-      }),
-      prisma.booking.count({
-        where: {
-          providerId: user.id,
-          status: {
-            in: ["PENDING", "CONFIRMED", "IN_PROGRESS"], // Adjust based on your status enum
-          },
-        },
-      }),
+    const [[ratingRows], [countRows], [activeJobsRows]] = await Promise.all([
+      db.query(
+        `SELECT AVG(r.rating) AS avgRating
+         FROM reviews r
+         JOIN bookings b ON r.booking_id = b.id
+         WHERE b.provider_id = ?`,
+        [user.id],
+      ),
+      db.query(
+        `SELECT COUNT(*) AS totalReviews
+         FROM reviews r
+         JOIN bookings b ON r.booking_id = b.id
+         WHERE b.provider_id = ?`,
+        [user.id],
+      ),
+      db.query(
+        `SELECT COUNT(*) AS activeJobs
+         FROM bookings
+         WHERE provider_id = ? AND status IN ('PENDING', 'CONFIRMED', 'IN_PROGRESS')`,
+        [user.id],
+      ),
     ]);
 
-    const avgRating = ratingAgg._avg.rating || 0;
+    const avgRating = ratingRows[0].avgRating || 0;
 
     return NextResponse.json({
-      rating: parseFloat(avgRating.toFixed(1)), // 1 decimal place
-      totalReviews: totalReviews,
-      activeJobs: activeJobsCount,
-      // Revenue and views could be added here later
+      rating: parseFloat(Number(avgRating).toFixed(1)),
+      totalReviews: countRows[0].totalReviews,
+      activeJobs: activeJobsRows[0].activeJobs,
     });
   } catch (error) {
     console.error("Error fetching provider stats:", error);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -11,22 +11,22 @@ export async function GET() {
 
   try {
     // Find provider request for this user
-    const providerRequest = await prisma.providerRequest.findFirst({
-      where: { userId: session.user.id },
-      select: { id: true },
-    });
+    const [requestRows] = await db.query(
+      "SELECT id FROM provider_requests WHERE user_id = ? LIMIT 1",
+      [session.user.id],
+    );
 
-    if (!providerRequest) {
+    if (!requestRows[0]) {
       return NextResponse.json(
         { error: "No provider request found" },
         { status: 404 },
       );
     }
 
-    const messages = await prisma.clarification.findMany({
-      where: { providerRequestId: providerRequest.id },
-      orderBy: { createdAt: "asc" },
-    });
+    const [messages] = await db.query(
+      "SELECT * FROM clarifications WHERE provider_request_id = ? ORDER BY created_at ASC",
+      [requestRows[0].id],
+    );
 
     return NextResponse.json(messages);
   } catch (error) {
@@ -43,27 +43,29 @@ export async function POST(req) {
   try {
     const { message } = await req.json();
 
-    const providerRequest = await prisma.providerRequest.findFirst({
-      where: { userId: session.user.id },
-      select: { id: true },
-    });
+    const [requestRows] = await db.query(
+      "SELECT id FROM provider_requests WHERE user_id = ? LIMIT 1",
+      [session.user.id],
+    );
 
-    if (!providerRequest) {
+    if (!requestRows[0]) {
       return NextResponse.json(
         { error: "No provider request found" },
         { status: 404 },
       );
     }
 
-    const newMessage = await prisma.clarification.create({
-      data: {
-        providerRequestId: providerRequest.id,
-        message,
-        sender: "PROVIDER",
-      },
-    });
+    const [result] = await db.query(
+      "INSERT INTO clarifications (provider_request_id, message, sender, created_at) VALUES (?, ?, 'PROVIDER', NOW())",
+      [requestRows[0].id, message],
+    );
 
-    return NextResponse.json(newMessage);
+    const [newRows] = await db.query(
+      "SELECT * FROM clarifications WHERE id = ?",
+      [result.insertId],
+    );
+
+    return NextResponse.json(newRows[0]);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

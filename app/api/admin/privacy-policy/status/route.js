@@ -1,12 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     // Fetch the latest privacy policy to get the last updated date
-    const policy = await prisma.privacyPolicy.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
+    const [policyRows] = await db.query(
+      "SELECT * FROM privacy_policy ORDER BY updatedAt DESC LIMIT 1",
+    );
+
+    const policy = policyRows[0];
 
     if (!policy) {
       return NextResponse.json({
@@ -19,20 +21,9 @@ export async function GET() {
     const policyUpdatedAt = new Date(policy.updatedAt);
 
     // Fetch all users with their roles and acceptance date
-    const users = await prisma.users.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        privacyPolicyAcceptedAt: true,
-      },
-      where: {
-        role: {
-          in: ["provider", "seeker"], 
-        },
-      },
-    });
+    const [users] = await db.query(
+      "SELECT id, name, email, role, privacy_policy_accepted_at FROM users WHERE role IN ('provider', 'seeker')",
+    );
 
     console.log("Admin Status API - Users Found:", users.length);
     console.log("Admin Status API - First User:", users[0]);
@@ -42,8 +33,8 @@ export async function GET() {
     const seekers = [];
 
     users.forEach((user) => {
-      const acceptedAt = user.privacyPolicyAcceptedAt
-        ? new Date(user.privacyPolicyAcceptedAt)
+      const acceptedAt = user.privacy_policy_accepted_at
+        ? new Date(user.privacy_policy_accepted_at)
         : null;
 
       const isAccepted = acceptedAt && acceptedAt >= policyUpdatedAt;
@@ -53,7 +44,7 @@ export async function GET() {
         name: user.name,
         email: user.email,
         isAccepted,
-        acceptedAt: user.privacyPolicyAcceptedAt,
+        acceptedAt: user.privacy_policy_accepted_at,
       };
 
       if (user.role === "provider") {

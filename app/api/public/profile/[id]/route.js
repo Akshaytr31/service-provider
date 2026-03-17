@@ -1,51 +1,85 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
   try {
     const { id: idParam } = await params;
     const isId = /^\d+$/.test(idParam);
-    const id = isId ? parseInt(idParam) : null;
 
-    let whereClause = {};
+    let userQuery, userParams;
     if (isId) {
-      whereClause = { id: id };
+      userQuery = "SELECT * FROM users WHERE id = ?";
+      userParams = [parseInt(idParam)];
     } else {
-      whereClause = { slug: idParam };
+      userQuery = "SELECT * FROM users WHERE slug = ?";
+      userParams = [idParam];
     }
 
-    const user = await prisma.users.findUnique({
-      where: whereClause,
-      include: {
-        seekerProfile: true,
-        providerRequests: {
-          where: { status: "APPROVED" },
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
+    const [userRows] = await db.query(userQuery, userParams);
+    const user = userRows[0];
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    let providerRequest = user.providerRequests?.[0] || null;
+    // Fetch seeker profile
+    const [spRows] = await db.query(
+      "SELECT * FROM SeekerProfile WHERE userId = ? LIMIT 1",
+      [user.id],
+    );
+    const seekerProfile = spRows[0] || null;
 
+    // Fetch approved provider request (latest)
+    const [prRows] = await db.query(
+      "SELECT * FROM provider_requests WHERE user_id = ? AND status = 'APPROVED' ORDER BY created_at DESC LIMIT 1",
+      [user.id],
+    );
+    let providerRequest = prRows[0] || null;
+
+    // Parse JSON columns on provider request
     if (providerRequest) {
-      // 1. Resolve Primary Subcategory manually
-      if (providerRequest.subCategoryId) {
-        const subCat = await prisma.subCategory.findUnique({
-          where: { id: providerRequest.subCategoryId },
-          include: { category: true },
-        });
-        providerRequest.subCategory = subCat;
+      const jsonCols = [
+        "licenses",
+        "qualifications",
+        "availability",
+        "payment_methods",
+        "service_areas",
+        "services_offered",
+        "gallery",
+      ];
+      for (const col of jsonCols) {
+        if (providerRequest[col] && typeof providerRequest[col] === "string") {
+          try {
+            providerRequest[col] = JSON.parse(providerRequest[col]);
+          } catch {}
+        }
       }
 
-      // 2. Resolve additional subcategories for servicesOffered if they exist
-      if (providerRequest.servicesOffered) {
-        const services = Array.isArray(providerRequest.servicesOffered)
-          ? providerRequest.servicesOffered
+      // 1. Resolve Primary Subcategory
+      if (providerRequest.sub_category_id) {
+        const [subCatRows] = await db.query(
+          `SELECT sc.*, c.id AS categoryId, c.name AS categoryName, c.image AS categoryImage
+           FROM sub_categories sc
+           LEFT JOIN categories c ON sc.category_id = c.id
+           WHERE sc.id = ?`,
+          [providerRequest.sub_category_id],
+        );
+        if (subCatRows[0]) {
+          providerRequest.subCategory = {
+            ...subCatRows[0],
+            category: {
+              id: subCatRows[0].categoryId,
+              name: subCatRows[0].categoryName,
+              image: subCatRows[0].categoryImage,
+            },
+          };
+        }
+      }
+
+      // 2. Resolve additional subcategories for servicesOffered
+      if (providerRequest.services_offered) {
+        const services = Array.isArray(providerRequest.services_offered)
+          ? providerRequest.services_offered
           : [];
 
         const subCategoryIds = services
@@ -53,10 +87,14 @@ export async function GET(req, { params }) {
           .filter((id) => !isNaN(id));
 
         if (subCategoryIds.length > 0) {
-          const subCategories = await prisma.subCategory.findMany({
-            where: { id: { in: subCategoryIds } },
-            include: { category: true },
-          });
+          const placeholders = subCategoryIds.map(() => "?").join(",");
+          const [subCategories] = await db.query(
+            `SELECT sc.*, c.name AS categoryName
+             FROM sub_categories sc
+             LEFT JOIN categories c ON sc.category_id = c.id
+             WHERE sc.id IN (${placeholders})`,
+            subCategoryIds,
+          );
 
           providerRequest.servicesOffered = services.map((s) => {
             const subCat = subCategories.find(
@@ -65,7 +103,7 @@ export async function GET(req, { params }) {
             return {
               ...s,
               subCategoryName: subCat?.name || "Unknown Service",
-              categoryName: subCat?.category?.name || "Other",
+              categoryName: subCat?.categoryName || "Other",
             };
           });
         }
@@ -73,34 +111,34 @@ export async function GET(req, { params }) {
     }
 
     // 3. Fetch Reviews and Calculate Rating
-    const reviews = await prisma.review.findMany({
-      where: {
-        booking: {
-          providerId: user.id,
+    const [reviews] = await db.query(
+      `SELECT r.rating, r.comment, r.created_at AS createdAt,
+              seeker.name AS seekerName, seeker.image AS seekerImage,
+              s.title AS serviceTitle
+       FROM reviews r
+       JOIN bookings b ON r.booking_id = b.id
+       LEFT JOIN users seeker ON b.seeker_id = seeker.id
+       LEFT JOIN services s ON b.service_id = s.id
+       WHERE b.provider_id = ?
+       ORDER BY r.created_at DESC`,
+      [user.id],
+    );
+
+    // Reshape reviews to match Prisma format
+    const formattedReviews = reviews.map((r) => ({
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      booking: {
+        seeker: {
+          name: r.seekerName,
+          image: r.seekerImage,
+        },
+        service: {
+          title: r.serviceTitle,
         },
       },
-      select: {
-        rating: true,
-        comment: true,
-        createdAt: true,
-        booking: {
-          select: {
-            seeker: {
-              select: {
-                name: true,
-                image: true,
-              },
-            },
-            service: {
-              select: {
-                title: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    }));
 
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating =
@@ -111,12 +149,6 @@ export async function GET(req, { params }) {
       name: user.name,
       image: user.image,
       role: user.role,
-      // Do not expose email, mobile, DOB, etc. broadly unless part of the public profile design.
-      // However, the request says "share this page... read only".
-      // The current profile page shows: name, role, tags, basic info (name, gender, dob, mobile), address etc.
-      // If it's a SHAREABLE link, the user presumably consents to sharing what's on their screen.
-      // I will include non-sensitive fields. Mobile/Email might be sensitive but often needed for connection.
-      // I'll include them but frontend can decide to show/hide.
       email: user.email,
       mobile: user.mobile,
       isProviderAtFirst: user.isProviderAtFirst,
@@ -126,9 +158,9 @@ export async function GET(req, { params }) {
     return NextResponse.json(
       {
         user: publicUser,
-        profile: user.seekerProfile || null,
+        profile: seekerProfile,
         providerRequest: providerRequest,
-        reviews: reviews,
+        reviews: formattedReviews,
         averageRating: parseFloat(averageRating),
         totalReviews: reviews.length,
       },

@@ -1,6 +1,28 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { transporter } from "@/lib/mailer";
+
+// Helper to parse JSON columns on a provider request row
+function parseJsonCols(row) {
+  if (!row) return row;
+  const jsonCols = [
+    "licenses",
+    "qualifications",
+    "availability",
+    "payment_methods",
+    "service_areas",
+    "services_offered",
+    "gallery",
+  ];
+  for (const col of jsonCols) {
+    if (row[col] && typeof row[col] === "string") {
+      try {
+        row[col] = JSON.parse(row[col]);
+      } catch {}
+    }
+  }
+  return row;
+}
 
 /* ================= GET SINGLE REQUEST ================= */
 export async function GET(req, context) {
@@ -14,33 +36,36 @@ export async function GET(req, context) {
       );
     }
 
-    const request = await prisma.providerRequest.findUnique({
-      where: { id: Number(id) },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        clarifications: {
-          orderBy: { createdAt: "asc" },
-        },
-      },
-    });
+    // Fetch request with user info
+    const [requestRows] = await db.query(
+      `SELECT pr.*, u.id AS userId, u.email AS userEmail, u.name AS userName
+       FROM provider_requests pr
+       LEFT JOIN users u ON pr.user_id = u.id
+       WHERE pr.id = ?`,
+      [Number(id)],
+    );
 
-    if (!request) {
+    if (!requestRows[0]) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
+
+    const request = parseJsonCols(requestRows[0]);
+    request.user = {
+      id: request.userId,
+      email: request.userEmail,
+      name: request.userName,
+    };
+
+    // Fetch clarifications
+    const [clarifications] = await db.query(
+      "SELECT * FROM clarifications WHERE provider_request_id = ? ORDER BY created_at ASC",
+      [Number(id)],
+    );
+    request.clarifications = clarifications;
 
     // AUTO-EXPIRE CHECK
     let hasUpdates = false;
     const now = new Date();
-    // Normalize "now" to midnight to compare dates properly if expiry is just YYYY-MM-DD string
-    // But assuming simple date comparison works for now.
-    // Ideally we treat expiry date string as T00:00:00 or T23:59:59 depending on logic.
-    // let's stick to simple Date comparison.
 
     if (Array.isArray(request.licenses)) {
       for (const license of request.licenses) {
@@ -52,9 +77,7 @@ export async function GET(req, context) {
           license.status = "EXPIRED";
           hasUpdates = true;
 
-          // Send Email
           if (request.user?.email) {
-
             try {
               await transporter.sendMail({
                 from: process.env.EMAIL_USER,
@@ -74,10 +97,10 @@ export async function GET(req, context) {
       }
 
       if (hasUpdates) {
-        await prisma.providerRequest.update({
-          where: { id: Number(id) },
-          data: { licenses: request.licenses },
-        });
+        await db.query(
+          "UPDATE provider_requests SET licenses = ? WHERE id = ?",
+          [JSON.stringify(request.licenses), Number(id)],
+        );
       }
     }
 
@@ -117,13 +140,24 @@ export async function PATCH(req, context) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
+    // Helper to fetch request with user
+    async function fetchRequestWithUser() {
+      const [rows] = await db.query(
+        `SELECT pr.*, u.id AS userId, u.email AS userEmail, u.name AS userName
+         FROM provider_requests pr
+         LEFT JOIN users u ON pr.user_id = u.id
+         WHERE pr.id = ?`,
+        [Number(id)],
+      );
+      if (!rows[0]) return null;
+      const r = parseJsonCols(rows[0]);
+      r.user = { id: r.userId, email: r.userEmail, name: r.userName };
+      return r;
+    }
+
     // HANDLE LICENSE EXPIRATION
     if (action === "expire_license") {
-      const request = await prisma.providerRequest.findUnique({
-        where: { id: Number(id) },
-        include: { user: true },
-      });
-
+      const request = await fetchRequestWithUser();
       if (!request) {
         return NextResponse.json(
           { error: "Request not found" },
@@ -131,7 +165,6 @@ export async function PATCH(req, context) {
         );
       }
 
-      // Update License Status in JSON
       const licenses = Array.isArray(request.licenses) ? request.licenses : [];
       if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
         return NextResponse.json(
@@ -142,16 +175,13 @@ export async function PATCH(req, context) {
 
       const licenseName = licenses[licenseIndex].name || "License";
       const licenseVersion = licenses[licenseIndex].version || 1;
-
       licenses[licenseIndex].status = "EXPIRED";
 
-      // Update DB
-      await prisma.providerRequest.update({
-        where: { id: Number(id) },
-        data: { licenses },
-      });
+      await db.query("UPDATE provider_requests SET licenses = ? WHERE id = ?", [
+        JSON.stringify(licenses),
+        Number(id),
+      ]);
 
-      // Send Email
       if (request.user?.email) {
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
@@ -165,7 +195,6 @@ export async function PATCH(req, context) {
         });
       }
 
-      // Trigger async check
       await updateServiceStatusForProvider(request.user?.email);
 
       return NextResponse.json({
@@ -176,11 +205,7 @@ export async function PATCH(req, context) {
 
     // HANDLE LICENSE APPROVAL
     if (action === "approve_license") {
-      const request = await prisma.providerRequest.findUnique({
-        where: { id: Number(id) },
-        include: { user: true },
-      });
-
+      const request = await fetchRequestWithUser();
       if (!request) {
         return NextResponse.json(
           { error: "Request not found" },
@@ -188,7 +213,6 @@ export async function PATCH(req, context) {
         );
       }
 
-      // Update License Status in JSON
       const licenses = Array.isArray(request.licenses) ? request.licenses : [];
       if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
         return NextResponse.json(
@@ -199,16 +223,13 @@ export async function PATCH(req, context) {
 
       const licenseName = licenses[licenseIndex].name || "License";
       const licenseVersion = licenses[licenseIndex].version || 1;
-
       licenses[licenseIndex].status = "APPROVED";
 
-      // Update DB
-      await prisma.providerRequest.update({
-        where: { id: Number(id) },
-        data: { licenses },
-      });
+      await db.query("UPDATE provider_requests SET licenses = ? WHERE id = ?", [
+        JSON.stringify(licenses),
+        Number(id),
+      ]);
 
-      // Send Email
       if (request.user?.email) {
         try {
           await transporter.sendMail({
@@ -236,11 +257,7 @@ export async function PATCH(req, context) {
 
     // HANDLE LICENSE REJECTION
     if (action === "reject_license") {
-      const request = await prisma.providerRequest.findUnique({
-        where: { id: Number(id) },
-        include: { user: true },
-      });
-
+      const request = await fetchRequestWithUser();
       if (!request) {
         return NextResponse.json(
           { error: "Request not found" },
@@ -248,7 +265,6 @@ export async function PATCH(req, context) {
         );
       }
 
-      // Update License Status in JSON
       const licenses = Array.isArray(request.licenses) ? request.licenses : [];
       if (typeof licenseIndex !== "number" || !licenses[licenseIndex]) {
         return NextResponse.json(
@@ -259,16 +275,13 @@ export async function PATCH(req, context) {
 
       const licenseName = licenses[licenseIndex].name || "License";
       const licenseVersion = licenses[licenseIndex].version || 1;
-
       licenses[licenseIndex].status = "REJECTED";
 
-      // Update DB
-      await prisma.providerRequest.update({
-        where: { id: Number(id) },
-        data: { licenses },
-      });
+      await db.query("UPDATE provider_requests SET licenses = ? WHERE id = ?", [
+        JSON.stringify(licenses),
+        Number(id),
+      ]);
 
-      // Send Email
       if (request.user?.email) {
         try {
           await transporter.sendMail({
@@ -294,11 +307,7 @@ export async function PATCH(req, context) {
 
     // HANDLE CLARIFICATION (No status change)
     if (action === "clarify") {
-      const request = await prisma.providerRequest.findUnique({
-        where: { id: Number(id) },
-        include: { user: true },
-      });
-
+      const request = await fetchRequestWithUser();
       if (!request) {
         return NextResponse.json(
           { error: "Request not found" },
@@ -324,13 +333,10 @@ export async function PATCH(req, context) {
       }
 
       // SAVE CLARIFICATION TO DB
-      await prisma.clarification.create({
-        data: {
-          providerRequestId: request.id,
-          message: reason,
-          sender: "ADMIN",
-        },
-      });
+      await db.query(
+        "INSERT INTO clarifications (provider_request_id, message, sender, created_at) VALUES (?, ?, 'ADMIN', NOW())",
+        [request.id, reason],
+      );
 
       return NextResponse.json({
         success: true,
@@ -338,36 +344,42 @@ export async function PATCH(req, context) {
       });
     }
 
+    // HANDLE APPROVE / REJECT
     const status = action === "approve" ? "APPROVED" : "REJECTED";
 
-    // 1️⃣ Update provider request status
-    const updateData = { status };
+    const updateFields = ["status = ?"];
+    const updateValues = [status];
+
     if (action === "reject") {
-      updateData.rejectionReason = reason;
+      updateFields.push("rejection_reason = ?");
+      updateValues.push(reason);
     }
 
-    const request = await prisma.providerRequest.update({
-      where: { id: Number(id) },
-      data: updateData,
-      include: { user: true }, // Fetch user for email
-    });
+    updateValues.push(Number(id));
 
-    // 2️⃣ Update user role safely (NO firstName access)
-    await prisma.users.updateMany({
-      where: { id: request.userId },
-      data:
-        action === "approve"
-          ? {
-              role: "provider",
-              providerRequestStatus: "approved",
-            }
-          : {
-              providerRequestStatus: "rejected",
-            },
-    });
+    await db.query(
+      `UPDATE provider_requests SET ${updateFields.join(", ")} WHERE id = ?`,
+      updateValues,
+    );
 
-    // 3️⃣ Send Email
-    if (request.user.email) {
+    // Fetch the updated request with user info
+    const request = await fetchRequestWithUser();
+
+    // Update user role
+    if (action === "approve") {
+      await db.query(
+        "UPDATE users SET role = 'provider', providerRequestStatus = 'approved' WHERE id = ?",
+        [request.user_id],
+      );
+    } else {
+      await db.query(
+        "UPDATE users SET providerRequestStatus = 'rejected' WHERE id = ?",
+        [request.user_id],
+      );
+    }
+
+    // Send Email
+    if (request.user?.email) {
       if (action === "reject") {
         await transporter.sendMail({
           from: process.env.EMAIL_USER,
@@ -378,7 +390,6 @@ export async function PATCH(req, context) {
               <p>Your request to become a provider has been <strong>rejected</strong>.</p>
               <p><strong>Reason:</strong> ${reason || "Not specified"}</p>
               <p>You can view details and reapply by visiting your dashboard:</p>
-
             `,
         });
       } else if (action === "approve") {
@@ -410,13 +421,27 @@ async function updateServiceStatusForProvider(email) {
   if (!email) return;
 
   // 1. Get Provider Request
-  const provider = await prisma.providerRequest.findFirst({
-    where: { user: { email } },
-  });
+  const [providerRows] = await db.query(
+    `SELECT pr.* FROM provider_requests pr
+     JOIN users u ON pr.user_id = u.id
+     WHERE u.email = ? ORDER BY pr.created_at DESC LIMIT 1`,
+    [email],
+  );
 
-  if (!provider || !provider.licenses) return;
+  const provider = providerRows[0];
+  if (!provider) return;
 
-  const licenses = provider.licenses;
+  // Parse licenses
+  let licenses = provider.licenses;
+  if (typeof licenses === "string") {
+    try {
+      licenses = JSON.parse(licenses);
+    } catch {
+      return;
+    }
+  }
+  if (!Array.isArray(licenses)) return;
+
   const today = new Date();
 
   // Track VALID subcategories
@@ -428,8 +453,6 @@ async function updateServiceStatusForProvider(email) {
     const subId = String(lic.subCategoryId);
     linkedSubCategoryIds.add(subId);
 
-    // Check Expiry AND Status (Must be APPROVED)
-    // If Admin just approved it, status is APPROVED.
     const expiryDate = new Date(lic.expiry);
     if (expiryDate > today && lic.status === "APPROVED") {
       validSubCategoryIds.add(subId);
@@ -437,29 +460,27 @@ async function updateServiceStatusForProvider(email) {
   }
 
   // 2. Get Services
-  const services = await prisma.services.findMany({
-    where: { providerEmail: email },
-  });
+  const [services] = await db.query(
+    "SELECT * FROM services WHERE providerEmail = ?",
+    [email],
+  );
 
   for (const service of services) {
-    const subId = String(service.subCategoryId);
+    const subId = String(service.sub_category_id);
 
-    // If linked but NO valid license -> BLOCK
     if (linkedSubCategoryIds.has(subId)) {
       if (!validSubCategoryIds.has(subId)) {
         if (service.status !== "BLOCKED") {
-          await prisma.services.update({
-            where: { id: service.id },
-            data: { status: "BLOCKED" },
-          });
+          await db.query(
+            "UPDATE services SET status = 'BLOCKED' WHERE id = ?",
+            [service.id],
+          );
         }
       } else {
-        // HAS valid license -> UNBLOCK
         if (service.status === "BLOCKED") {
-          await prisma.services.update({
-            where: { id: service.id },
-            data: { status: "ACTIVE" },
-          });
+          await db.query("UPDATE services SET status = 'ACTIVE' WHERE id = ?", [
+            service.id,
+          ]);
         }
       }
     }

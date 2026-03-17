@@ -1,9 +1,10 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
+  let connection;
   try {
     const session = await getServerSession(authOptions);
 
@@ -58,7 +59,7 @@ export async function POST(req) {
       rulesAccepted,
     } = body;
 
-    // Basic Validation (checking a few key fields)
+    // Basic Validation
     if (!userType || !termsAccepted) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -66,12 +67,15 @@ export async function POST(req) {
       );
     }
 
-    // Check if request already exists?
-    const existingRequest = await prisma.providerRequest.findFirst({
-      where: { userId: Number(session.user.id) },
-    });
+    const userId = session.user.id;
 
-    if (existingRequest && existingRequest.status === "PENDING") {
+    // Check if request already exists
+    const [existingRequests] = await db.query(
+      "SELECT id, status FROM provider_requests WHERE user_id = ? AND status = 'PENDING'",
+      [userId],
+    );
+
+    if (existingRequests.length > 0) {
       return NextResponse.json(
         { message: "You already have a pending provider request." },
         { status: 409 },
@@ -79,99 +83,99 @@ export async function POST(req) {
     }
 
     // Transaction: Create Request + Update User
-    await prisma.$transaction(async (tx) => {
-      // Create Provider Request
-      await tx.providerRequest.create({
-        data: {
-          userId: Number(session.user.id),
-          userType,
-          firstName,
-          lastName,
-          businessName,
-          businessType,
-          registrationNumber,
-          trnNumber,
-          businessExpiryDate: expiryDate,
-          establishmentYear,
+    connection = await db.getConnection();
+    await connection.beginTransaction();
 
-          city,
-          zipCode,
-          state,
-          country,
-          address,
-          serviceRadius: serviceRadius ? parseInt(serviceRadius) : null,
-          serviceAreas: serviceAreas || [],
-          latitude: latitude || null,
-          longitude: longitude || null,
+    // Create Provider Request
+    await connection.query(
+      `INSERT INTO provider_requests (
+        user_id, user_type, first_name, last_name, business_name, business_type, 
+        registration_number, trn_number, business_expiry_date, establishment_year,
+        city, zip_code, state, country, address, service_radius, service_areas,
+        latitude, longitude, category_id, sub_category_id, services_offered,
+        description, years_experience, qualifications, licenses, availability,
+        pricing_type, base_rate, on_site_charges, payment_methods,
+        id_type, id_number, background_check_consent, terms_accepted, privacy_accepted,
+        rules_accepted, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')`,
+      [
+        userId,
+        userType,
+        firstName || null,
+        lastName || null,
+        businessName || null,
+        businessType || null,
+        registrationNumber || null,
+        trnNumber || null,
+        expiryDate || null,
+        establishmentYear || null,
+        city || null,
+        zipCode || null,
+        state || null,
+        country || null,
+        address || null,
+        serviceRadius ? parseInt(serviceRadius) : null,
+        JSON.stringify(serviceAreas || []),
+        latitude || null,
+        longitude || null,
+        services?.[0]?.categoryId ? parseInt(services[0].categoryId) : null,
+        services?.[0]?.subCategoryId
+          ? parseInt(services[0].subCategoryId)
+          : null,
+        JSON.stringify(services || []),
+        services?.[0]?.description || "",
+        yearsExperience || null,
+        JSON.stringify(qualifications || []),
+        JSON.stringify(licenses || []),
+        JSON.stringify(availability || {}),
+        pricingType || null,
+        baseRate || null,
+        onSiteCharges || null,
+        JSON.stringify(paymentMethods || []),
+        idType || null,
+        idNumber || null,
+        backgroundCheckConsent || false,
+        termsAccepted || false,
+        privacyAccepted || false,
+        rulesAccepted || false,
+      ],
+    );
 
-          categoryId: services?.[0]?.categoryId
-            ? parseInt(services[0].categoryId)
-            : null,
-          subCategoryId: services?.[0]?.subCategoryId
-            ? parseInt(services[0].subCategoryId)
-            : null,
-          servicesOffered: services || [],
-          description: services?.[0]?.description || "",
-          yearsExperience,
+    // Update User Status
+    const [userRows] = await connection.query(
+      "SELECT role FROM users WHERE id = ?",
+      [userId],
+    );
 
-          qualifications: qualifications || [],
-          licenses: licenses || [],
-
-          availability: availability || {},
-
-          pricingType,
-          baseRate,
-          onSiteCharges,
-          paymentMethods: paymentMethods || [],
-
-          idType,
-          idNumber,
-          backgroundCheck: backgroundCheckConsent,
-
-          termsAccepted,
-          privacyAccepted,
-          rulesAccepted,
-
-          status: "PENDING",
-        },
-      });
-
-      // Update User Status
-      // If user has role 'none', promote to 'provider' immediately (assuming upgrade request implies intent)
-      // BUT normally provider requests are PENDING.
-      // However, for Google Sign-In flow where they act as "Signup", we might want to set different status?
-      // The user asked to "login" (full access) only after form filling.
-      // For providers, full access usually means "waiting for approval" dashboard.
-
-      // Let's check current role
-      const currentUser = await tx.users.findUnique({
-        where: { id: Number(session.user.id) },
-      });
-
-      let updateData = {
-        providerRequestStatus: "PENDING",
-      };
-
-      if (currentUser.role === "none" || currentUser.role === "new_user") {
-        updateData.role = "provider";
-        updateData.isProviderAtFirst = true;
+    if (userRows.length > 0) {
+      const user = userRows[0];
+      if (user.role === "none" || user.role === "new_user") {
+        await connection.query(
+          "UPDATE users SET role = 'provider', isProviderAtFirst = true, providerRequestStatus = 'PENDING' WHERE id = ?",
+          [userId],
+        );
+      } else {
+        await connection.query(
+          "UPDATE users SET providerRequestStatus = 'PENDING' WHERE id = ?",
+          [userId],
+        );
       }
+    }
 
-      await tx.users.update({
-        where: { id: Number(session.user.id) },
-        data: updateData,
-      });
-    });
+    await connection.commit();
 
     return NextResponse.json(
       { message: "Provider request submitted successfully" },
       { status: 201 },
     );
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error("Provider Upgrade Error:", error);
     return NextResponse.json(
       { message: `Error: ${error.message}` },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }

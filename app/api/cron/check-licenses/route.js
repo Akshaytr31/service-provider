@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { transporter } from "@/lib/mailer";
 
@@ -6,19 +6,29 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const requests = await prisma.providerRequest.findMany({
-      where: { status: "APPROVED" },
-      include: { user: true },
-    });
+    const [requestRows] = await db.query(
+      `SELECT pr.*, u.id AS userId, u.email AS userEmail, u.name AS userName
+       FROM provider_requests pr
+       JOIN users u ON pr.user_id = u.id
+       WHERE pr.status = 'APPROVED'`,
+    );
 
     let blockedCount = 0;
     let unblockedCount = 0;
     let reminderCount = 0;
 
-    for (const req of requests) {
-      if (!req.user?.email) continue;
+    for (const req of requestRows) {
+      if (!req.userEmail) continue;
 
-      const licenses = req.licenses;
+      // Parse licenses JSON
+      let licenses = req.licenses;
+      if (typeof licenses === "string") {
+        try {
+          licenses = JSON.parse(licenses);
+        } catch {
+          continue;
+        }
+      }
       if (!Array.isArray(licenses)) continue;
 
       let licensesUpdated = false;
@@ -26,9 +36,7 @@ export async function GET() {
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(today.getDate() + 7);
 
-      // Track which subcategories have at least one VALID license
       const validSubCategoryIds = new Set();
-      // Track which subcategories are LINKED to any license (valid or expired)
       const linkedSubCategoryIds = new Set();
 
       for (const lic of licenses) {
@@ -38,20 +46,17 @@ export async function GET() {
         linkedSubCategoryIds.add(subId);
 
         const expiryDate = new Date(lic.expiry);
-        // Check if fresh
         if (expiryDate > today) {
           validSubCategoryIds.add(subId);
 
-          // Check if expiring soon (within 7 days) AND reminder not sent
-          // We check if it is within the next 7 days window: today < expiry <= sevenDaysFromNow
           if (expiryDate <= sevenDaysFromNow && !lic.reminderSent) {
             try {
               await transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: req.user.email,
+                to: req.userEmail,
                 subject: `Action Required: License Expiring Soon (${lic.name || "Document"})`,
                 html: `
-                    <p>Dear ${req.user.name || "User"},</p>
+                    <p>Dear ${req.userName || "User"},</p>
                     <p>Your license <strong>${lic.name} (Version ${lic.version || 1})</strong> is expiring on <strong>${expiryDate.toDateString()}</strong>.</p>
                     <p>Please log in to your profile and upload the latest version to avoid service disruption.</p>
                 `,
@@ -66,46 +71,38 @@ export async function GET() {
         }
       }
 
-      // Update provider request if licenses were modified (reminderSent flag added)
+      // Update provider request if licenses were modified
       if (licensesUpdated) {
-        await prisma.providerRequest.update({
-          where: { id: req.id },
-          data: { licenses },
-        });
+        await db.query(
+          "UPDATE provider_requests SET licenses = ? WHERE id = ?",
+          [JSON.stringify(licenses), req.id],
+        );
       }
 
       // Fetch provider's services
-      const services = await prisma.services.findMany({
-        where: { providerEmail: req.user.email },
-      });
+      const [services] = await db.query(
+        "SELECT * FROM services WHERE providerEmail = ?",
+        [req.userEmail],
+      );
 
       for (const service of services) {
-        const subId = String(service.subCategoryId);
-
-        // Logic:
-        // 1. If service is linked to a license category (linkedSubCategoryIds.has(subId))
-        // 2. AND there is NO valid license for it (!validSubCategoryIds.has(subId))
-        // -> BLOCK IT
-
-        // 3. If there IS a valid license -> UNBLOCK IT (if it was blocked)
+        const subId = String(service.sub_category_id);
 
         if (linkedSubCategoryIds.has(subId)) {
           if (!validSubCategoryIds.has(subId)) {
-            // Expired / Missing Valid License
             if (service.status !== "BLOCKED") {
-              await prisma.services.update({
-                where: { id: service.id },
-                data: { status: "BLOCKED" },
-              });
+              await db.query(
+                "UPDATE services SET status = 'BLOCKED' WHERE id = ?",
+                [service.id],
+              );
               blockedCount++;
             }
           } else {
-            // Has Valid License
             if (service.status === "BLOCKED") {
-              await prisma.services.update({
-                where: { id: service.id },
-                data: { status: "ACTIVE" },
-              });
+              await db.query(
+                "UPDATE services SET status = 'ACTIVE' WHERE id = ?",
+                [service.id],
+              );
               unblockedCount++;
             }
           }

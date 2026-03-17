@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 
 export async function GET(req, props) {
   const params = await props.params;
@@ -11,14 +11,10 @@ export async function GET(req, props) {
     return NextResponse.json({ error: "Date required" }, { status: 400 });
 
   try {
-    const bookings = await prisma.booking.findMany({
-      where: {
-        serviceId: parseInt(id),
-        date: new Date(dateStr),
-        status: "CONFIRMED",
-      },
-      select: { time: true },
-    });
+    const [bookings] = await db.query(
+      "SELECT time FROM bookings WHERE service_id = ? AND date = ? AND status = 'CONFIRMED'",
+      [parseInt(id), new Date(dateStr)],
+    );
 
     const bookedSlots = bookings.map((b) => b.time);
     return NextResponse.json(bookedSlots);

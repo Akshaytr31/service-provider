@@ -1,27 +1,8 @@
-// import { getServerSession } from "next-auth";
-// import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-// import { db } from "@/lib/db";
-// import { NextResponse } from "next/server";
-
-// export async function POST() {
-//   const session = await getServerSession(authOptions);
-
-//   if (!session?.user?.email) {
-//     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//   }
-
-//   await db.query(
-//     "UPDATE users SET providerRequestStatus = 'pending' WHERE email = ?",
-//     [session.user.email]
-//   );
-
-//   return NextResponse.json({ success: true });
-// }
-
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { prisma } from "@/lib/prisma";
-import { generateUniqueSlug } from "@/lib/slug";
+import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
+import { generateUniqueSlugDb } from "@/lib/slug";
 
 export async function POST(req) {
   try {
@@ -31,45 +12,46 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    // Find existing user
+    const [userRows] = await db.query("SELECT * FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    let user = userRows[0];
 
     if (!user) {
-      user = await prisma.users.create({
-        data: {
-          email: session.user.email,
-          name: session.user.name || "User",
-          role: "seeker",
-        },
-      });
+      const [result] = await db.query(
+        "INSERT INTO users (email, name, role, createdAt) VALUES (?, ?, 'seeker', NOW())",
+        [session.user.email, session.user.name || "User"],
+      );
+      const [newUserRows] = await db.query("SELECT * FROM users WHERE id = ?", [
+        result.insertId,
+      ]);
+      user = newUserRows[0];
     }
 
     const body = await req.json();
 
-    const request = await prisma.providerRequest.create({
-      data: {
-        userId: user.id,
-        about: body.about,
-        education: body.education,
-        experience: body.experience,
-        skills: body.skills,
-        certificates: body.certificates,
-        profilePhoto: body.profilePhoto || null,
-        status: "PENDING",
-        createdAt: new Date(),
-      },
-    });
+    const [result] = await db.query(
+      `INSERT INTO provider_requests (user_id, status, created_at, profile_photo)
+       VALUES (?, 'PENDING', NOW(), ?)`,
+      [user.id, body.profilePhoto || null],
+    );
 
-    return NextResponse.json(request, { status: 201 });
+    const [requestRows] = await db.query(
+      "SELECT * FROM provider_requests WHERE id = ?",
+      [result.insertId],
+    );
+
+    return NextResponse.json(requestRows[0], { status: 201 });
   } catch (error) {
-    console.error("PRISMA ERROR:", error);
+    console.error("PROVIDER REQUEST ERROR:", error);
     return NextResponse.json(
       { error: "Failed to send request", message: error.message },
       { status: 500 },
     );
   }
 }
+
 export async function PATCH(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -79,111 +61,151 @@ export async function PATCH(req) {
     }
 
     const body = await req.json();
-    const { licenses, licenseIndex } = body;
 
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-      include: {
-        providerRequests: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
+    // Find user with latest provider request
+    const [userRows] = await db.query("SELECT * FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const user = userRows[0];
 
-    if (!user || !user.providerRequests?.[0]) {
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const [requestRows] = await db.query(
+      "SELECT * FROM provider_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+      [user.id],
+    );
+
+    if (!requestRows[0]) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
-    const providerRequestId = user.providerRequests[0].id;
+    const providerRequestId = requestRows[0].id;
 
-    // If we are updating a specific license in the array
-    let updatedLicenses = user.providerRequests[0].licenses || [];
+    // Build dynamic update
+    const updateFields = [];
+    const updateValues = [];
 
-    // Ensure licenses is an array
-    if (!Array.isArray(updatedLicenses)) {
-      updatedLicenses = [];
+    const fieldMap = {
+      profilePhoto: "profile_photo",
+      bannerPhoto: "banner_photo",
+      firstName: "first_name",
+      lastName: "last_name",
+      businessName: "business_name",
+      businessType: "business_type",
+      registrationNumber: "registration_number",
+      trnNumber: "trn_number",
+      establishmentYear: "establishment_year",
+      businessExpiryDate: "business_expiry_date",
+      description: "description",
+      yearsExperience: "years_experience",
+      pricingType: "pricing_type",
+      baseRate: "base_rate",
+      onSiteCharges: "on_site_charges",
+      address: "address",
+      city: "city",
+      state: "state",
+      country: "country",
+      zipCode: "zip_code",
+      idType: "id_type",
+      idNumber: "id_number",
+    };
+
+    for (const [jsKey, dbCol] of Object.entries(fieldMap)) {
+      if (body[jsKey] !== undefined) {
+        updateFields.push(`${dbCol} = ?`);
+        updateValues.push(body[jsKey]);
+      }
     }
 
-    if (licenses) {
-      // If a full list is provided (or a single object to replace/append)
-      // For this specific requirement "update expiry/document", we might receive the whole updated list OR a specific update.
-      // Let's assume the frontend sends the COMPLETE updated licenses array for simplicity and robustness.
-      updatedLicenses = licenses;
+    // Numeric fields
+    if (body.serviceRadius !== undefined) {
+      updateFields.push("service_radius = ?");
+      updateValues.push(parseInt(body.serviceRadius) || null);
+    }
+    if (body.categoryId !== undefined) {
+      updateFields.push("category_id = ?");
+      updateValues.push(parseInt(body.categoryId) || null);
+    }
+    if (body.subCategoryId !== undefined) {
+      updateFields.push("sub_category_id = ?");
+      updateValues.push(parseInt(body.subCategoryId) || null);
+    }
+    if (body.latitude !== undefined) {
+      updateFields.push("latitude = ?");
+      updateValues.push(body.latitude);
+    }
+    if (body.longitude !== undefined) {
+      updateFields.push("longitude = ?");
+      updateValues.push(body.longitude);
     }
 
-    const updatedRequest = await prisma.providerRequest.update({
-      where: { id: providerRequestId },
-      data: {
-        // Allow updating all fields
-        profilePhoto: body.profilePhoto,
-        bannerPhoto: body.bannerPhoto,
+    // JSON fields
+    const jsonFields = {
+      licenses: "licenses",
+      servicesOffered: "services_offered",
+      gallery: "gallery",
+      availability: "availability",
+      qualifications: "qualifications",
+    };
 
-        firstName: body.firstName,
-        lastName: body.lastName,
-        businessName: body.businessName,
-        businessType: body.businessType,
-        registrationNumber: body.registrationNumber,
-        trnNumber: body.trnNumber,
-        establishmentYear: body.establishmentYear,
-        businessExpiryDate: body.businessExpiryDate,
+    for (const [jsKey, dbCol] of Object.entries(jsonFields)) {
+      if (body[jsKey] !== undefined) {
+        updateFields.push(`${dbCol} = ?`);
+        updateValues.push(JSON.stringify(body[jsKey]));
+      }
+    }
 
-        description: body.description,
-        serviceRadius: body.serviceRadius
-          ? parseInt(body.serviceRadius)
-          : undefined,
-        yearsExperience: body.yearsExperience,
+    if (updateFields.length > 0) {
+      updateValues.push(providerRequestId);
+      await db.query(
+        `UPDATE provider_requests SET ${updateFields.join(", ")} WHERE id = ?`,
+        updateValues,
+      );
+    }
 
-        categoryId: body.categoryId ? parseInt(body.categoryId) : undefined,
-        subCategoryId: body.subCategoryId
-          ? parseInt(body.subCategoryId)
-          : undefined,
+    // Fetch updated request
+    const [updatedRows] = await db.query(
+      "SELECT * FROM provider_requests WHERE id = ?",
+      [providerRequestId],
+    );
+    const updatedRequest = updatedRows[0];
 
-        pricingType: body.pricingType,
-        baseRate: body.baseRate,
-        onSiteCharges: body.onSiteCharges,
-
-        address: body.address,
-        city: body.city,
-        state: body.state,
-        country: body.country,
-        zipCode: body.zipCode,
-        latitude: body.latitude,
-        longitude: body.longitude,
-
-        idType: body.idType,
-        idNumber: body.idNumber,
-
-        // Preserve existing behavior for licenses if passed
-        ...(body.licenses && { licenses: body.licenses }),
-
-        servicesOffered: body.servicesOffered,
-        gallery: body.gallery,
-        gallery: body.gallery,
-        availability: body.availability,
-        qualifications: body.qualifications,
-      },
-    });
+    // Parse JSON columns
+    const jsonCols = [
+      "licenses",
+      "qualifications",
+      "availability",
+      "services_offered",
+      "gallery",
+    ];
+    for (const col of jsonCols) {
+      if (updatedRequest[col] && typeof updatedRequest[col] === "string") {
+        try {
+          updatedRequest[col] = JSON.parse(updatedRequest[col]);
+        } catch {}
+      }
+    }
 
     // Generate and update slug if name/business name changes
     const nameSource =
-      updatedRequest.businessName ||
-      `${updatedRequest.firstName || ""} ${updatedRequest.lastName || ""}`.trim() ||
+      updatedRequest.business_name ||
+      `${updatedRequest.first_name || ""} ${updatedRequest.last_name || ""}`.trim() ||
       user.name;
 
     if (nameSource) {
-      // Generate and update slug if name/business name changes
-      const newSlug = await generateUniqueSlug(
+      const newSlug = await generateUniqueSlugDb(
         nameSource,
-        prisma.users,
+        "users",
         user.slug,
       );
 
       if (newSlug && newSlug !== user.slug) {
-        await prisma.users.update({
-          where: { id: user.id },
-          data: { slug: newSlug },
-        });
+        await db.query("UPDATE users SET slug = ? WHERE id = ?", [
+          newSlug,
+          user.id,
+        ]);
       }
     }
 

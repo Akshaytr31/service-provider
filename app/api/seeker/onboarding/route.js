@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { randomInt } from "crypto";
 
@@ -18,7 +18,7 @@ export async function POST() {
     await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
     await db.query(
       "INSERT INTO email_otps (email, otp, expires_at) VALUES (?, ?, ?)",
-      [email, otp, expiresAt]
+      [email, otp, expiresAt],
     );
 
     const { sendEmail } = await import("@/lib/mail");
@@ -26,6 +26,9 @@ export async function POST() {
 
     return NextResponse.json({ message: "OTP sent" });
   } catch (err) {
-    return NextResponse.json({ message: "Failed to send OTP" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Failed to send OTP" },
+      { status: 500 },
+    );
   }
 }

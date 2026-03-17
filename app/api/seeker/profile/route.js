@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { generateUniqueSlug } from "@/lib/slug";
+import { generateUniqueSlugDb } from "@/lib/slug";
 
 export async function GET() {
   try {
@@ -11,33 +11,40 @@ export async function GET() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-      include: {
-        seekerProfile: true,
-        providerRequests: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    });
+    // 1. Get User
+    const [userRows] = await db.query("SELECT * FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
 
-    if (!user) {
+    if (userRows.length === 0) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // Auto-generate slug if missing (Lazy Migration)
+    const user = userRows[0];
+
+    // 2. Get Seeker Profile
+    const [profileRows] = await db.query(
+      "SELECT * FROM SeekerProfile WHERE userId = ?",
+      [user.id],
+    );
+
+    // 3. Get Latest Provider Request
+    const [requestRows] = await db.query(
+      "SELECT * FROM provider_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+      [user.id],
+    );
+
+    // 4. Auto-generate slug if missing
     if (!user.slug) {
-      const nameSource =
-        user.providerRequests?.[0]?.businessName || user.name || "user";
-      const newSlug = await generateUniqueSlug(nameSource, prisma.users);
+      const nameSource = requestRows?.[0]?.business_name || user.name || "user";
+      const newSlug = await generateUniqueSlugDb(nameSource, "users");
 
       if (newSlug) {
-        await prisma.users.update({
-          where: { id: user.id },
-          data: { slug: newSlug },
-        });
-        user.slug = newSlug; // Update local variable for response
+        await db.query("UPDATE users SET slug = ? WHERE id = ?", [
+          newSlug,
+          user.id,
+        ]);
+        user.slug = newSlug;
       }
     }
 
@@ -54,8 +61,8 @@ export async function GET() {
     return NextResponse.json(
       {
         user: userData,
-        profile: user.seekerProfile || null,
-        providerRequest: user.providerRequests?.[0] || null,
+        profile: profileRows[0] || null,
+        providerRequest: requestRows[0] || null,
       },
       { status: 200 },
     );
@@ -69,6 +76,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
+  let connection;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -104,111 +112,155 @@ export async function POST(req) {
       // Education
       education,
       acceptedTermsandconditions,
-      image, // Add image/profile photo support
+      image,
     } = body;
 
     const userEmail = session.user.email;
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Get User
-      const user = await tx.users.findUnique({
-        where: { email: userEmail },
-      });
+    connection = await db.getConnection();
+    await connection.beginTransaction();
 
-      if (!user) throw new Error("User not found");
+    // 1. Get User
+    const [userRows] = await connection.query(
+      "SELECT id, role, slug FROM users WHERE email = ?",
+      [userEmail],
+    );
 
-      // 2. Update User Role if needed (Transition from 'none' -> 'seeker')
-      if (user.role === "none" || user.role === "new_user") {
-        await tx.users.update({
-          where: { email: userEmail },
-          data: { role: "seeker" },
-        });
-      }
+    if (userRows.length === 0) throw new Error("User not found");
+    const user = userRows[0];
 
-      // 2.5 Update/Generate Slug
-      let newSlug = slug;
+    // 2. Update User Role if needed (Transition from 'none' -> 'seeker')
+    if (user.role === "none" || user.role === "new_user") {
+      await connection.query(
+        "UPDATE users SET role = 'seeker' WHERE email = ?",
+        [userEmail],
+      );
+    }
 
-      // If no slug provided and user has none, auto-generate from name
-      if (!newSlug && !user.slug) {
-        const nameSource =
-          firstName && lastName
-            ? `${firstName} ${lastName}`
-            : businessName || user.name || "user";
-        newSlug = await generateUniqueSlug(nameSource, tx.users);
-      }
-      // If slug provided and different, ensure uniqueness
-      else if (newSlug && newSlug !== user.slug) {
-        newSlug = await generateUniqueSlug(newSlug, tx.users);
-      }
+    // 2.5 Update/Generate Slug
+    let newSlug = slug;
+    if (!newSlug && !user.slug) {
+      const nameSource =
+        firstName && lastName
+          ? `${firstName} ${lastName}`
+          : businessName || "user";
+      newSlug = await generateUniqueSlugDb(nameSource, "users");
+    } else if (newSlug && newSlug !== user.slug) {
+      newSlug = await generateUniqueSlugDb(newSlug, "users", user.slug);
+    }
 
-      if (newSlug && newSlug !== user.slug) {
-        await tx.users.update({
-          where: { email: userEmail },
-          data: { slug: newSlug },
-        });
-      }
+    if (newSlug && newSlug !== user.slug) {
+      await connection.query("UPDATE users SET slug = ? WHERE email = ?", [
+        newSlug,
+        userEmail,
+      ]);
+    }
 
-      // 2.6 Update Image if provided
-      if (image) {
-        await tx.users.update({
-          where: { email: userEmail },
-          data: { image },
-        });
-      }
+    // 2.6 Update Image if provided
+    if (image) {
+      await connection.query("UPDATE users SET image = ? WHERE email = ?", [
+        image,
+        userEmail,
+      ]);
+    }
 
-      // 3. Prepare Profile Data
-      const profileData = {
-        userId: user.id, // Ensure we link to the correct user
-        userType,
-        gender: gender || null,
-        address: address || null,
-        city: city || null,
-        zipCode: zipCode || null,
-        state: state || null,
-        country: country || null,
-        acceptedTermsandconditions: acceptedTermsandconditions || false,
-      };
+    // 3. Prepare Profile Data
+    const qualifications = education ? JSON.stringify([education]) : null;
 
-      if (userType === "individual") {
-        Object.assign(profileData, {
-          firstName: firstName || null,
-          lastName: lastName || null,
-          idType: idType || null,
-          idNumber: idNumber || null,
-          backgroundCheck: backgroundCheckConsent || false,
-          qualifications: education ? [education] : null,
-          fieldOfStudy: education?.field || null,
-          institution: education?.institution || null,
-          year: education?.year || null,
-        });
-      } else if (userType === "business") {
-        Object.assign(profileData, {
-          businessName: businessName || null,
-          businessType: businessType || null,
-          registrationNumber: registrationNumber || null,
-          establishmentYear: establishmentYear || null,
-          trnNumber: trnNumber || null,
-          businessExpiryDate: businessExpiryDate || null,
-        });
-      }
+    // 4. Upsert Seeker Profile
+    const [existingProfiles] = await connection.query(
+      "SELECT id FROM SeekerProfile WHERE userId = ?",
+      [user.id],
+    );
 
-      // 4. Upsert Seeker Profile
-      await tx.seekerProfile.upsert({
-        where: { userId: user.id },
-        create: profileData,
-        update: profileData,
-      });
-    });
+    if (existingProfiles.length > 0) {
+      // UPDATE
+      await connection.query(
+        `UPDATE SeekerProfile SET 
+          userType = ?, gender = ?, address = ?, city = ?, zipCode = ?, state = ?, country = ?, 
+          acceptedTermsandconditions = ?, firstName = ?, lastName = ?, idType = ?, idNumber = ?, 
+          backgroundCheck = ?, qualifications = ?, fieldOfStudy = ?, institution = ?, year = ?,
+          businessName = ?, businessType = ?, registrationNumber = ?, establishmentYear = ?, trnNumber = ?, businessExpiryDate = ?
+        WHERE userId = ?`,
+        [
+          userType,
+          gender || null,
+          address || null,
+          city || null,
+          zipCode || null,
+          state || null,
+          country || null,
+          acceptedTermsandconditions || false,
+          userType === "individual" ? firstName : null,
+          userType === "individual" ? lastName : null,
+          userType === "individual" ? idType : null,
+          userType === "individual" ? idNumber : null,
+          userType === "individual" ? backgroundCheckConsent || false : false,
+          qualifications,
+          userType === "individual" ? education?.field || null : null,
+          userType === "individual" ? education?.institution || null : null,
+          userType === "individual" ? education?.year || null : null,
+          userType === "business" ? businessName : null,
+          userType === "business" ? businessType : null,
+          userType === "business" ? registrationNumber : null,
+          userType === "business" ? establishmentYear : null,
+          userType === "business" ? trnNumber : null,
+          userType === "business" ? businessExpiryDate : null,
+          user.id,
+        ],
+      );
+    } else {
+      // INSERT
+      await connection.query(
+        `INSERT INTO SeekerProfile (
+          userId, userType, gender, address, city, zipCode, state, country, 
+          acceptedTermsandconditions, firstName, lastName, idType, idNumber, 
+          backgroundCheck, qualifications, fieldOfStudy, institution, year,
+          businessName, businessType, registrationNumber, establishmentYear, trnNumber, businessExpiryDate
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user.id,
+          userType,
+          gender || null,
+          address || null,
+          city || null,
+          zipCode || null,
+          state || null,
+          country || null,
+          acceptedTermsandconditions || false,
+          userType === "individual" ? firstName : null,
+          userType === "individual" ? lastName : null,
+          userType === "individual" ? idType : null,
+          userType === "individual" ? idNumber : null,
+          userType === "individual" ? backgroundCheckConsent || false : false,
+          qualifications,
+          userType === "individual" ? education?.field || null : null,
+          userType === "individual" ? education?.institution || null : null,
+          userType === "individual" ? education?.year || null : null,
+          userType === "business" ? businessName : null,
+          userType === "business" ? businessType : null,
+          userType === "business" ? registrationNumber : null,
+          userType === "business" ? establishmentYear : null,
+          userType === "business" ? trnNumber : null,
+          userType === "business" ? businessExpiryDate : null,
+        ],
+      );
+    }
+
+    await connection.commit();
 
     return NextResponse.json(
       { message: "Profile updated successfully" },
       { status: 200 },
     );
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error("Error updating seeker profile:", error);
     return NextResponse.json(
       { message: "Internal server error", error: error.message },
       { status: 500 },
     );
+  } finally {
+    if (connection) connection.release();
   }
 }

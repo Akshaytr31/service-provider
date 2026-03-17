@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req) {
   try {
@@ -11,16 +11,14 @@ export async function POST(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const updatedUser = await prisma.users.update({
-      where: { email: session.user.email },
-      data: {
-        privacyPolicyAcceptedAt: new Date(),
-      },
-    });
+    await db.query(
+      "UPDATE users SET privacy_policy_accepted_at = NOW() WHERE email = ?",
+      [session.user.email],
+    );
 
     return NextResponse.json({
       message: "Privacy policy accepted",
-      acceptedAt: updatedUser.privacyPolicyAcceptedAt,
+      acceptedAt: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Accept Privacy Policy Error:", error);

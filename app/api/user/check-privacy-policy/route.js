@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -11,23 +11,23 @@ export async function GET() {
       return NextResponse.json({ needsAcceptance: false });
     }
 
-    const [user, policy] = await Promise.all([
-      prisma.users.findUnique({
-        where: { email: session.user.email },
-        select: { privacyPolicyAcceptedAt: true },
-      }),
-      prisma.privacyPolicy.findFirst({
-        orderBy: { updatedAt: "desc" },
-      }),
+    const [[userRows], [policyRows]] = await Promise.all([
+      db.query("SELECT privacy_policy_accepted_at FROM users WHERE email = ?", [
+        session.user.email,
+      ]),
+      db.query("SELECT * FROM privacy_policy ORDER BY updatedAt DESC LIMIT 1"),
     ]);
+
+    const user = userRows[0];
+    const policy = policyRows[0];
 
     if (!user || !policy) {
       return NextResponse.json({ needsAcceptance: false });
     }
 
     const policyUpdatedAt = new Date(policy.updatedAt);
-    const userAcceptedAt = user.privacyPolicyAcceptedAt
-      ? new Date(user.privacyPolicyAcceptedAt)
+    const userAcceptedAt = user.privacy_policy_accepted_at
+      ? new Date(user.privacy_policy_accepted_at)
       : null;
 
     console.log("Check Policy Debug:", {
@@ -37,14 +37,11 @@ export async function GET() {
       needsAcceptance: !userAcceptedAt || userAcceptedAt < policyUpdatedAt,
     });
 
-    // Check if user has accepted the latest policy
-    // We allow a small buffer or just strict comparison.
-    // If userAcceptedAt is null, or before policyUpdatedAt, then needs acceptance.
     const needsAcceptance = !userAcceptedAt || userAcceptedAt < policyUpdatedAt;
 
     return NextResponse.json({
       needsAcceptance,
-      content: policy.content, // Send content to display in modal
+      content: policy.content,
     });
   } catch (error) {
     console.error("Check Privacy Policy Error:", error);

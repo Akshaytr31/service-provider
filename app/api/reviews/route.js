@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -20,38 +20,37 @@ export async function POST(req) {
     }
 
     // Get User
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const user = userRows[0];
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Verify Booking Ownership and Status
-    const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(bookingId) },
-      include: { review: true },
-    });
+    const [bookingRows] = await db.query(
+      `SELECT b.*, r.id AS reviewId
+       FROM bookings b
+       LEFT JOIN reviews r ON r.booking_id = b.id
+       WHERE b.id = ?`,
+      [parseInt(bookingId)],
+    );
+    const booking = bookingRows[0];
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    if (booking.seekerId !== user.id) {
+    if (booking.seeker_id !== user.id) {
       return NextResponse.json(
         { error: "Unauthorized access to this booking" },
         { status: 403 },
       );
     }
 
-    // Optional: Check if booking is completed (or whatever status indicates completion)
-    // For now, allowing review on any booking that isn't PENDING might be safer, or just allow it.
-    // Let's assume user can only review if status is 'COMPLETED' or similar if that exists,
-    // but based on previous files, status defaults to PENDING.
-    // I'll skip status check for now to ensure testability unless I see specific status logic.
-
-    if (booking.review) {
+    if (booking.reviewId) {
       return NextResponse.json(
         { error: "Review already exists for this booking" },
         { status: 409 },
@@ -59,15 +58,17 @@ export async function POST(req) {
     }
 
     // Create Review
-    const review = await prisma.review.create({
-      data: {
-        rating: parseInt(rating),
-        comment: comment,
-        bookingId: parseInt(bookingId),
-      },
-    });
+    const [result] = await db.query(
+      `INSERT INTO reviews (rating, comment, booking_id, created_at)
+       VALUES (?, ?, ?, NOW())`,
+      [parseInt(rating), comment || null, parseInt(bookingId)],
+    );
 
-    return NextResponse.json(review);
+    const [reviewRows] = await db.query("SELECT * FROM reviews WHERE id = ?", [
+      result.insertId,
+    ]);
+
+    return NextResponse.json(reviewRows[0]);
   } catch (error) {
     console.error("Review Create Error:", error);
     return NextResponse.json(

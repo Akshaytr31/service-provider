@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -20,27 +20,32 @@ export async function POST(req) {
     }
 
     // Get Seeker User
-    const seeker = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const [seekerRows] = await db.query("SELECT * FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const seeker = seekerRows[0];
 
     if (!seeker) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check service exists and get provider
-    const service = await prisma.services.findUnique({
-      where: { id: parseInt(serviceId) },
-    });
+    const [serviceRows] = await db.query(
+      "SELECT * FROM services WHERE id = ?",
+      [parseInt(serviceId)],
+    );
+    const service = serviceRows[0];
 
     if (!service) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }
 
     // Find provider user by email
-    const provider = await prisma.users.findUnique({
-      where: { email: service.providerEmail },
-    });
+    const [providerRows] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [service.providerEmail],
+    );
+    const provider = providerRows[0];
 
     if (!provider) {
       return NextResponse.json(
@@ -58,16 +63,12 @@ export async function POST(req) {
     }
 
     // Check if slot is taken
-    const existing = await prisma.booking.findFirst({
-      where: {
-        serviceId: parseInt(serviceId),
-        date: new Date(date),
-        time: time,
-        status: "CONFIRMED",
-      },
-    });
+    const [existingRows] = await db.query(
+      "SELECT id FROM bookings WHERE service_id = ? AND date = ? AND time = ? AND status = 'CONFIRMED'",
+      [parseInt(serviceId), new Date(date), time],
+    );
 
-    if (existing) {
+    if (existingRows.length > 0) {
       return NextResponse.json(
         { error: "Slot already booked" },
         { status: 409 },
@@ -75,30 +76,37 @@ export async function POST(req) {
     }
 
     // Create Booking
-    const booking = await prisma.booking.create({
-      data: {
-        seekerId: seeker.id,
-        providerId: provider.id,
-        serviceId: parseInt(serviceId),
-        date: new Date(date),
-        time: time,
-        status: "PENDING",
-      },
-      include: {
-        service: true,
-      },
-    });
+    const [bookingResult] = await db.query(
+      `INSERT INTO bookings (seeker_id, provider_id, service_id, date, time, status, created_at)
+       VALUES (?, ?, ?, ?, ?, 'PENDING', NOW())`,
+      [seeker.id, provider.id, parseInt(serviceId), new Date(date), time],
+    );
 
     // Notify Provider
-    await prisma.notification.create({
-      data: {
-        userId: provider.id,
-        message: `New booking request for "${booking.service.title}" on ${new Date(date).toLocaleDateString()} at ${time}`,
-        type: "BOOKING_REQUEST",
-        isRead: false,
-        link: `/providerDashboard?view=requests&status=PENDING`,
-      },
-    });
+    await db.query(
+      `INSERT INTO notifications (user_id, message, type, is_read, link, created_at)
+       VALUES (?, ?, 'BOOKING_REQUEST', 0, ?, NOW())`,
+      [
+        provider.id,
+        `New booking request for "${service.title}" on ${new Date(date).toLocaleDateString()} at ${time}`,
+        `/providerDashboard?view=requests&status=PENDING`,
+      ],
+    );
+
+    // Return the created booking with service info
+    const [bookingRows] = await db.query(
+      `SELECT b.*, s.title AS serviceTitle, s.price AS servicePrice
+       FROM bookings b
+       LEFT JOIN services s ON b.service_id = s.id
+       WHERE b.id = ?`,
+      [bookingResult.insertId],
+    );
+
+    const booking = bookingRows[0];
+    booking.service = {
+      title: booking.serviceTitle,
+      price: booking.servicePrice,
+    };
 
     return NextResponse.json(booking);
   } catch (error) {
@@ -117,9 +125,10 @@ export async function GET(req) {
   }
 
   try {
-    const user = await prisma.users.findUnique({
-      where: { email: session.user.email },
-    });
+    const [userRows] = await db.query("SELECT id FROM users WHERE email = ?", [
+      session.user.email,
+    ]);
+    const user = userRows[0];
 
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -127,57 +136,103 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const role = searchParams.get("role");
 
-    let whereClause = {
-      OR: [{ seekerId: user.id }, { providerId: user.id }],
-    };
+    let whereClause = "(b.seeker_id = ? OR b.provider_id = ?)";
+    let params = [user.id, user.id];
 
     if (role === "provider") {
-      whereClause = { providerId: user.id };
+      whereClause = "b.provider_id = ?";
+      params = [user.id];
     } else if (role === "seeker") {
-      whereClause = { seekerId: user.id };
+      whereClause = "b.seeker_id = ?";
+      params = [user.id];
     }
 
-    const bookings = await prisma.booking.findMany({
-      where: whereClause,
-      include: {
-        seeker: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            mobile: true,
-          },
-        },
-        provider: {
-          select: { name: true, email: true, id: true, image: true },
-        },
-        service: {
-          select: {
-            title: true,
-            price: true,
-            coverPhoto: true,
-            subCategory: {
-              select: {
-                category: {
-                  select: { name: true },
-                },
-              },
-            },
-          },
-        },
-        review: true,
+    const [bookings] = await db.query(
+      `SELECT 
+        b.*,
+        seeker.id AS seekerId, seeker.name AS seekerName, seeker.email AS seekerEmail, seeker.image AS seekerImage, seeker.mobile AS seekerMobile,
+        provider.name AS providerName, provider.email AS providerEmail, provider.id AS providerUserId, provider.image AS providerImage,
+        s.title AS serviceTitle, s.price AS servicePrice, s.coverPhoto AS serviceCoverPhoto, s.sub_category_id AS serviceSubCategoryId,
+        r.id AS reviewId, r.rating AS reviewRating, r.comment AS reviewComment, r.created_at AS reviewCreatedAt, r.booking_id AS reviewBookingId
+       FROM bookings b
+       LEFT JOIN users seeker ON b.seeker_id = seeker.id
+       LEFT JOIN users provider ON b.provider_id = provider.id
+       LEFT JOIN services s ON b.service_id = s.id
+       LEFT JOIN reviews r ON r.booking_id = b.id
+       WHERE ${whereClause}
+       ORDER BY b.created_at DESC`,
+      params,
+    );
+
+    // Get subcategory → category names for services
+    const subCategoryIds = [
+      ...new Set(bookings.map((b) => b.serviceSubCategoryId).filter(Boolean)),
+    ];
+    let categoryMap = {};
+
+    if (subCategoryIds.length > 0) {
+      const placeholders = subCategoryIds.map(() => "?").join(",");
+      const [subCats] = await db.query(
+        `SELECT sc.id, c.name AS categoryName
+         FROM sub_categories sc
+         LEFT JOIN categories c ON sc.category_id = c.id
+         WHERE sc.id IN (${placeholders})`,
+        subCategoryIds,
+      );
+      for (const sc of subCats) {
+        categoryMap[sc.id] = sc.categoryName;
+      }
+    }
+
+    // Reshape into nested objects matching Prisma's include format
+    const result = bookings.map((b) => ({
+      id: b.id,
+      seekerId: b.seeker_id,
+      providerId: b.provider_id,
+      serviceId: b.service_id,
+      date: b.date,
+      time: b.time,
+      status: b.status,
+      createdAt: b.created_at,
+      cancellationReason: b.cancellationReason,
+      seeker: {
+        id: b.seekerId,
+        name: b.seekerName,
+        email: b.seekerEmail,
+        image: b.seekerImage,
+        mobile: b.seekerMobile,
       },
-      orderBy: { createdAt: "desc" },
-    });
+      provider: {
+        name: b.providerName,
+        email: b.providerEmail,
+        id: b.providerUserId,
+        image: b.providerImage,
+      },
+      service: {
+        title: b.serviceTitle,
+        price: b.servicePrice,
+        coverPhoto: b.serviceCoverPhoto,
+        subCategory: {
+          category: {
+            name: categoryMap[b.serviceSubCategoryId] || null,
+          },
+        },
+      },
+      review: b.reviewId
+        ? {
+            id: b.reviewId,
+            rating: b.reviewRating,
+            comment: b.reviewComment,
+            createdAt: b.reviewCreatedAt,
+            bookingId: b.reviewBookingId,
+          }
+        : null,
+    }));
 
     console.log(`API: Fetching bookings for ${session.user.email}`);
-    console.log(`Found ${bookings.length} bookings.`);
+    console.log(`Found ${result.length} bookings.`);
 
-    // Add a computed field to indicate if user is provider or seeker for this blocking?
-    // Frontend can infer from checking user.id vs providerId.
-
-    return NextResponse.json(bookings);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Booking Fetch Error:", error);
     return NextResponse.json(
