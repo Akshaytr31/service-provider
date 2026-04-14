@@ -12,7 +12,7 @@ export async function GET(req, props) {
 
   try {
     const [bookings] = await db.query(
-      "SELECT time FROM bookings WHERE service_id = ? AND date = ? AND status = 'CONFIRMED'",
+      "SELECT time FROM bookings WHERE service_id = ? AND date = ? AND status IN ('PENDING', 'CONFIRMED')",
       [parseInt(id), new Date(dateStr)],
     );
 

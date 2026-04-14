@@ -64,7 +64,7 @@ export async function POST(req) {
 
     // Check if slot is taken
     const [existingRows] = await db.query(
-      "SELECT id FROM bookings WHERE service_id = ? AND date = ? AND time = ? AND status = 'CONFIRMED'",
+      "SELECT id FROM bookings WHERE service_id = ? AND date = ? AND time = ? AND status IN ('PENDING', 'CONFIRMED')",
       [parseInt(serviceId), new Date(date), time],
     );
 

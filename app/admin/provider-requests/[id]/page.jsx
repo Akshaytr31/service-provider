@@ -243,7 +243,11 @@ export default function ProviderRequestDetails() {
 
   const providerRequest = data;
   const status = providerRequest.status;
-  const userType = providerRequest.businessName ? "business" : "individual";
+  const userType =
+    providerRequest.user_type ||
+    (providerRequest.business_name || providerRequest.businessName
+      ? "business"
+      : "individual");
 
   /* ================= COMPONENTS ================= */
 
@@ -529,15 +533,25 @@ export default function ProviderRequestDetails() {
                   label="Name"
                   value={
                     userType === "business"
-                      ? providerRequest.businessName
-                      : providerRequest.user?.name
+                      ? providerRequest.business_name ||
+                        providerRequest.businessName
+                      : providerRequest.user?.name ||
+                        `${providerRequest.first_name || ""} ${providerRequest.last_name || ""}`.trim()
                   }
                 />
-                <LabelValue label="Email" value={providerRequest.user?.email} />
-                <LabelValue label="ID Type" value={providerRequest.idType} />
+                <LabelValue
+                  label="Email"
+                  value={
+                    providerRequest.user?.email || providerRequest.userEmail
+                  }
+                />
+                <LabelValue
+                  label="ID Type"
+                  value={providerRequest.id_type || providerRequest.idType}
+                />
                 <LabelValue
                   label="ID Number"
-                  value={providerRequest.idNumber}
+                  value={providerRequest.id_number || providerRequest.idNumber}
                 />
                 {/* <LabelValue label="Mobile" value={providerRequest.phone} /> */}
               </SimpleGrid>
@@ -553,23 +567,37 @@ export default function ProviderRequestDetails() {
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="full">
                   <LabelValue
                     label="Business Type"
-                    value={providerRequest.businessType}
+                    value={
+                      providerRequest.business_type ||
+                      providerRequest.businessType
+                    }
                   />
                   <LabelValue
                     label="Registration #"
-                    value={providerRequest.registrationNumber}
+                    value={
+                      providerRequest.registration_number ||
+                      providerRequest.registrationNumber
+                    }
                   />
                   <LabelValue
                     label="Est. Year"
-                    value={providerRequest.establishmentYear}
+                    value={
+                      providerRequest.establishment_year ||
+                      providerRequest.establishmentYear
+                    }
                   />
                   <LabelValue
                     label="TRN Number"
-                    value={providerRequest.trnNumber}
+                    value={
+                      providerRequest.trn_number || providerRequest.trnNumber
+                    }
                   />
                   <LabelValue
                     label="Expiry Date"
-                    value={providerRequest.businessExpiryDate}
+                    value={
+                      providerRequest.business_expiry_date ||
+                      providerRequest.businessExpiryDate
+                    }
                   />
                 </SimpleGrid>
               </InfoCard>
@@ -581,16 +609,22 @@ export default function ProviderRequestDetails() {
                 <LabelValue label="City" value={providerRequest.city} />
                 <LabelValue label="State" value={providerRequest.state} />
                 <LabelValue label="Country" value={providerRequest.country} />
-                <LabelValue label="Zip Code" value={providerRequest.zipCode} />
+                <LabelValue
+                  label="Zip Code"
+                  value={providerRequest.zip_code || providerRequest.zipCode}
+                />
                 <LabelValue
                   label="Radius"
-                  value={`${providerRequest.serviceRadius} KM`}
+                  value={`${providerRequest.service_radius || providerRequest.serviceRadius} KM`}
                 />
               </SimpleGrid>
               <Box pt={2}>
                 <LabelValue
                   label="Service Areas"
-                  value={providerRequest.serviceAreas?.join(", ")}
+                  value={(
+                    providerRequest.service_areas ||
+                    providerRequest.serviceAreas
+                  )?.join(", ")}
                   isFullWidth
                 />
               </Box>
@@ -629,44 +663,59 @@ export default function ProviderRequestDetails() {
                 {/* Unified Service List */}
                 {(function () {
                   const otherServicesRaw =
-                    providerRequest.servicesOffered || [];
+                    providerRequest.services_offered ||
+                    providerRequest.servicesOffered ||
+                    [];
+
+                  const pCategory =
+                    providerRequest.category_id || providerRequest.categoryId;
+                  const pSubCategory =
+                    providerRequest.sub_category_id ||
+                    providerRequest.subCategoryId;
 
                   // Find the root service object within servicesOffered to get extraSkills
                   const rootServiceRaw = otherServicesRaw.find(
                     (s) =>
-                      Number(s.categoryId) ===
-                        Number(providerRequest.categoryId) &&
-                      Number(s.subCategoryId) ===
-                        Number(providerRequest.subCategoryId),
+                      Number(s.categoryId || s.category_id) ===
+                        Number(pCategory) &&
+                      Number(s.subCategoryId || s.sub_category_id) ===
+                        Number(pSubCategory),
                   );
 
                   const rootService = {
-                    categoryId: providerRequest.categoryId,
-                    subCategoryId: providerRequest.subCategoryId,
+                    categoryId: pCategory,
+                    subCategoryId: pSubCategory,
                     yearsExperience:
+                      providerRequest.years_experience ||
                       providerRequest.yearsExperience ||
-                      rootServiceRaw?.yearsExperience,
+                      rootServiceRaw?.yearsExperience ||
+                      rootServiceRaw?.years_experience,
                     description:
                       providerRequest.description ||
                       rootServiceRaw?.description,
                     // Use skills from providerRequest if available, otherwise fallback to the found service object
                     extraSkills:
-                      providerRequest.skills || rootServiceRaw?.extraSkills,
+                      providerRequest.skills ||
+                      rootServiceRaw?.extraSkills ||
+                      rootServiceRaw?.extra_skills,
                     isRoot: true,
                   };
 
                   const otherServices = otherServicesRaw
                     .filter((s) => {
                       const isSameCategory =
-                        Number(s.categoryId) === Number(rootService.categoryId);
+                        Number(s.categoryId || s.category_id) ===
+                        Number(rootService.categoryId);
                       const isSameSubCategory =
-                        Number(s.subCategoryId) ===
+                        Number(s.subCategoryId || s.sub_category_id) ===
                         Number(rootService.subCategoryId);
                       return !(isSameCategory && isSameSubCategory);
                     })
                     .map((s) => ({
                       ...s,
-                      serviceRadius: providerRequest.serviceRadius,
+                      serviceRadius:
+                        providerRequest.service_radius ||
+                        providerRequest.serviceRadius,
                     }));
 
                   const allServices = [rootService, ...otherServices];
@@ -685,10 +734,19 @@ export default function ProviderRequestDetails() {
 
                     if (isObject) {
                       const category = categories.find(
-                        (c) => c.id === Number(serviceEntry.categoryId),
+                        (c) =>
+                          c.id ===
+                          Number(
+                            serviceEntry.categoryId || serviceEntry.category_id,
+                          ),
                       );
                       const subCategory = category?.subCategories?.find(
-                        (sc) => sc.id === Number(serviceEntry.subCategoryId),
+                        (sc) =>
+                          sc.id ===
+                          Number(
+                            serviceEntry.subCategoryId ||
+                              serviceEntry.sub_category_id,
+                          ),
                       );
 
                       return (
@@ -730,7 +788,7 @@ export default function ProviderRequestDetails() {
                               </Text>
                               <Text fontSize="sm" fontWeight="bold">
                                 {category?.name ||
-                                  `ID: ${serviceEntry.categoryId || "-"}`}
+                                  `ID: ${serviceEntry.categoryId || serviceEntry.category_id || "-"}`}
                               </Text>
                             </Box>
                             <Box>
@@ -744,7 +802,7 @@ export default function ProviderRequestDetails() {
                               </Text>
                               <Text fontSize="sm" fontWeight="bold">
                                 {subCategory?.name ||
-                                  `ID: ${serviceEntry.subCategoryId || "-"}`}
+                                  `ID: ${serviceEntry.subCategoryId || serviceEntry.sub_category_id || "-"}`}
                               </Text>
                             </Box>
                             <Box>
@@ -757,8 +815,9 @@ export default function ProviderRequestDetails() {
                                 Years of Experience
                               </Text>
                               <Text fontSize="sm" fontWeight="bold">
-                                {serviceEntry.yearsExperience
-                                  ? `${serviceEntry.yearsExperience} Years`
+                                {serviceEntry.yearsExperience ||
+                                serviceEntry.years_experience
+                                  ? `${serviceEntry.yearsExperience || serviceEntry.years_experience} Years`
                                   : "-"}
                               </Text>
                             </Box>
@@ -1088,10 +1147,15 @@ export default function ProviderRequestDetails() {
             {/* Pricing */}
             <InfoCard title="Pricing" icon={EmailIcon} delay={0.6}>
               <SimpleGrid columns={2} w="full">
-                <LabelValue label="Type" value={providerRequest.pricingType} />
+                <LabelValue
+                  label="Type"
+                  value={
+                    providerRequest.pricing_type || providerRequest.pricingType
+                  }
+                />
                 <LabelValue
                   label="Base Rate"
-                  value={providerRequest.baseRate}
+                  value={providerRequest.base_rate || providerRequest.baseRate}
                 />
               </SimpleGrid>
               <Box pt={2}>
@@ -1099,7 +1163,10 @@ export default function ProviderRequestDetails() {
                   PAYMENT METHODS
                 </Text>
                 <HStack wrap="wrap" spacing={2}>
-                  {providerRequest.paymentMethods?.map((p, i) => (
+                  {(
+                    providerRequest.payment_methods ||
+                    providerRequest.paymentMethods
+                  )?.map((p, i) => (
                     <Tag
                       key={i}
                       size="sm"
@@ -1120,20 +1187,29 @@ export default function ProviderRequestDetails() {
               delay={0.7}
             >
               <VStack align="stretch" spacing={3} w="full">
-                <LabelValue label="ID Type" value={providerRequest.idType} />
+                <LabelValue
+                  label="ID Type"
+                  value={providerRequest.id_type || providerRequest.idType}
+                />
                 <LabelValue
                   label="ID Number"
-                  value={providerRequest.idNumber}
+                  value={providerRequest.id_number || providerRequest.idNumber}
                 />
                 <Tag
                   colorScheme={
-                    providerRequest.backgroundCheck ? "green" : "red"
+                    providerRequest.background_check_consent ||
+                    providerRequest.backgroundCheck
+                      ? "green"
+                      : "red"
                   }
                   variant="subtle"
                   alignSelf="start"
                 >
                   Background Check:{" "}
-                  {providerRequest.backgroundCheck ? "Yes" : "No"}
+                  {providerRequest.background_check_consent ||
+                  providerRequest.backgroundCheck
+                    ? "Yes"
+                    : "No"}
                 </Tag>
               </VStack>
             </InfoCard>

@@ -43,12 +43,12 @@ export default function PostService() {
     price: "",
     subCategoryId: "",
     coverPhoto: "",
+    serviceRadius: "",
   });
 
   const [allCategories, setAllCategories] = useState([]);
   const [approvedServices, setApprovedServices] = useState([]); // Array of {categoryId, subCategoryId, categoryName, subCategoryName}
   const [selectedServiceIndex, setSelectedServiceIndex] = useState(0); // Index of selected service combo
-  const [serviceRadius, setServiceRadius] = useState("");
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const toast = useToast(); // Initialize toast
@@ -79,82 +79,110 @@ export default function PostService() {
           const getLicenseStatus = (subCatId) => {
             if (!subCatId) return "N/A";
 
+            const requestStatus = providerRequest.status;
+
             // Find ALL licenses that match this subcategory
             const matchingLicenses = licenses.filter(
-              (l) => parseInt(l.subCategoryId) === parseInt(subCatId),
+              (l) =>
+                parseInt(l.subCategoryId || l.sub_category_id) ===
+                parseInt(subCatId),
             );
 
-            if (matchingLicenses.length === 0) return "MISSING";
+            if (matchingLicenses.length === 0) {
+              return requestStatus === "APPROVED" ||
+                requestStatus === "approved" ||
+                requestStatus === "Approved"
+                ? "APPROVED"
+                : "MISSING";
+            }
 
             // Prioritize statuses: APPROVED > PENDING > EXPIRED
-            if (matchingLicenses.some((l) => l.status === "APPROVED"))
+            if (
+              matchingLicenses.some(
+                (l) => l.status === "APPROVED" || l.status === "approved",
+              )
+            )
               return "APPROVED";
-            if (matchingLicenses.some((l) => l.status === "PENDING"))
+            if (
+              matchingLicenses.some(
+                (l) => l.status === "PENDING" || l.status === "pending",
+              )
+            )
               return "PENDING";
-            if (matchingLicenses.some((l) => l.status === "EXPIRED"))
+            if (
+              matchingLicenses.some(
+                (l) => l.status === "EXPIRED" || l.status === "expired",
+              )
+            )
               return "EXPIRED";
 
             // Fallback for missing/unknown status
             // If the provider request itself is APPROVED, assume undefined license status means APPROVED
-            const requestStatus = providerRequest.status;
             return (
               matchingLicenses[0].status ||
-              (requestStatus === "APPROVED" || requestStatus === "approved"
+              (requestStatus === "APPROVED" ||
+              requestStatus === "approved" ||
+              requestStatus === "Approved"
                 ? "APPROVED"
                 : "PENDING")
             );
           };
 
+          const pServicesOffered =
+            providerRequest.services_offered || providerRequest.servicesOffered;
           // 1. Add services from servicesOffered array
-          if (
-            providerRequest.servicesOffered &&
-            Array.isArray(providerRequest.servicesOffered)
-          ) {
-            allServices = providerRequest.servicesOffered.map((service) => {
+          if (pServicesOffered && Array.isArray(pServicesOffered)) {
+            allServices = pServicesOffered.map((service) => {
               const category = categories.find(
-                (c) => c.id === parseInt(service.categoryId),
+                (c) =>
+                  c.id === parseInt(service.categoryId || service.category_id),
               );
-              const subCategory = category?.subCategories.find(
-                (sub) => sub.id === parseInt(service.subCategoryId),
+              const subCategory = category?.subCategories?.find(
+                (sub) =>
+                  sub.id ===
+                  parseInt(service.subCategoryId || service.sub_category_id),
               );
               return {
-                categoryId: service.categoryId,
-                subCategoryId: service.subCategoryId,
+                categoryId: service.categoryId || service.category_id,
+                subCategoryId: service.subCategoryId || service.sub_category_id,
                 categoryName: category?.name || "Unknown Category",
                 subCategoryName: subCategory?.name || "Unknown Subcategory",
-                licenseStatus: getLicenseStatus(service.subCategoryId),
+                licenseStatus: getLicenseStatus(
+                  service.subCategoryId || service.sub_category_id,
+                ),
               };
             });
           }
 
+          const pCategoryId =
+            providerRequest.category_id || providerRequest.categoryId;
+          const pSubCategoryId =
+            providerRequest.sub_category_id || providerRequest.subCategoryId;
+
           // 2. Add Primary Service (if valid and not duplicate)
-          if (providerRequest.categoryId && providerRequest.subCategoryId) {
+          if (pCategoryId && pSubCategoryId) {
             const primaryExists = allServices.some(
               (s) =>
-                parseInt(s.categoryId) ===
-                  parseInt(providerRequest.categoryId) &&
-                parseInt(s.subCategoryId) ===
-                  parseInt(providerRequest.subCategoryId),
+                parseInt(s.categoryId) === parseInt(pCategoryId) &&
+                parseInt(s.subCategoryId) === parseInt(pSubCategoryId),
             );
 
             if (!primaryExists) {
               const category = categories.find(
-                (c) => c.id === parseInt(providerRequest.categoryId),
+                (c) => c.id === parseInt(pCategoryId),
               );
-              const subCategory = category?.subCategories.find(
-                (sub) => sub.id === parseInt(providerRequest.subCategoryId),
+              const subCategory = category?.subCategories?.find(
+                (sub) => sub.id === parseInt(pSubCategoryId),
               );
 
               if (category && subCategory) {
                 allServices.unshift({
-                  categoryId: providerRequest.categoryId,
-                  subCategoryId: providerRequest.subCategoryId,
+                  categoryId: pCategoryId,
+                  subCategoryId: pSubCategoryId,
                   categoryName: category.name,
                   subCategoryName: subCategory.name,
                   isPrimary: true,
-                  licenseStatus: getLicenseStatus(
-                    providerRequest.subCategoryId,
-                  ),
+                  licenseStatus: getLicenseStatus(pSubCategoryId),
                 });
               }
             }
@@ -171,8 +199,12 @@ export default function PostService() {
             }));
           }
 
-          if (providerRequest.serviceRadius) {
-            setServiceRadius(providerRequest.serviceRadius);
+          if (providerRequest.service_radius || providerRequest.serviceRadius) {
+            setForm((prev) => ({
+              ...prev,
+              serviceRadius:
+                providerRequest.service_radius || providerRequest.serviceRadius,
+            }));
           }
         }
       } catch (error) {
@@ -304,6 +336,7 @@ export default function PostService() {
         price: "",
         subCategoryId: form.subCategoryId, // Keep the fixed subcategory
         coverPhoto: "",
+        serviceRadius: form.serviceRadius,
       });
       // Don't reset selectedCategory as it's fixed
       router.push("/providerDashboard");
@@ -431,11 +464,14 @@ export default function PostService() {
                       <Icon as={FiMapPin} color="gray.400" />
                     </InputLeftElement>
                     <Input
-                      value={serviceRadius ? `${serviceRadius} km` : "N/A"}
-                      isReadOnly
-                      bg="gray.50"
+                      name="serviceRadius"
+                      value={form.serviceRadius}
+                      placeholder="e.g. 15"
+                      onChange={handleChange}
+                      bg="white"
                       borderColor="gray.200"
-                      color="gray.500"
+                      color="gray.800"
+                      focusBorderColor="green.500"
                     />
                   </InputGroup>
                 </FormControl>
